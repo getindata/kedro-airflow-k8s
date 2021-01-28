@@ -1,0 +1,64 @@
+from airflow import DAG
+from airflow.utils.dates import days_ago
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+from airflow.operators.python import PythonOperator
+from airflow.kubernetes.secret import Secret
+from kubernetes.client import models as k8s
+
+EXPERIMENT_NAME = "{{ dag_name }}"
+
+args = {
+    'owner': 'airflow',
+}
+
+with DAG(
+    dag_id='{{ dag_name }}',
+    default_args=args,
+    schedule_interval=None,
+    start_date=days_ago(2),
+    tags=['demo', 'commit_sha:{{ git_info.commit_sha }}'],
+    params={"example_key": "example_value"},
+) as dag:
+
+    def start_mlflow_run(ti, **kwargs):
+        from airflow.models.variable import Variable
+        from mlflow.tracking import MlflowClient
+
+        client = MlflowClient(Variable.get('mlflow'))
+        experiment_id = client.get_experiment_by_name(EXPERIMENT_NAME).experiment_id
+        run_id = client.create_run(experiment_id).info.run_id
+        ti.xcom_push('mlflow_run_id', run_id)
+
+    start_mlflow_run = PythonOperator(
+        task_id='start_mlflow_run',
+        python_callable=start_mlflow_run,
+    )
+
+    tasks = {}
+    {% for node in pipeline.nodes %}
+    tasks["{{ node.name | safe | slugify }}"] = KubernetesPodOperator(
+        task_id="{{ node.name | safe | slugify  }}",
+        name="{{ node.name | safe | slugify  }}",
+        namespace='airflow',
+        image='{{ config.image }}',
+        image_pull_policy='{{ config.image_pull_policy }}',
+        cmds=['bash', '-c'],
+        {% raw %}arguments=['sed -i -e"s|^mlflow_tracking_uri:.*|mlflow_tracking_uri: {{ var.value.mlflow }}|" conf/base/mlflow.yml && MLFLOW_RUN_ID={{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %} kedro run --node \'{{ node.name | safe }}\''],
+        is_delete_operator_pod=True,
+    )
+    {% endfor %}
+
+    
+    {% for parent_node, child_nodes in dependencies.items() -%}
+    {% for child in child_nodes %}
+    tasks["{{ parent_node.name | safe | slugify }}"] >> tasks["{{ child.name | safe | slugify }}"]
+    {% endfor %}
+    {%- endfor %}
+
+    {% for node in base_nodes %}
+    start_mlflow_run >> tasks['{{ node | slugify }}']
+    {% endfor %}
+
+
+if __name__ == "__main__":
+    dag.cli()
