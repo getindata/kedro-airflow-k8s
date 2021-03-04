@@ -1,11 +1,10 @@
-import os
-
 from kedro.config import MissingConfigException
 
 DEFAULT_CONFIG_TEMPLATE = """
 image: {image}
 imagePullPolicy: Always
 """
+
 
 class Config(object):
     def __init__(self, raw):

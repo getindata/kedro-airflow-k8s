@@ -8,8 +8,8 @@ from .config import PluginConfig
 
 CONFIG_FILE_PATTERN = "airflow*"
 
-class ContextHelper(object):
 
+class ContextHelper(object):
     def __init__(self, metadata, env):
         self._metadata = metadata
         self._env = env
@@ -26,6 +26,7 @@ class ContextHelper(object):
     @property
     def session(self):
         from kedro.framework.session import KedroSession
+
         if self._session is None:
             self._session = KedroSession.create(
                 self._metadata.package_name, env=self._env
@@ -64,4 +65,5 @@ class ContextHelper16(ContextHelper):
     @property
     def session(self):
         from kedro.framework.session import KedroSession
-        return KedroSession.create('', Path.cwd(), env=self._env)
+
+        return KedroSession.create("", Path.cwd(), env=self._env)
