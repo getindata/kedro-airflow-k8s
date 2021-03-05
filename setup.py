@@ -9,6 +9,8 @@ with open("README.md") as f:
 INSTALL_REQUIRES = [
     "kedro>=0.16,<=0.18",
     "click<8.0",
+    "semver~=2.10",
+    "python-slugify>=4.0.1",
 ]
 
 # Dev Requirements
@@ -50,7 +52,7 @@ setup(
     extras_require=EXTRA_REQUIRE,
     entry_points={
         "kedro.project_commands": [
-            "airflow-k8s = kedro_airlfow_k8s.cli:commands"
+            "airflow-k8s = kedro_airflow_k8s.cli:commands"
         ]
     },
 )
