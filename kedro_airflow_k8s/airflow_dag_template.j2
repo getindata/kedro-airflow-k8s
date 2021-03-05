@@ -42,7 +42,7 @@ with DAG(
         image='{{ config.image }}',
         image_pull_policy='{{ config.image_pull_policy }}',
         cmds=['bash', '-c'],
-        arguments=['MLFLOW_RUN_ID={% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %} kedro run --node \'{{ node.name | safe }}\''],
+        arguments=['MLFLOW_RUN_ID={% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %} kedro run -e {{ env }} --node \'{{ node.name | safe }}\''],
         is_delete_operator_pod=True,
     )
     {% endfor %}

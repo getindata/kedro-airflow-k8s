@@ -66,4 +66,5 @@ def generate(ctx, target_path="dags/"):
         mlflow_url=ctx.obj["context_helper"].mlflow_config[
             "mlflow_tracking_uri"
         ],
+        env=ctx.obj["context_helper"].env,
     ).dump(str(target_path))

@@ -16,6 +16,10 @@ class ContextHelper(object):
         self._session = None
 
     @property
+    def env(self):
+        return self._env
+
+    @property
     def project_name(self):
         return self._metadata.project_name
 
