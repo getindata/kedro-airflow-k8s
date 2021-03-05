@@ -6,7 +6,7 @@ from semver import VersionInfo
 
 from .config import PluginConfig
 
-CONFIG_FILE_PATTERN = "airflow*"
+CONFIG_FILE_PATTERN = "airflow-k8s*"
 
 
 class ContextHelper(object):
