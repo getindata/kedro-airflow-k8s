@@ -63,4 +63,7 @@ def generate(ctx, target_path="dags/"):
         config=ctx.obj["context_helper"].config,
         git_info=ctx.obj["context_helper"].session.store["git"],
         base_nodes=nodes_with_no_deps,
+        mlflow_url=ctx.obj["context_helper"].mlflow_config[
+            "mlflow_tracking_uri"
+        ],
     ).dump(str(target_path))

@@ -40,6 +40,11 @@ class ContextHelper(object):
         raw = self.context.config_loader.get(CONFIG_FILE_PATTERN)
         return PluginConfig(raw)
 
+    @property
+    @lru_cache()
+    def mlflow_config(self):
+        return self.context.config_loader.get("mlflow*")
+
     @staticmethod
     def init(metadata, env):
         version = VersionInfo.parse(kedro_version)

@@ -21,10 +21,9 @@ with DAG(
 ) as dag:
 
     def start_mlflow_run(ti, **kwargs):
-        from airflow.models.variable import Variable
         from mlflow.tracking import MlflowClient
 
-        client = MlflowClient(Variable.get('mlflow'))
+        client = MlflowClient("{{ mlflow_url }}")
         experiment_id = client.get_experiment_by_name(EXPERIMENT_NAME).experiment_id
         run_id = client.create_run(experiment_id).info.run_id
         ti.xcom_push('mlflow_run_id', run_id)
@@ -43,7 +42,7 @@ with DAG(
         image='{{ config.image }}',
         image_pull_policy='{{ config.image_pull_policy }}',
         cmds=['bash', '-c'],
-        {% raw %}arguments=['sed -i -e"s|^mlflow_tracking_uri:.*|mlflow_tracking_uri: {{ var.value.mlflow }}|" conf/base/mlflow.yml && MLFLOW_RUN_ID={{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %} kedro run --node \'{{ node.name | safe }}\''],
+        arguments=['MLFLOW_RUN_ID={% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %} kedro run --node \'{{ node.name | safe }}\''],
         is_delete_operator_pod=True,
     )
     {% endfor %}
