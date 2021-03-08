@@ -55,11 +55,10 @@ def generate(ctx, target_path="dags/"):
             dependencies[parent].append(node)
             nodes_with_no_deps = nodes_with_no_deps - set([node.name])
 
-    bottom_nodes = set(node.name for node in pipeline.nodes)
-    parent_nodes = set()
+    all_parent_nodes = set()
     for _, parent_nodes in pipeline.node_dependencies.items():
-        parent_nodes += set(parent.name for parent in parent_nodes)
-    bottom_nodes -= parent_nodes
+        all_parent_nodes = all_parent_nodes.union(set(parent.name for parent in parent_nodes))
+    bottom_nodes = set(node.name for node in pipeline.nodes) - all_parent_nodes
 
     template.stream(
         dag_name=package_name,
