@@ -4,6 +4,7 @@ from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import Kubernete
 from airflow.operators.python import PythonOperator
 from airflow.kubernetes.secret import Secret
 from kubernetes.client import models as k8s
+from kubernetes import client, config
 
 EXPERIMENT_NAME = "{{ dag_name }}"
 
@@ -33,6 +34,33 @@ with DAG(
         python_callable=start_mlflow_run,
     )
 
+    def create_pipeline_storage(ti, **kwargs):
+        with client.ApiClient(config.load_incluster_config()) as api_client:
+            v1 = client.CoreV1Api(api_client)
+            pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name='{{ project_name | safe | slugify }}', namespace='airflow'),
+                spec=k8s.V1PersistentVolumeClaimSpec(access_modes=['ReadWriteMany'], resources=k8s.V1ResourceRequirements(requests={'storage':'3Gi'})))
+
+            v1.create_namespaced_persistent_volume_claim('airflow', pvc)
+
+    create_pipeline_storage = PythonOperator(
+        task_id='create_pipeline_storage',
+        python_callable=create_pipeline_storage
+    )
+
+    def delete_pipeline_storage(ti, **kwargs):
+        with client.ApiClient(config.load_incluster_config()) as api_client:
+            v1 = client.CoreV1Api(api_client)
+            v1.delete_namespaced_persistent_volume_claim(name='{{ project_name | safe | slugify }}', namespace='airflow')
+
+    delete_pipeline_storage = PythonOperator(
+        task_id='delete_pipeline_storage',
+        python_callable=delete_pipeline_storage,
+        trigger_rule='all_done'
+    )
+
+    volume = k8s.V1Volume(name='storage', persistent_volume_claim=k8s.V1PersistentVolumeClaimVolumeSource(claim_name='{{ project_name | safe | slugify  }}'))
+    volume_mount = k8s.V1VolumeMount(mount_path='/data', name='storage')
+
     tasks = {}
     {% for node in pipeline.nodes %}
     tasks["{{ node.name | safe | slugify }}"] = KubernetesPodOperator(
@@ -44,6 +72,8 @@ with DAG(
         cmds=['bash', '-c'],
         arguments=['MLFLOW_RUN_ID={% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %} kedro run -e {{ env }} --node \'{{ node.name | safe }}\''],
         is_delete_operator_pod=True,
+        volumes=[volume],
+        volume_mounts=[volume_mount],
     )
     {% endfor %}
 
@@ -56,6 +86,11 @@ with DAG(
 
     {% for node in base_nodes %}
     start_mlflow_run >> tasks['{{ node | slugify }}']
+    create_pipeline_storage >> tasks['{{ node | slugify }}']
+    {% endfor %}
+
+    {% for node in bottom_nodes %}
+    tasks['{{ node | slugify }}'] >> delete_pipeline_storage
     {% endfor %}
 
 

@@ -55,6 +55,12 @@ def generate(ctx, target_path="dags/"):
             dependencies[parent].append(node)
             nodes_with_no_deps = nodes_with_no_deps - set([node.name])
 
+    bottom_nodes = set(node.name for node in pipeline.nodes)
+    parent_nodes = set()
+    for _, parent_nodes in pipeline.node_dependencies.items():
+        parent_nodes += set(parent.name for parent in parent_nodes)
+    bottom_nodes -= parent_nodes
+
     template.stream(
         dag_name=package_name,
         dependencies=dependencies,
@@ -63,6 +69,7 @@ def generate(ctx, target_path="dags/"):
         config=ctx.obj["context_helper"].config,
         git_info=ctx.obj["context_helper"].session.store["git"],
         base_nodes=nodes_with_no_deps,
+        bottom_nodes=bottom_nodes,
         mlflow_url=ctx.obj["context_helper"].mlflow_config[
             "mlflow_tracking_uri"
         ],
