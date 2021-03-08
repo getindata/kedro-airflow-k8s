@@ -6,14 +6,15 @@
 [![PyPI version](https://badge.fury.io/py/kedro-airflow-k8s.svg)](https://pypi.org/project/kedro-airflow-k8s/)
 [![Downloads](https://pepy.tech/badge/kedro-airflow-k8s)](https://pepy.tech/project/kedro-airflow-k8s) 
 
-[![Maintainability](https://api.codeclimate.com/v1/badges/fff07cbd2e5012a045a3/maintainability)](https://codeclimate.com/github/getindata/kedro-airflow-k8s/maintainability) 
-[![Test Coverage](https://api.codeclimate.com/v1/badges/fff07cbd2e5012a045a3/test_coverage)](https://codeclimate.com/github/getindata/kedro-airflow-k8s/test_coverage)
+[![Maintainability](https://api.codeclimate.com/v1/badges/f2ef65a9be497267c738/maintainability)](https://codeclimate.com/github/getindata/kedro-airflow-k8s/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/f2ef65a9be497267c738/test_coverage)](https://codeclimate.com/github/getindata/kedro-airflow-k8s/test_coverage)
 [![Documentation Status](https://readthedocs.org/projects/kedro-airflow-k8s/badge/?version=latest)](https://kedro-airflow-k8s.readthedocs.io/en/latest/?badge=latest)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fgetindata%2Fkedro-airflow-k7s.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fgetindata%2Fkedro-kubeflow?ref=badge_shield)
-
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fgetindata%2Fkedro-airflow-k8s.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fgetindata%2Fkedro-airflow-k8s?ref=badge_shield)
 ## About
 
-The main purpose of this plugin is to enable running kedro pipeline with Airflow on Kuberentes Cluster. In difference to 
+_**WORK IN PROGRESS**_
+
+The main purpose of this plugin is to enable running kedro pipeline with Airflow on Kubernetes Cluster. In difference to 
 [kedro-airflow](https://github.com/quantumblacklabs/kedro-airflow) this plugin does not require additional libraries installed
 in airflow runtime, it uses K8S infrastructure instead. 
 
@@ -21,12 +22,12 @@ The plugin can be used together with `kedro-docker` to simplify preparation of d
 
 ## Documentation
 
-**TODO**
+**work in progress**
 
 ## Usage guide
 
-**TODO** 
+**work in progress** 
 
 ## Configuration file
 
-**TODO** 
+**work in progress** 
