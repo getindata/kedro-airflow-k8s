@@ -3,6 +3,7 @@ from kedro.config import MissingConfigException
 DEFAULT_CONFIG_TEMPLATE = """
 image: {image}
 imagePullPolicy: Always
+namespace: {namespace}
 """
 
 
@@ -36,6 +37,10 @@ class PluginConfig(Config):
     @property
     def image_pull_policy(self):
         return self._get_or_default("imagePullPolicy", "Always")
+
+    @property
+    def namespace(self):
+        return self._get_or_fail("namespace")
 
     @staticmethod
     def sample_config(**kwargs):
