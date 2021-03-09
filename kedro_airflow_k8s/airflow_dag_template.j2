@@ -22,7 +22,8 @@ with DAG(
     params={"example_key": "example_value"},
 ) as dag:
 
-    pvc_name = f'{{ project_name | safe | slugify }}.{{execution_marker}}'
+    pvc_name = '{{ project_name | safe | slugify }}.{{ execution_marker }}'
+    pv_name = '{{ project_name | safe | slugify }}.{{ execution_marker }}'
 
     def start_mlflow_run(ti, **kwargs):
         from mlflow.tracking import MlflowClient
@@ -40,10 +41,15 @@ with DAG(
     def create_pipeline_storage(ti, **kwargs):
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
-            pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name=pvc_name, namespace='airflow'),
-                spec=k8s.V1PersistentVolumeClaimSpec(access_modes=['ReadOnlyMany'], resources=k8s.V1ResourceRequirements(requests={'storage':'3Gi'})))
 
-            v1.create_namespaced_persistent_volume_claim('airflow', pvc)
+            pv = k8s.V1PersistentVolume(metadata=k8s.V1ObjectMeta(name=pv_name),
+                    spec=k8s.V1PersistentVolumeSpec(capacity={'storage':'{{ request_storage | safe }}'}, access_modes=['ReadWriteMany'], persistent_volume_reclaim_policy='Recycle',
+                        nfs=k8s.V1NFSVolumeSource(path=f'/airflow_pods/{pv_name}', server='10.14.99.82')))
+            pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name=pvc_name, namespace='airflow'),
+                    spec=k8s.V1PersistentVolumeClaimSpec(access_modes=['ReadWriteMany'], storage_class_name="", volume_name='airflow-pods-pv', resources=k8s.V1ResourceRequirements(requests={'storage':'{{ request_storage | safe }}'})))
+
+            v1.create_persistent_volume(pv)
+            v1.create_namespaced_persistent_volume_claim(namespace='airflow', pvc)
 
     create_pipeline_storage = PythonOperator(
         task_id='create_pipeline_storage',
@@ -54,6 +60,7 @@ with DAG(
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
             v1.delete_namespaced_persistent_volume_claim(name=pvc_name, namespace='airflow')
+            v1.delete_persistent_volume(name=pv_name)
 
     delete_pipeline_storage = PythonOperator(
         task_id='delete_pipeline_storage',
