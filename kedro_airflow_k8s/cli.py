@@ -30,11 +30,8 @@ def airflow_group(ctx, metadata, env):
 
 
 @airflow_group.command()
-@click.option(
-    "-s", "--request_storage", "request_storage", type=str, default="1Gi", help="Size of temporary storage for pods"
-)
 @click.pass_context
-def generate(ctx, request_storage, target_path="dags/"):
+def generate(ctx, target_path="dags/"):
     """Create an Airflow DAG for a project"""
     loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
     jinja_env = jinja2.Environment(
@@ -73,7 +70,6 @@ def generate(ctx, request_storage, target_path="dags/"):
         git_info=ctx.obj["context_helper"].session.store["git"],
         base_nodes=nodes_with_no_deps,
         bottom_nodes=bottom_nodes,
-        request_storage=request_storage,
         execution_marker=datetime.datetime.now().strftime('%Y%m%d%H%M%S'),
         mlflow_url=ctx.obj["context_helper"].mlflow_config[
             "mlflow_tracking_uri"

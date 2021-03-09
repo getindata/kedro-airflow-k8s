@@ -42,6 +42,10 @@ class PluginConfig(Config):
     def namespace(self):
         return self._get_or_fail("namespace")
 
+    @property
+    def request_storage(self):
+        return self._get_or_default("request_storage", "1Gi")
+
     @staticmethod
     def sample_config(**kwargs):
         return DEFAULT_CONFIG_TEMPLATE.format(**kwargs)

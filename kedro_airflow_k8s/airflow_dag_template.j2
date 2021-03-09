@@ -41,11 +41,11 @@ with DAG(
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
 
-            pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name=pvc_name, namespace='airflow'),
+            pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name=pvc_name, namespace='{{ config.namespace }}'),
                     spec=k8s.V1PersistentVolumeClaimSpec(access_modes=['ReadWriteOnce'],
-                    resources=k8s.V1ResourceRequirements(requests={'storage':'{{ request_storage | safe }}'})))
+                    resources=k8s.V1ResourceRequirements(requests={'storage':'{{ config.request_storage | safe }}'})))
 
-            v1.create_namespaced_persistent_volume_claim(pvc, namespace='airflow')
+            v1.create_namespaced_persistent_volume_claim(pvc, namespace='{{ config.namespace }}')
 
     create_pipeline_storage = PythonOperator(
         task_id='create_pipeline_storage',
@@ -55,7 +55,7 @@ with DAG(
     def delete_pipeline_storage(ti, **kwargs):
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
-            v1.delete_namespaced_persistent_volume_claim(name=pvc_name, namespace='airflow')
+            v1.delete_namespaced_persistent_volume_claim(name=pvc_name, namespace='{{ config.namespace }}')
 
     delete_pipeline_storage = PythonOperator(
         task_id='delete_pipeline_storage',
