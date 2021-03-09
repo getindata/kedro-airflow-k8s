@@ -11,7 +11,6 @@ INSTALL_REQUIRES = [
     "click<8.0",
     "semver~=2.10",
     "python-slugify>=4.0.1",
-    "apache-airflow>=2.0.1",
 ]
 
 # Dev Requirements
@@ -38,7 +37,7 @@ setup(
     license="Apache Software License (Apache 2.0)",
     python_requires=">=3",
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
