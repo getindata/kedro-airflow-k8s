@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 from pathlib import Path
 
@@ -69,6 +70,7 @@ def generate(ctx, target_path="dags/"):
         git_info=ctx.obj["context_helper"].session.store["git"],
         base_nodes=nodes_with_no_deps,
         bottom_nodes=bottom_nodes,
+        execution_marker=datetime.datetime.now().strftime('%Y%m%d%H%M%S'),
         mlflow_url=ctx.obj["context_helper"].mlflow_config[
             "mlflow_tracking_uri"
         ],

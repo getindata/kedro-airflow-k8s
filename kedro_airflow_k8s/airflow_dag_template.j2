@@ -22,6 +22,8 @@ with DAG(
     params={"example_key": "example_value"},
 ) as dag:
 
+    pvc_name = f'{{ project_name | safe | slugify }}.{{execution_marker}}'
+
     def start_mlflow_run(ti, **kwargs):
         from mlflow.tracking import MlflowClient
 
@@ -38,7 +40,7 @@ with DAG(
     def create_pipeline_storage(ti, **kwargs):
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
-            pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name='{{ project_name | safe | slugify }}', namespace='airflow'),
+            pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name=pvc_name, namespace='airflow'),
                 spec=k8s.V1PersistentVolumeClaimSpec(access_modes=['ReadOnlyMany'], resources=k8s.V1ResourceRequirements(requests={'storage':'3Gi'})))
 
             v1.create_namespaced_persistent_volume_claim('airflow', pvc)
@@ -51,7 +53,7 @@ with DAG(
     def delete_pipeline_storage(ti, **kwargs):
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
-            v1.delete_namespaced_persistent_volume_claim(name='{{ project_name | safe | slugify }}', namespace='airflow')
+            v1.delete_namespaced_persistent_volume_claim(name=pvc_name, namespace='airflow')
 
     delete_pipeline_storage = PythonOperator(
         task_id='delete_pipeline_storage',
@@ -59,7 +61,7 @@ with DAG(
         trigger_rule='all_done'
     )
 
-    volume = k8s.V1Volume(name='storage',persistent_volume_claim=k8s.V1PersistentVolumeClaimVolumeSource(claim_name='{{ project_name | safe | slugify }}'))
+    volume = k8s.V1Volume(name='storage',persistent_volume_claim=k8s.V1PersistentVolumeClaimVolumeSource(claim_name=pvc_name))
     volume_mount = k8s.V1VolumeMount(name='storage', mount_path='/data', sub_path=None, read_only=False)
     tasks = {}
     {% for node in pipeline.nodes %}
