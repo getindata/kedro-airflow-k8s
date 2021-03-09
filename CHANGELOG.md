@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed 
+
+-   Drop dependency on `airflow`
+
 ## [0.0.2] - 2021-03-09
 
 ### Added
