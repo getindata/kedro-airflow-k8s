@@ -11,6 +11,7 @@ INSTALL_REQUIRES = [
     "click<8.0",
     "semver~=2.10",
     "python-slugify>=4.0.1",
+    "apache-airflow>=2.0.1",
 ]
 
 # Dev Requirements
@@ -30,7 +31,7 @@ EXTRA_REQUIRE = {
 
 setup(
     name="kedro-airflow-k8s",
-    version="0.0.0",
+    version="0.0.2",
     description="Kedro plugin with Airflow on Kubernetes support",
     long_description=README,
     long_description_content_type="text/markdown",

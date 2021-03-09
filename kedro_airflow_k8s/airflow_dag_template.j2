@@ -70,7 +70,7 @@ with DAG(
     tasks["{{ node.name | safe | slugify }}"] = KubernetesPodOperator(
         task_id="{{ node.name | safe | slugify  }}",
         name="{{ node.name | safe | slugify  }}",
-        namespace='airflow',
+        namespace='{{ config.namespace }}',
         image='{{ config.image }}',
         image_pull_policy='{{ config.image_pull_policy }}',
         cmds=['bash', '-c'],

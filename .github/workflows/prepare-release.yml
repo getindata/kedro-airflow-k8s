@@ -15,7 +15,7 @@ jobs:
       matrix:
         python-version: [3.7]
     env:
-      PYTHON_PACKAGE: kedro_airlfow_k8s
+      PYTHON_PACKAGE: kedro_airflow_k8s
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
