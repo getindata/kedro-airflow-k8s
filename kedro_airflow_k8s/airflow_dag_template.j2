@@ -6,6 +6,7 @@ from airflow.kubernetes.secret import Secret
 from kubernetes.client import models as k8s
 from kubernetes import client, config
 
+
 EXPERIMENT_NAME = "{{ dag_name }}"
 
 args = {
@@ -38,7 +39,7 @@ with DAG(
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
             pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name='{{ project_name | safe | slugify }}', namespace='airflow'),
-                spec=k8s.V1PersistentVolumeClaimSpec(access_modes=['ReadWriteMany'], resources=k8s.V1ResourceRequirements(requests={'storage':'3Gi'})))
+                spec=k8s.V1PersistentVolumeClaimSpec(access_modes=['ReadOnlyMany'], resources=k8s.V1ResourceRequirements(requests={'storage':'3Gi'})))
 
             v1.create_namespaced_persistent_volume_claim('airflow', pvc)
 
@@ -58,9 +59,8 @@ with DAG(
         trigger_rule='all_done'
     )
 
-    volume = k8s.V1Volume(name='storage', persistent_volume_claim=k8s.V1PersistentVolumeClaimVolumeSource(claim_name='{{ project_name | safe | slugify  }}'))
-    volume_mount = k8s.V1VolumeMount(mount_path='/data', name='storage')
-
+    volume = k8s.V1Volume(name='storage',persistent_volume_claim=k8s.V1PersistentVolumeClaimVolumeSource(claim_name='{{ project_name | safe | slugify }}'))
+    volume_mount = k8s.V1VolumeMount(name='storage', mount_path='/data', sub_path=None, read_only=False)
     tasks = {}
     {% for node in pipeline.nodes %}
     tasks["{{ node.name | safe | slugify }}"] = KubernetesPodOperator(
