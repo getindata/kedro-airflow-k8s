@@ -14,7 +14,7 @@ args = {
 }
 
 with DAG(
-    dag_id='{{ dag_name }}_with_volume',
+    dag_id='{{ dag_name }}',
     default_args=args,
     schedule_interval=None,
     start_date=days_ago(2),
@@ -33,7 +33,7 @@ with DAG(
         ti.xcom_push('mlflow_run_id', run_id)
 
     start_mlflow_run = PythonOperator(
-        task_id='start_mlflow_run12',
+        task_id='start_mlflow_run',
         python_callable=start_mlflow_run,
     )
 
@@ -45,7 +45,7 @@ with DAG(
                     spec=k8s.V1PersistentVolumeClaimSpec(access_modes=['ReadWriteOnce'],
                     resources=k8s.V1ResourceRequirements(requests={'storage':'{{ config.request_storage | safe }}'})))
 
-            v1.create_namespaced_persistent_volume_claim(pvc, namespace='{{ config.namespace }}')
+            v1.create_namespaced_persistent_volume_claim('{{ config.namespace }}', pvc)
 
     create_pipeline_storage = PythonOperator(
         task_id='create_pipeline_storage',
