@@ -44,7 +44,7 @@ class PluginConfig(Config):
 
     @property
     def request_storage(self):
-        return self._get_or_default("request_storage", "1Gi")
+        return self._get_or_default("requestStorage", "1Gi")
 
     @staticmethod
     def sample_config(**kwargs):
