@@ -58,7 +58,9 @@ def generate(ctx, target_path="dags/"):
 
     all_parent_nodes = set()
     for _, parent_nodes in pipeline.node_dependencies.items():
-        all_parent_nodes = all_parent_nodes.union(set(parent.name for parent in parent_nodes))
+        all_parent_nodes = all_parent_nodes.union(
+            set(parent.name for parent in parent_nodes)
+        )
     bottom_nodes = set(node.name for node in pipeline.nodes) - all_parent_nodes
 
     template.stream(
@@ -70,7 +72,7 @@ def generate(ctx, target_path="dags/"):
         git_info=ctx.obj["context_helper"].session.store["git"],
         base_nodes=nodes_with_no_deps,
         bottom_nodes=bottom_nodes,
-        execution_marker=datetime.datetime.now().strftime('%Y%m%d%H%M%S'),
+        execution_marker=datetime.datetime.now().strftime("%Y%m%d%H%M%S"),
         mlflow_url=ctx.obj["context_helper"].mlflow_config[
             "mlflow_tracking_uri"
         ],
