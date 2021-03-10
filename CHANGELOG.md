@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.0.4] - 2021-03-10
+
 ## [0.0.3] - 2021-03-09
 
 ### Fixed
@@ -14,7 +16,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.0.3...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.0.4...HEAD
+
+[0.0.4]: https://github.com/getindata/kedro-airflow-k8s/compare/0.0.3...0.0.4
 
 [0.0.3]: https://github.com/getindata/kedro-airflow-k8s/compare/0.0.2...0.0.3
 
