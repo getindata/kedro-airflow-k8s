@@ -1,6 +1,6 @@
 """kedro_airflow_k8s module."""
 
-from setuptools import find_packages, setup
+from setuptools import setup
 
 with open("README.md") as f:
     README = f.read()
@@ -45,7 +45,10 @@ setup(
     author=u"Mateusz Pytel",
     author_email="mateusz@getindata.com",
     url="https://github.com/getindata/kedro-airflow-k8s/",
-    packages=find_packages(exclude=["ez_setup", "examples", "tests", "docs"]),
+    packages=["kedro_airflow_k8s"],
+    package_data={
+        "kedro_airflow_k8s": ["kedro_airflow_k8s/airflow_dag_template.j2"]
+    },
     include_package_data=True,
     zip_safe=False,
     install_requires=INSTALL_REQUIRES,
