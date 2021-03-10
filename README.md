@@ -22,7 +22,7 @@ The plugin can be used together with `kedro-docker` to simplify preparation of d
 
 ## Documentation
 
-**work in progress**
+For detailed documentation refer to https://kedro-airflow-k8s.readthedocs.io/
 
 ## Usage guide
 
@@ -37,6 +37,3 @@ Commands:
   generate  Create an Airflow DAG for a project
 ```
 
-## Configuration file
-
-**work in progress** 

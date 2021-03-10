@@ -10,7 +10,9 @@ Welcome to Kedro Airflow K8S Plugin's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   Hello World!
+   Introduction <source/01_introduction/01_intro.md>
+   Installation <source/02_installation/index.rst>
+   Getting Started <source/03_getting_started/index.rst>
 
 Indices and tables
 ==================
