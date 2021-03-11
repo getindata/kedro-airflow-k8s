@@ -22,7 +22,7 @@ with DAG(
     params={"example_key": "example_value"},
 ) as dag:
 
-    pvc_name = '{{ project_name | safe | slugify }}.{{ execution_marker }}'
+    pvc_name = '{{ project_name | safe | slugify }}.{% raw %}{{ ts_nodash }}{% endraw %}'
 
     def start_mlflow_run(ti, **kwargs):
         from mlflow.tracking import MlflowClient
