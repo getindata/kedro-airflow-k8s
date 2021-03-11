@@ -42,7 +42,7 @@ with DAG(
             v1 = client.CoreV1Api(api_client)
 
             pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name=pvc_name, namespace='{{ config.namespace }}'),
-                    spec=k8s.V1PersistentVolumeClaimSpec(access_modes=['ReadWriteOnce'],
+                    spec=k8s.V1PersistentVolumeClaimSpec(access_modes=['{{ config.access_mode }}'],
                     resources=k8s.V1ResourceRequirements(requests={'storage':'{{ config.request_storage | safe }}'})))
 
             v1.create_namespaced_persistent_volume_claim('{{ config.namespace }}', pvc)
@@ -64,7 +64,7 @@ with DAG(
     )
 
     volume = k8s.V1Volume(name='storage',persistent_volume_claim=k8s.V1PersistentVolumeClaimVolumeSource(claim_name=pvc_name))
-    volume_mount = k8s.V1VolumeMount(name='storage', mount_path='/data', sub_path=None, read_only=False)
+    volume_mount = k8s.V1VolumeMount(name='storage', mount_path='/home/kedro/data', sub_path=None, read_only=False)
     tasks = {}
     {% for node in pipeline.nodes %}
     tasks["{{ node.name | safe | slugify }}"] = KubernetesPodOperator(

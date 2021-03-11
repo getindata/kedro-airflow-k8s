@@ -49,6 +49,8 @@ class TestPluginCLI(unittest.TestCase):
         context_helper.config = {
             "namespace": "test_ns",
             "image": "test/image:latest",
+            "access_mode": "ReadWriteMany",
+            "request_storage": "3Gi",
         }
         context_helper.mlflow_config = {
             "mlflow_tracking_uri": "mlflow.url.com"
@@ -69,3 +71,5 @@ class TestPluginCLI(unittest.TestCase):
         assert "image='test/image:latest'" in dag_content
         assert 'MlflowClient("mlflow.url.com")' in dag_content
         assert "commit_sha:abcdef" in dag_content
+        assert "access_modes=['ReadWriteMany']" in dag_content
+        assert "'storage':'3Gi'" in dag_content
