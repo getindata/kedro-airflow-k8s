@@ -68,7 +68,7 @@ class TestPluginCLI(unittest.TestCase):
         dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
         assert 'EXPERIMENT_NAME = "kedro_airflow_k8s"' in dag_content
         assert "namespace='test_ns'" in dag_content
-        assert "image='test/image:latest'" in dag_content
+        assert "image: test/image:latest" in dag_content
         assert 'MlflowClient("mlflow.url.com")' in dag_content
         assert "commit_sha:abcdef" in dag_content
         assert "access_modes=['ReadWriteMany']" in dag_content
