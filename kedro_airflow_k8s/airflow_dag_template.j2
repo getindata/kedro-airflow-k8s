@@ -37,7 +37,7 @@ with DAG(
         python_callable=start_mlflow_run,
     )
 
-    def create_pipeline_storage(ti, **kwargs):
+    def create_pipeline_storage(pvc_name, ti, **kwargs):
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
 
@@ -46,16 +46,18 @@ with DAG(
                     resources=k8s.V1ResourceRequirements(requests={'storage':'{{ config.request_storage | safe }}'})))
 
             v1.create_namespaced_persistent_volume_claim('{{ config.namespace }}', pvc)
+            ti.xcom_push('pvc_name', pvc_name)
 
     create_pipeline_storage = PythonOperator(
         task_id='create_pipeline_storage',
-        python_callable=create_pipeline_storage
+        python_callable=create_pipeline_storage,
+        op_args=[pvc_name],
     )
 
     def delete_pipeline_storage(ti, **kwargs):
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
-            v1.delete_namespaced_persistent_volume_claim(name=pvc_name, namespace='{{ config.namespace }}')
+            v1.delete_namespaced_persistent_volume_claim(name=ti.xcom_pull('pvc_name'), namespace='{{ config.namespace }}')
 
     delete_pipeline_storage = PythonOperator(
         task_id='delete_pipeline_storage',
@@ -63,7 +65,7 @@ with DAG(
         trigger_rule='all_done'
     )
 
-    volume = k8s.V1Volume(name='storage',persistent_volume_claim=k8s.V1PersistentVolumeClaimVolumeSource(claim_name=pvc_name))
+    volume = k8s.V1Volume(name='storage',persistent_volume_claim=k8s.V1PersistentVolumeClaimVolumeSource(claim_name='{% raw %}{{ task_instance.xcom_pull(key="pvc_name") }}{% endraw %}'))
     volume_mount = k8s.V1VolumeMount(name='storage', mount_path='/home/kedro/data', sub_path=None, read_only=False)
     tasks = {}
     {% for node in pipeline.nodes %}
