@@ -30,7 +30,7 @@ def airflow_group(ctx, metadata, env):
 
 @airflow_group.command()
 @click.pass_context
-def generate(ctx, target_path="dags/"):
+def compile(ctx, target_path="dags/"):
     """Create an Airflow DAG for a project"""
     loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
     jinja_env = jinja2.Environment(

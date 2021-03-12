@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from click.testing import CliRunner
 
-from kedro_airflow_k8s.cli import generate
+from kedro_airflow_k8s.cli import compile
 from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.context_helper import ContextHelper
 
@@ -41,7 +41,7 @@ def pipeline_fixture():
 
 
 class TestPluginCLI(unittest.TestCase):
-    def test_generate(self):
+    def test_compile(self):
         context_helper = MagicMock(ContextHelper)
         context_helper.context.package_name = "kedro_airflow_k8s"
         context_helper.context.pipelines.get = lambda x: pipeline_fixture()
@@ -61,7 +61,7 @@ class TestPluginCLI(unittest.TestCase):
 
         runner = CliRunner()
 
-        result = runner.invoke(generate, [], obj=config)
+        result = runner.invoke(compile, [], obj=config)
         assert result.exit_code == 0
         assert Path("dags/kedro_airflow_k8s.py").exists()
 

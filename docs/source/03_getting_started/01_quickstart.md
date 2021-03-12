@@ -76,7 +76,7 @@ Options:
 -h, --help      Show this message and exit.
 
 Commands:
-generate  Create an Airflow DAG for a project
+compile  Create an Airflow DAG for a project
 ```
 
 ## Build the docker image to be used on Kubeflow Pipelines runs
@@ -139,7 +139,7 @@ docker push remote.repo.url.com/airflow_k8s_plugin_demo:latest
 
 Plugin requires project to be under git repository. Perform [repository initialization](https://git-scm.com/docs/git-init) and commit project files  
 
-## Generate DAG
+## Compile DAG
 
 Create configuration file in `conf/pipelines/airflow-k8s.yaml`:
 
@@ -154,9 +154,9 @@ Also mlflow configuration has to be set up as described in [mlflow section](./03
 Having configuration ready, type:
 
 ```console
-kedro airflow-k8s -e pipelines generate
+kedro airflow-k8s -e pipelines compile
 ```
 
-This command generates DAG in `dag/airflow_k8s_plugin_demo.py`. This file should be copied manually into Airflow DAG
+This command compiles pipeline and generates DAG in `dag/airflow_k8s_plugin_demo.py`. This file should be copied manually into Airflow DAG
 directory, 
 that Airflow periodically scans. After it appears in airflow console, it is ready to be triggered. 

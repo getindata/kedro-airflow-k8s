@@ -42,10 +42,10 @@ Options:
 -h, --help      Show this message and exit.
 
 Commands:
-generate  Create an Airflow DAG for a project
+compile  Create an Airflow DAG for a project
 ```
 
-### `generate`
+### `compile`
 
-`generate` command takes one argument, which is the directory name containing configuration (relative to `conf` folder). 
+`compile` command takes one argument, which is the directory name containing configuration (relative to `conf` folder). 
 As an outcome, `dag` directory contains python file with generated DAG.
