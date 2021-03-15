@@ -7,6 +7,10 @@
 
 ## [0.0.4] - 2021-03-10
 
+### Fixed
+
+- Added DAG template to package manifest
+
 ## [0.0.3] - 2021-03-09
 
 ### Fixed
