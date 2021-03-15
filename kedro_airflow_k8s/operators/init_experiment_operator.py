@@ -16,11 +16,15 @@ class InitExperimentOperator(PythonOperator):
         super().__init__(
             task_id=task_id, python_callable=self.start_mlflow_run, **kwargs
         )
-        self.mlflow_url = mlflow_url
         self.experiment_name = experiment_name
+        self.mlflow_url = mlflow_url
+
+    def create_mlflow_client(self):
+        from mlflow.tracking import MlflowClient
+
+        return MlflowClient(self.mlflow_url)
 
     def start_mlflow_run(self, ti, **kwargs):
-        from mlflow.tracking import MlflowClient
         from mlflow.protos.databricks_pb2 import (
             RESOURCE_ALREADY_EXISTS,
             ErrorCode,
@@ -28,9 +32,11 @@ class InitExperimentOperator(PythonOperator):
         from mlflow.exceptions import MlflowException
         from mlflow.entities.lifecycle_stage import LifecycleStage
 
-        client = MlflowClient(self.mlflow_url)
+        mlflow_client = self.create_mlflow_client()
         try:
-            experiment_id = client.create_experiment(self.experiment_name)
+            experiment_id = mlflow_client.create_experiment(
+                self.experiment_name
+            )
             logging.info(
                 f"Experiment {self.experiment_name} created with id {experiment_id}"
             )
@@ -40,7 +46,9 @@ class InitExperimentOperator(PythonOperator):
             ):
                 raise
 
-            experiment = client.get_experiment_by_name(self.experiment_name)
+            experiment = mlflow_client.get_experiment_by_name(
+                self.experiment_name
+            )
             if experiment.lifecycle_stage == LifecycleStage.DELETED:
                 logging.error(
                     f"Experiment {self.experiment_name} already DELETED"
@@ -51,5 +59,7 @@ class InitExperimentOperator(PythonOperator):
                 f"Experiment {self.experiment_name} exists with id {experiment_id}"
             )
 
-        run_id = client.create_run(experiment_id).info.run_id
+        run_id = mlflow_client.create_run(experiment_id).info.run_id
         ti.xcom_push("mlflow_run_id", run_id)
+
+        return run_id

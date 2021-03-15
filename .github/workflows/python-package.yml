@@ -32,6 +32,7 @@ jobs:
 
     - name: Test with tox
       run: |
+        airflow db init
         tox -e py37
 
     - name: Report coverage
