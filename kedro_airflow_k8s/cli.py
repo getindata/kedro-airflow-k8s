@@ -30,7 +30,7 @@ def airflow_group(ctx, metadata, env):
 
 @airflow_group.command()
 @click.pass_context
-def generate(ctx, target_path="dags/"):
+def compile(ctx, target_path="dags/"):
     """Create an Airflow DAG for a project"""
     loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
     jinja_env = jinja2.Environment(
@@ -55,6 +55,13 @@ def generate(ctx, target_path="dags/"):
             dependencies[parent].append(node)
             nodes_with_no_deps = nodes_with_no_deps - set([node.name])
 
+    all_parent_nodes = set()
+    for _, parent_nodes in pipeline.node_dependencies.items():
+        all_parent_nodes = all_parent_nodes.union(
+            set(parent.name for parent in parent_nodes)
+        )
+    bottom_nodes = set(node.name for node in pipeline.nodes) - all_parent_nodes
+
     template.stream(
         dag_name=package_name,
         dependencies=dependencies,
@@ -63,6 +70,7 @@ def generate(ctx, target_path="dags/"):
         config=ctx.obj["context_helper"].config,
         git_info=ctx.obj["context_helper"].session.store["git"],
         base_nodes=nodes_with_no_deps,
+        bottom_nodes=bottom_nodes,
         mlflow_url=ctx.obj["context_helper"].mlflow_config[
             "mlflow_tracking_uri"
         ],

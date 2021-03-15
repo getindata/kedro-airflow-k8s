@@ -4,6 +4,8 @@ DEFAULT_CONFIG_TEMPLATE = """
 image: {image}
 imagePullPolicy: Always
 namespace: {namespace}
+accessMode: {accessMode}
+requestStorage: {requestStorage}
 """
 
 
@@ -41,6 +43,14 @@ class PluginConfig(Config):
     @property
     def namespace(self):
         return self._get_or_fail("namespace")
+
+    @property
+    def access_mode(self):
+        return self._get_or_default("accessMode", "ReadWriteOnce")
+
+    @property
+    def request_storage(self):
+        return self._get_or_default("requestStorage", "1Gi")
 
     @staticmethod
     def sample_config(**kwargs):
