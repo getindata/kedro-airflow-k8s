@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 -   Creates mlflow experiment on pipeline start if it does not exist
+-   Temporary persistent volumes generation and removal for pipelines
 
 ## [0.0.4] - 2021-03-10
 
