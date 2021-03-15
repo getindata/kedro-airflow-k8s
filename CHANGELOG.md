@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Creates mlflow experiment on pipeline start if it does not exist
+
 ## [0.0.4] - 2021-03-10
 
 ## [0.0.3] - 2021-03-09
