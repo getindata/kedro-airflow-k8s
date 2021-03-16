@@ -4,7 +4,7 @@ from airflow.operators.python import PythonOperator
 from airflow.utils.decorators import apply_defaults
 
 
-class InitExperimentOperator(PythonOperator):
+class StartMLflowExperimentOperator(PythonOperator):
     @apply_defaults
     def __init__(
         self,

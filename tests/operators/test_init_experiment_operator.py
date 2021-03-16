@@ -11,10 +11,10 @@ from mlflow.entities import LifecycleStage
 from mlflow.exceptions import MlflowException
 from mlflow.protos import databricks_pb2
 
-from kedro_airflow_k8s.operators import init_experiment_operator
+from kedro_airflow_k8s.operators import start_mlflow_experiment
 
 
-class TestInitExperimentOperator(unittest.TestCase):
+class TestStartMLflowExperimentOperator(unittest.TestCase):
     @staticmethod
     def create_context(task):
         dag = DAG(dag_id="dag")
@@ -30,7 +30,7 @@ class TestInitExperimentOperator(unittest.TestCase):
 
     def test_init_with_new_experiment(self):
         with mock.patch.object(
-            init_experiment_operator.InitExperimentOperator,
+            start_mlflow_experiment.StartMLflowExperimentOperator,
             "create_mlflow_client",
         ) as create_mlflow_client:
             mlflow_client = MagicMock()
@@ -38,7 +38,7 @@ class TestInitExperimentOperator(unittest.TestCase):
             mlflow_client.create_run.return_value.info.run_id = "next-run-id"
 
             create_mlflow_client.return_value = mlflow_client
-            op = init_experiment_operator.InitExperimentOperator(
+            op = start_mlflow_experiment.StartMLflowExperimentOperator(
                 task_id="test",
                 mlflow_url="http://test.mlflow.com",
                 experiment_name="test-experiment",
@@ -50,7 +50,7 @@ class TestInitExperimentOperator(unittest.TestCase):
 
     def test_init_with_existing_experiment(self):
         with mock.patch.object(
-            init_experiment_operator.InitExperimentOperator,
+            start_mlflow_experiment.StartMLflowExperimentOperator,
             "create_mlflow_client",
         ) as create_mlflow_client:
             mlflow_client = MagicMock()
@@ -65,7 +65,7 @@ class TestInitExperimentOperator(unittest.TestCase):
             )
 
             create_mlflow_client.return_value = mlflow_client
-            op = init_experiment_operator.InitExperimentOperator(
+            op = start_mlflow_experiment.StartMLflowExperimentOperator(
                 task_id="test",
                 mlflow_url="http://test.mlflow.com",
                 experiment_name="test-experiment",
@@ -78,7 +78,7 @@ class TestInitExperimentOperator(unittest.TestCase):
     def test_init_with_existing_deleted_experiment(self):
         with pytest.raises(MlflowException):
             with mock.patch.object(
-                init_experiment_operator.InitExperimentOperator,
+                start_mlflow_experiment.StartMLflowExperimentOperator,
                 "create_mlflow_client",
             ) as create_mlflow_client:
                 mlflow_client = MagicMock()
@@ -93,7 +93,7 @@ class TestInitExperimentOperator(unittest.TestCase):
                 )
 
                 create_mlflow_client.return_value = mlflow_client
-                op = init_experiment_operator.InitExperimentOperator(
+                op = start_mlflow_experiment.StartMLflowExperimentOperator(
                     task_id="test",
                     mlflow_url="http://test.mlflow.com",
                     experiment_name="test-experiment",
@@ -105,7 +105,7 @@ class TestInitExperimentOperator(unittest.TestCase):
     def test_init_with_mlflow_internal_error(self):
         with pytest.raises(MlflowException):
             with mock.patch.object(
-                init_experiment_operator.InitExperimentOperator,
+                start_mlflow_experiment.StartMLflowExperimentOperator,
                 "create_mlflow_client",
             ) as create_mlflow_client:
                 mlflow_client = MagicMock()
@@ -117,7 +117,7 @@ class TestInitExperimentOperator(unittest.TestCase):
                 )
 
                 create_mlflow_client.return_value = mlflow_client
-                op = init_experiment_operator.InitExperimentOperator(
+                op = start_mlflow_experiment.StartMLflowExperimentOperator(
                     task_id="test",
                     mlflow_url="http://test.mlflow.com",
                     experiment_name="test-experiment",

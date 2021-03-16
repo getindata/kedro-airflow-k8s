@@ -14,7 +14,7 @@ args = {
     'owner': 'airflow',
 }
 
-{{ include_init_experiment_operator | safe }}
+{{ include_start_mlflow_experiment_operator | safe }}
 
 with DAG(
     dag_id='{{ dag_name }}',
@@ -27,7 +27,7 @@ with DAG(
 
     pvc_name = '{{ project_name | safe | slugify }}.{% raw %}{{ ts_nodash | lower  }}{% endraw %}'
 
-    start_mlflow_run = InitExperimentOperator(
+    start_mlflow_run = StartMLflowExperimentOperator(
         experiment_name=EXPERIMENT_NAME,
         mlflow_url='{{ mlflow_url }}'
     )
