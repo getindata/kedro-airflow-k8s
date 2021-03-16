@@ -11,6 +11,7 @@ INSTALL_REQUIRES = [
     "click<8.0",
     "semver~=2.10",
     "python-slugify>=4.0.1",
+    "gcsfs>=0.6.3, <0.7.0",
 ]
 
 # Dev Requirements

@@ -1,10 +1,11 @@
 import unittest
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from unittest.mock import MagicMock
 
 from click.testing import CliRunner
 
-from kedro_airflow_k8s.cli import compile
+from kedro_airflow_k8s.cli import compile, upload_pipeline
 from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.context_helper import ContextHelper
 
@@ -73,3 +74,35 @@ class TestPluginCLI(unittest.TestCase):
         assert "commit_sha:abcdef" in dag_content
         assert "access_modes=['ReadWriteMany']" in dag_content
         assert "'storage':'3Gi'" in dag_content
+
+    def test_upload_pipeline(self):
+        context_helper = MagicMock(ContextHelper)
+        context_helper.context.package_name = "kedro_airflow_k8s"
+        context_helper.context.pipelines.get = lambda x: pipeline_fixture()
+        context_helper.project_name = "kedro_airflow_k8s"
+        context_helper.config = {
+            "namespace": "test_ns",
+            "image": "test/image:latest",
+            "access_mode": "ReadWriteMany",
+            "request_storage": "3Gi",
+        }
+        context_helper.mlflow_config = {
+            "mlflow_tracking_uri": "mlflow.url.com"
+        }
+        context_helper.session.store["git"].commit_sha = "abcdef"
+
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        output_file = NamedTemporaryFile(
+            mode="wt", delete=True, prefix="test_upload_pipeline", suffix=".py"
+        )
+        result = runner.invoke(
+            upload_pipeline, ["--output", output_file.name], obj=config
+        )
+        assert result.exit_code == 0
+        assert Path(output_file.name).exists()
+
+        dag_content = Path(output_file.name).read_text()
+        assert len(dag_content) > 0
