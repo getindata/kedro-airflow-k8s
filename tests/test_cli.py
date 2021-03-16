@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from tempfile import NamedTemporaryFile
+from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock
 
 from click.testing import CliRunner
@@ -95,14 +95,18 @@ class TestPluginCLI(unittest.TestCase):
 
         runner = CliRunner()
 
-        output_file = NamedTemporaryFile(
-            mode="wt", delete=True, prefix="test_upload_pipeline", suffix=".py"
+        output_directory = TemporaryDirectory(
+            prefix="test_upload_pipeline", suffix=".py"
         )
         result = runner.invoke(
-            upload_pipeline, ["--output", output_file.name], obj=config
+            upload_pipeline,
+            ["--output", str(output_directory.name)],
+            obj=config,
         )
         assert result.exit_code == 0
-        assert Path(output_file.name).exists()
+        assert Path(output_directory.name).exists()
 
-        dag_content = Path(output_file.name).read_text()
+        dag_content = (
+            Path(output_directory.name) / "kedro_airflow_k8s.py"
+        ).read_text()
         assert len(dag_content) > 0
