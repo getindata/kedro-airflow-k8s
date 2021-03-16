@@ -6,13 +6,15 @@ from airflow.kubernetes.secret import Secret
 from airflow.kubernetes.pod_generator import PodGenerator
 from kubernetes.client import models as k8s
 from kubernetes import client, config
-
+import logging
 
 EXPERIMENT_NAME = "{{ dag_name }}"
 
 args = {
     'owner': 'airflow',
 }
+
+{{ include_start_mlflow_experiment_operator | safe }}
 
 with DAG(
     dag_id='{{ dag_name }}',
@@ -25,17 +27,9 @@ with DAG(
 
     pvc_name = '{{ project_name | safe | slugify }}.{% raw %}{{ ts_nodash | lower  }}{% endraw %}'
 
-    def start_mlflow_run(ti, **kwargs):
-        from mlflow.tracking import MlflowClient
-
-        client = MlflowClient("{{ mlflow_url }}")
-        experiment_id = client.get_experiment_by_name(EXPERIMENT_NAME).experiment_id
-        run_id = client.create_run(experiment_id).info.run_id
-        ti.xcom_push('mlflow_run_id', run_id)
-
-    start_mlflow_run = PythonOperator(
-        task_id='start_mlflow_run',
-        python_callable=start_mlflow_run,
+    start_mlflow_run = StartMLflowExperimentOperator(
+        experiment_name=EXPERIMENT_NAME,
+        mlflow_url='{{ mlflow_url }}'
     )
 
     def create_pipeline_storage(pvc_name, ti, **kwargs):

@@ -21,17 +21,20 @@ jobs:
     - name: Setup virtualenv
       run: |
         python -V
-        python -m pip install virtualenv
+        python -m pip install virtualenv pipdeptree
         virtualenv venv
         source venv/bin/activate
    
     - name: Check pre-commit status
       run: |
         pip install .[tests]
+        pip freeze
+        pipdeptree
         pre-commit run --all-files
 
     - name: Test with tox
       run: |
+        airflow db reset --yes
         tox -e py37
 
     - name: Report coverage

@@ -20,6 +20,9 @@ EXTRA_REQUIRE = {
         "pytest-cov>=2.8.0, <3.0.0",
         "tox==3.21.1",
         "pre-commit==2.9.3",
+        "apache-airflow==2.0.1",
+        "mlflow==1.14.1",
+        "sqlalchemy==1.3.23",
     ],
     "docs": [
         "sphinx==3.4.2",

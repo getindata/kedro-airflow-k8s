@@ -4,3 +4,9 @@ plugins:
     checks:
       import-error:
         enabled: false
+      logging-format-interpolation:
+        enabled: false
+      import-outside-toplevel:
+        enabled: false
+      bad-continuation:
+        enabled: false

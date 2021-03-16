@@ -75,4 +75,7 @@ def compile(ctx, target_path="dags/"):
             "mlflow_tracking_uri"
         ],
         env=ctx.obj["context_helper"].env,
+        include_start_mlflow_experiment_operator=(
+            Path(__file__).parent / "operators/start_mlflow_experiment.py"
+        ).read_text(),
     ).dump(str(target_path))

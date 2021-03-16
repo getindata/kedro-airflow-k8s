@@ -2,9 +2,14 @@
 
 ## [Unreleased]
 
-- Temporary persistent volumes generation and removal for pipelines
+-   Creates mlflow experiment on pipeline start if it does not exist
+-   Temporary persistent volumes generation and removal for pipelines
 
 ## [0.0.4] - 2021-03-10
+
+### Fixed
+
+- Added DAG template to package manifest
 
 ## [0.0.3] - 2021-03-09
 
