@@ -1,8 +1,8 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import Callable
 
 import click
+import fsspec
 import jinja2
 from jinja2.environment import TemplateStream
 from slugify import slugify
@@ -53,27 +53,6 @@ def _create_template_stream(context_helper) -> TemplateStream:
     )
 
 
-def _process_file(path: str, processor: Callable):
-    if path.startswith("gs://") or path.startswith("gcs://"):
-        import google.auth
-
-        credentials, project_id = google.auth.default()
-        bare_path = path[path.index("/") + 2 :]  # noqa: E203
-
-        import gcsfs
-
-        fs = gcsfs.GCSFileSystem(project=project_id)
-    else:
-        bare_path = path
-
-        from fsspec.implementations import local
-
-        fs = local.LocalFileSystem(auto_mkdir=True)
-
-    with fs.open(bare_path, "wt") as f:
-        processor(f)
-
-
 @click.group("airflow-k8s")
 def commands():
     """Kedro plugin adding support for Airflow on K8S"""
@@ -105,7 +84,8 @@ def compile(ctx, target_path="dags/"):
     target_path = Path(target_path)
     target_path = target_path / dag_filename
 
-    _process_file(str(target_path), lambda f: template_stream.dump(f))
+    with fsspec.open(str(target_path), "wt") as f:
+        template_stream.dump(f)
 
 
 @airflow_group.command()
@@ -127,6 +107,5 @@ def upload_pipeline(ctx, output):
     package_name = context_helper.context.package_name
     dag_filename = f"{package_name}.py"
 
-    _process_file(
-        f"{output}/{dag_filename}", lambda f: template_stream.dump(f)
-    )
+    with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
+        template_stream.dump(f)
