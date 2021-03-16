@@ -77,6 +77,7 @@ Options:
 
 Commands:
 compile  Create an Airflow DAG for a project
+upload-pipeline  Uploads pipeline to Airflow DAG location
 ```
 
 ## Build the docker image to be used on Kubeflow Pipelines runs
@@ -160,3 +161,12 @@ kedro airflow-k8s -e pipelines compile
 This command compiles pipeline and generates DAG in `dag/airflow_k8s_plugin_demo.py`. This file should be copied manually into Airflow DAG
 directory, 
 that Airflow periodically scans. After it appears in airflow console, it is ready to be triggered. 
+
+As an alternative, one cas use the following:
+
+```console
+kedro airflow-k8s -e pipelines upload-pipeline -o ${AIRFLOW_DAG_HOME}
+```
+
+in order to get DAG copied directly to Airflow DAG folder. Google Cloud Storage locations are also support with `gcs://`
+or `gs://` prefix in parameter (this requires plugin to be installed with `pip install kedro-airflow-k8s[gcp]`.

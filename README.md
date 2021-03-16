@@ -34,6 +34,7 @@ Options:
   -h, --help      Show this message and exit.
 
 Commands:
-  generate  Create an Airflow DAG for a project
+  compile           Create an Airflow DAG for a project
+  upload-pipeline   Create and upload Airflow DAG to the directory 
 ```
 
