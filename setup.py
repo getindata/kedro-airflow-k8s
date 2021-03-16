@@ -29,7 +29,7 @@ EXTRA_REQUIRE = {
         "recommonmark==0.7.1",
         "sphinx_rtd_theme==0.5.1",
     ],
-    "gcs": [
+    "gcp": [
         "gcsfs>=0.6.2, <0.7.0",
     ],
 }
