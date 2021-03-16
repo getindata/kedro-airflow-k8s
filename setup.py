@@ -11,7 +11,6 @@ INSTALL_REQUIRES = [
     "click<8.0",
     "semver~=2.10",
     "python-slugify>=4.0.1",
-    "gcsfs>=0.6.2, <0.7.0",
 ]
 
 # Dev Requirements
@@ -29,6 +28,9 @@ EXTRA_REQUIRE = {
         "sphinx==3.4.2",
         "recommonmark==0.7.1",
         "sphinx_rtd_theme==0.5.1",
+    ],
+    "gcs": [
+        "gcsfs>=0.6.2, <0.7.0",
     ],
 }
 

@@ -169,4 +169,4 @@ kedro airflow-k8s -e pipelines upload-pipeline -o ${AIRFLOW_DAG_HOME}
 ```
 
 in order to get DAG copied directly to Airflow DAG folder. Google Cloud Storage locations are also support with `gcs://`
-or `gs://` prefix in parameter.
+or `gs://` prefix in parameter (this requires plugin to be installed with `pip install kedro-airflow-k8s[gcp]`.
