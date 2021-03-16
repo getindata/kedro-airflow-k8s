@@ -42,10 +42,16 @@ Options:
 -h, --help      Show this message and exit.
 
 Commands:
-compile  Create an Airflow DAG for a project
+  compile          Create an Airflow DAG for a project
+  upload-pipeline  Uploads pipeline to Airflow DAG location
 ```
 
 ### `compile`
 
 `compile` command takes one argument, which is the directory name containing configuration (relative to `conf` folder). 
 As an outcome, `dag` directory contains python file with generated DAG.
+
+### `upload-pipeline`
+
+`upload-pipeline` command takes two arguments, one is the directory name containing configuration (relative to conf 
+folder), the second one is output location of generated dag.

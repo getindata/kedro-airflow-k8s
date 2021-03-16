@@ -120,7 +120,7 @@ def compile(ctx, target_path="dags/"):
 @click.pass_context
 def upload_pipeline(ctx, output):
     """
-    Uploads pipeline to Airflow DAG location.
+    Uploads pipeline to Airflow DAG location
     """
     context_helper = ctx.obj["context_helper"]
     template_stream = _create_template_stream(context_helper)
