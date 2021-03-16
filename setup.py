@@ -22,6 +22,7 @@ EXTRA_REQUIRE = {
         "pre-commit==2.9.3",
         "apache-airflow==2.0.1",
         "mlflow==1.14.1",
+        "sqlalchemy==1.3.23",
     ],
     "docs": [
         "sphinx==3.4.2",
