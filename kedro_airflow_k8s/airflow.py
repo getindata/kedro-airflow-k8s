@@ -29,6 +29,7 @@ class MissingDAGException(BaseException):
 class AirflowClient:
     MAX_RETRIES = 10
     RETRY_INTERVAL = 10
+    VERIFY = False
     """
     Client of Airflow. Supports both low level functionalities of Airflow and some high
      level aggregates on top of them.
@@ -48,6 +49,7 @@ class AirflowClient:
             + (status_forcelist or []),
             method_whitelist=["GET", "POST", "PATCH", "DELETE"],
             backoff_factor=1,
+            raise_on_status=True,
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         session = requests.Session()
@@ -65,7 +67,10 @@ class AirflowClient:
         res = AirflowClient.create_http_session().get(
             f"{self.rest_api_url}/dags/{dag_id}",
             headers={"Content-Type": "application/json"},
+            verify=AirflowClient.VERIFY,
         )
+        if res.status_code != 200:
+            raise RuntimeError(res.json().get("title"))
         return DAGModel(res.json())
 
     def wait_for_dag(self, dag_id: str, tag: str) -> DAGModel:
@@ -81,6 +86,7 @@ class AirflowClient:
             res = session.get(
                 url=f"{self.rest_api_url}/dags/{dag_id}",
                 headers={"Content-Type": "application/json"},
+                verify=AirflowClient.VERIFY,
             )
             dag_json = res.json()
             dag = DAGModel(dag_id=dag_json["dag_id"], tags=dag_json["tags"])
@@ -102,12 +108,12 @@ class AirflowClient:
         """
         session = AirflowClient.create_http_session()
 
+        now = datetime.datetime.utcnow().isoformat(timespec="seconds")
         res = session.post(
             url=f"{self.rest_api_url}/dags/{dag_id}/dagRuns",
-            data={
-                "execution_date": datetime.datetime.now().isoformat(
-                    timespec="seconds"
-                )
-            },
+            json={"execution_date": f"{now}Z"},
+            verify=AirflowClient.VERIFY,
         )
+        if res.status_code != 200:
+            raise RuntimeError(res.json().get("title"))
         return res.json()["dag_run_id"]

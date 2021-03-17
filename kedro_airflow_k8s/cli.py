@@ -173,6 +173,6 @@ def run_once(ctx, output: str):
     )
     dag = airflow_client.wait_for_dag(
         dag_id=context_helper.context.package_name,
-        tag=f'commit_sha:{context_helper.session.store["git"].commit_sha}',
+        tag=f'commit_sha:{context_helper.session.store["git"]["commit_sha"]}',
     )
     airflow_client.trigger_dag_run(dag.dag_id)
