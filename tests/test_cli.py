@@ -1,11 +1,13 @@
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
 from click.testing import CliRunner
 
-from kedro_airflow_k8s.cli import compile, schedule, upload_pipeline
+from kedro_airflow_k8s import airflow
+from kedro_airflow_k8s.cli import compile, run_once, schedule, upload_pipeline
 from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.context_helper import ContextHelper
 
@@ -133,7 +135,7 @@ class TestPluginCLI(unittest.TestCase):
         runner = CliRunner()
 
         output_directory = TemporaryDirectory(
-            prefix="test_upload_pipeline", suffix=".py"
+            prefix="test_schedule", suffix=".py"
         )
         result = runner.invoke(
             schedule,
@@ -152,3 +154,106 @@ class TestPluginCLI(unittest.TestCase):
             Path(output_directory.name) / "kedro_airflow_k8s.py"
         ).read_text()
         assert "schedule_interval='0 0 0 5 *'" in dag_content
+
+    def test_run_once(self):
+        context_helper = MagicMock(ContextHelper)
+        context_helper.context.package_name = "kedro_airflow_k8s"
+        context_helper.context.pipelines.get = lambda x: pipeline_fixture()
+        context_helper.project_name = "kedro_airflow_k8s"
+        context_helper.config = {
+            "namespace": "test_ns",
+            "image": "test/image:latest",
+            "access_mode": "ReadWriteMany",
+            "request_storage": "3Gi",
+        }
+        context_helper.mlflow_config = {
+            "mlflow_tracking_uri": "mlflow.url.com"
+        }
+        context_helper.airflow_config = {
+            "airflow_rest_api_uri": "airflow.url.com/api/v1"
+        }
+        context_helper.session.store["git"].commit_sha = "abcdef"
+
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        output_directory = TemporaryDirectory(
+            prefix="test_run_once", suffix=".py"
+        )
+
+        with patch.object(
+            airflow.AirflowClient, "wait_for_dag"
+        ) as wait_for_dag:
+            with patch.object(
+                airflow.AirflowClient, "trigger_dag_run"
+            ) as trigger_dag_run:
+                wait_for_dag.return_value = airflow.DAGModel(
+                    dag_id="kedro_airflow_k8s",
+                    tags=[{"name": "demo"}, {"name": "commit_sha:abcdef"}],
+                )
+
+                result = runner.invoke(
+                    run_once,
+                    [
+                        "--output",
+                        str(output_directory.name),
+                    ],
+                    obj=config,
+                )
+                assert result.exit_code == 0
+                trigger_dag_run.assert_called_once_with("kedro_airflow_k8s")
+
+                assert Path(output_directory.name).exists()
+
+                dag_content = (
+                    Path(output_directory.name) / "kedro_airflow_k8s.py"
+                ).read_text()
+                assert len(dag_content) > 0
+
+    def test_run_once_upload_error(self):
+        context_helper = MagicMock(ContextHelper)
+        context_helper.context.package_name = "kedro_airflow_k8s"
+        context_helper.context.pipelines.get = lambda x: pipeline_fixture()
+        context_helper.project_name = "kedro_airflow_k8s"
+        context_helper.config = {
+            "namespace": "test_ns",
+            "image": "test/image:latest",
+            "access_mode": "ReadWriteMany",
+            "request_storage": "3Gi",
+        }
+        context_helper.mlflow_config = {
+            "mlflow_tracking_uri": "mlflow.url.com"
+        }
+        context_helper.airflow_config = {
+            "airflow_rest_api_uri": "airflow.url.com/api/v1"
+        }
+        context_helper.session.store["git"].commit_sha = "abcdef"
+
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        output_directory = TemporaryDirectory(
+            prefix="test_run_once", suffix=".py"
+        )
+
+        with pytest.raises(airflow.MissingDAGException):
+            with patch.object(
+                airflow.AirflowClient, "wait_for_dag"
+            ) as wait_for_dag:
+                wait_for_dag.side_effect = Mock(
+                    side_effect=airflow.MissingDAGException(
+                        "kedro_airflow_k8s", "commit_sha:abcdef"
+                    )
+                )
+
+                result = runner.invoke(
+                    run_once,
+                    [
+                        "--output",
+                        str(output_directory.name),
+                    ],
+                    obj=config,
+                )
+                assert result.exit_code == 1
