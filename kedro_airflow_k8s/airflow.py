@@ -35,11 +35,18 @@ class AirflowClient:
      level aggregates on top of them.
     """
 
-    def __init__(self, rest_api_url: str):
+    def __init__(
+        self,
+        rest_api_url: str,
+        max_retries: int = MAX_RETRIES,
+        retry_interval: int = RETRY_INTERVAL,
+    ):
         """
         :param rest_api_url: full url to service rest API
         """
         self.rest_api_url = rest_api_url
+        self.max_retries = max_retries
+        self.retry_interval = retry_interval
 
     @staticmethod
     def create_http_session(status_forcelist: Optional[List[int]] = None):
@@ -71,7 +78,9 @@ class AirflowClient:
         )
         if res.status_code != 200:
             raise RuntimeError(res.json().get("title"))
-        return DAGModel(res.json())
+        dag_json = res.json()
+        dag = DAGModel(dag_id=dag_json["dag_id"], tags=dag_json["tags"])
+        return dag
 
     def wait_for_dag(self, dag_id: str, tag: str) -> DAGModel:
         """
@@ -82,7 +91,7 @@ class AirflowClient:
         """
         session = AirflowClient.create_http_session([404])
         count = 0
-        while count < AirflowClient.MAX_RETRIES:
+        while count <= self.max_retries:
             res = session.get(
                 url=f"{self.rest_api_url}/dags/{dag_id}",
                 headers={"Content-Type": "application/json"},
@@ -93,12 +102,9 @@ class AirflowClient:
             if [tag for dag_tag in dag.tags if dag_tag["name"] == tag]:
                 return dag
             count += 1
-            sleep(AirflowClient.RETRY_INTERVAL)
+            sleep(self.retry_interval)
 
-        raise RuntimeError(
-            f"DAG of id {dag_id} with tag {tag} could not be found in"
-            f" given time on {self.rest_api_url}"
-        )
+        raise MissingDAGException(dag_id, tag)
 
     def trigger_dag_run(self, dag_id: str) -> str:
         """
