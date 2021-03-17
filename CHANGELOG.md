@@ -8,7 +8,7 @@
 -   Temporary persistent volumes generation and removal for pipelines
 -   `upload-pipeline` command that generates DAG to Airflow directory 
 -   `schedule` command that generates DAG to Airflow directory with the given schedule
-
+-    `run-once` command that uploads pipeline to Airflow and creates the DAG run
 ## [0.0.4] - 2021-03-10
 
 ### Fixed
