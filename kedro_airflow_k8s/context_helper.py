@@ -49,6 +49,11 @@ class ContextHelper(object):
     def mlflow_config(self):
         return self.context.config_loader.get("mlflow*")
 
+    @property
+    @lru_cache()
+    def airflow_config(self):
+        return self.context.config_loader.get("airflow.yml")
+
     @staticmethod
     def init(metadata, env):
         version = VersionInfo.parse(kedro_version)

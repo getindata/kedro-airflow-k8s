@@ -8,7 +8,7 @@ from kubernetes.client import models as k8s
 from kubernetes import client, config
 import logging
 
-EXPERIMENT_NAME = "{{ dag_name }}"
+EXPERIMENT_NAME = "{{ experiment_name }}"
 
 args = {
     'owner': 'airflow',

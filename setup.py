@@ -23,6 +23,7 @@ EXTRA_REQUIRE = {
         "apache-airflow==2.0.1",
         "mlflow==1.14.1",
         "sqlalchemy==1.3.23",
+        "responses>=0.13.0",
     ],
     "docs": [
         "sphinx==3.4.2",
