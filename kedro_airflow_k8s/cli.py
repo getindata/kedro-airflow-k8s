@@ -57,6 +57,16 @@ def _create_template_stream(
     )
 
 
+def get_dag_filename_and_template_stream(ctx, cron_expression=None):
+    context_helper = ctx.obj["context_helper"]
+    package_name = context_helper.context.package_name
+    dag_filename = f"{package_name}.py"
+    template_stream = _create_template_stream(
+        context_helper, schedule_interval=cron_expression
+    )
+    return dag_filename, template_stream
+
+
 @click.group("airflow-k8s")
 def commands():
     """Kedro plugin adding support for Airflow on K8S"""
@@ -81,12 +91,9 @@ def airflow_group(ctx, metadata, env):
 @click.pass_context
 def compile(ctx, target_path="dags/"):
     """Create an Airflow DAG for a project"""
-    template_stream = _create_template_stream(ctx.obj["context_helper"])
+    dag_filename, template_stream = get_dag_filename_and_template_stream(ctx)
 
-    package_name = ctx.obj["context_helper"].context.package_name
-    dag_filename = f"{package_name}.py"
-    target_path = Path(target_path)
-    target_path = target_path / dag_filename
+    target_path = Path(target_path) / dag_filename
 
     with fsspec.open(str(target_path), "wt") as f:
         template_stream.dump(f)
@@ -106,10 +113,7 @@ def upload_pipeline(ctx, output: str):
     """
     Uploads pipeline to Airflow DAG location
     """
-    context_helper = ctx.obj["context_helper"]
-    template_stream = _create_template_stream(context_helper)
-    package_name = context_helper.context.package_name
-    dag_filename = f"{package_name}.py"
+    dag_filename, template_stream = get_dag_filename_and_template_stream(ctx)
 
     with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
         template_stream.dump(f)
@@ -136,12 +140,9 @@ def schedule(ctx, output: str, cron_expression: str):
     """
     Uploads pipeline to Airflow with given schedule
     """
-    context_helper = ctx.obj["context_helper"]
-    template_stream = _create_template_stream(
-        context_helper, schedule_interval=cron_expression
+    dag_filename, template_stream = get_dag_filename_and_template_stream(
+        ctx, cron_expression
     )
-    package_name = context_helper.context.package_name
-    dag_filename = f"{package_name}.py"
 
     with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
         template_stream.dump(f)
@@ -161,10 +162,8 @@ def run_once(ctx, output: str):
     """
     Uploads pipeline to Airflow and runs once.
     """
+    dag_filename, template_stream = get_dag_filename_and_template_stream(ctx)
     context_helper = ctx.obj["context_helper"]
-    template_stream = _create_template_stream(context_helper)
-    package_name = context_helper.context.package_name
-    dag_filename = f"{package_name}.py"
 
     with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
         template_stream.dump(f)
