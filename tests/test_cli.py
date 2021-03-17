@@ -1,4 +1,3 @@
-import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, Mock, patch
@@ -8,46 +7,39 @@ from click.testing import CliRunner
 
 from kedro_airflow_k8s import airflow
 from kedro_airflow_k8s.cli import compile, run_once, schedule, upload_pipeline
-from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.context_helper import ContextHelper
 
-test_config = PluginConfig(
-    {
-        "image": "docker.registry.com/getindata/kedro-project-image",
-        "namespace": "airflow",
-    }
-)
 
+class TestPluginCLI:
+    @pytest.fixture(scope="class")
+    def pipeline(self):
+        def node(name):
+            nd = MagicMock()
+            nd.name = name
+            return nd
 
-def pipeline_fixture():
-    def node(name):
-        nd = MagicMock()
-        nd.name = name
-        return nd
+        start = node("start")
+        task_1, task_2 = node("task_1"), node("task_2")
+        finish = node("finish")
+        nodes = [start, task_1, task_2, finish]
 
-    start = node("start")
-    task_1, task_2 = node("task_1"), node("task_2")
-    finish = node("finish")
-    nodes = [start, task_1, task_2, finish]
+        node_dependencies = {
+            task_1: [start],
+            task_2: [start],
+            finish: [task_1, task_2],
+        }
 
-    node_dependencies = {
-        task_1: [start],
-        task_2: [start],
-        finish: [task_1, task_2],
-    }
+        pipeline = MagicMock()
+        pipeline.nodes = nodes
+        pipeline.node_dependencies = node_dependencies
 
-    pipeline = MagicMock()
-    pipeline.nodes = nodes
-    pipeline.node_dependencies = node_dependencies
+        return pipeline
 
-    return pipeline
-
-
-class TestPluginCLI(unittest.TestCase):
-    def test_compile(self):
+    @pytest.fixture(scope="class")
+    def context_helper(self, pipeline):
         context_helper = MagicMock(ContextHelper)
         context_helper.context.package_name = "kedro_airflow_k8s"
-        context_helper.context.pipelines.get = lambda x: pipeline_fixture()
+        context_helper.context.pipelines.get.return_value = pipeline
         context_helper.project_name = "kedro_airflow_k8s"
         context_helper.config = {
             "namespace": "test_ns",
@@ -59,7 +51,12 @@ class TestPluginCLI(unittest.TestCase):
             "mlflow_tracking_uri": "mlflow.url.com"
         }
         context_helper.session.store["git"].commit_sha = "abcdef"
+        context_helper.airflow_config = {
+            "airflow_rest_api_uri": "airflow.url.com/api/v1"
+        }
+        return context_helper
 
+    def test_compile(self, context_helper):
         config = dict(context_helper=context_helper)
 
         runner = CliRunner()
@@ -78,22 +75,7 @@ class TestPluginCLI(unittest.TestCase):
         assert "'storage':'3Gi'" in dag_content
         assert "schedule_interval=None" in dag_content
 
-    def test_upload_pipeline(self):
-        context_helper = MagicMock(ContextHelper)
-        context_helper.context.package_name = "kedro_airflow_k8s"
-        context_helper.context.pipelines.get = lambda x: pipeline_fixture()
-        context_helper.project_name = "kedro_airflow_k8s"
-        context_helper.config = {
-            "namespace": "test_ns",
-            "image": "test/image:latest",
-            "access_mode": "ReadWriteMany",
-            "request_storage": "3Gi",
-        }
-        context_helper.mlflow_config = {
-            "mlflow_tracking_uri": "mlflow.url.com"
-        }
-        context_helper.session.store["git"].commit_sha = "abcdef"
-
+    def test_upload_pipeline(self, context_helper):
         config = dict(context_helper=context_helper)
 
         runner = CliRunner()
@@ -114,22 +96,7 @@ class TestPluginCLI(unittest.TestCase):
         ).read_text()
         assert len(dag_content) > 0
 
-    def test_schedule(self):
-        context_helper = MagicMock(ContextHelper)
-        context_helper.context.package_name = "kedro_airflow_k8s"
-        context_helper.context.pipelines.get = lambda x: pipeline_fixture()
-        context_helper.project_name = "kedro_airflow_k8s"
-        context_helper.config = {
-            "namespace": "test_ns",
-            "image": "test/image:latest",
-            "access_mode": "ReadWriteMany",
-            "request_storage": "3Gi",
-        }
-        context_helper.mlflow_config = {
-            "mlflow_tracking_uri": "mlflow.url.com"
-        }
-        context_helper.session.store["git"].commit_sha = "abcdef"
-
+    def test_schedule(self, context_helper):
         config = dict(context_helper=context_helper)
 
         runner = CliRunner()
@@ -155,25 +122,7 @@ class TestPluginCLI(unittest.TestCase):
         ).read_text()
         assert "schedule_interval='0 0 0 5 *'" in dag_content
 
-    def test_run_once(self):
-        context_helper = MagicMock(ContextHelper)
-        context_helper.context.package_name = "kedro_airflow_k8s"
-        context_helper.context.pipelines.get = lambda x: pipeline_fixture()
-        context_helper.project_name = "kedro_airflow_k8s"
-        context_helper.config = {
-            "namespace": "test_ns",
-            "image": "test/image:latest",
-            "access_mode": "ReadWriteMany",
-            "request_storage": "3Gi",
-        }
-        context_helper.mlflow_config = {
-            "mlflow_tracking_uri": "mlflow.url.com"
-        }
-        context_helper.airflow_config = {
-            "airflow_rest_api_uri": "airflow.url.com/api/v1"
-        }
-        context_helper.session.store["git"].commit_sha = "abcdef"
-
+    def test_run_once(self, context_helper):
         config = dict(context_helper=context_helper)
 
         runner = CliRunner()
@@ -211,25 +160,7 @@ class TestPluginCLI(unittest.TestCase):
                 ).read_text()
                 assert len(dag_content) > 0
 
-    def test_run_once_upload_error(self):
-        context_helper = MagicMock(ContextHelper)
-        context_helper.context.package_name = "kedro_airflow_k8s"
-        context_helper.context.pipelines.get = lambda x: pipeline_fixture()
-        context_helper.project_name = "kedro_airflow_k8s"
-        context_helper.config = {
-            "namespace": "test_ns",
-            "image": "test/image:latest",
-            "access_mode": "ReadWriteMany",
-            "request_storage": "3Gi",
-        }
-        context_helper.mlflow_config = {
-            "mlflow_tracking_uri": "mlflow.url.com"
-        }
-        context_helper.airflow_config = {
-            "airflow_rest_api_uri": "airflow.url.com/api/v1"
-        }
-        context_helper.session.store["git"].commit_sha = "abcdef"
-
+    def test_run_once_upload_error(self, context_helper):
         config = dict(context_helper=context_helper)
 
         runner = CliRunner()
