@@ -12,7 +12,7 @@ from kedro_airflow_k8s.context_helper import ContextHelper
 
 
 def _create_template_stream(
-    context_helper, schedule_interval: str = None
+    context_helper, dag_name: str = None, schedule_interval: str = None
 ) -> TemplateStream:
     loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
     jinja_env = jinja2.Environment(
@@ -40,7 +40,8 @@ def _create_template_stream(
     bottom_nodes = set(node.name for node in pipeline.nodes) - all_parent_nodes
 
     return template.stream(
-        dag_name=package_name,
+        dag_name=dag_name or package_name,
+        experiment_name=package_name,
         dependencies=dependencies,
         project_name=context_helper.project_name,
         pipeline=pipeline,
@@ -57,12 +58,14 @@ def _create_template_stream(
     )
 
 
-def get_dag_filename_and_template_stream(ctx, cron_expression=None):
+def get_dag_filename_and_template_stream(
+    ctx, cron_expression=None, dag_name=None
+):
     context_helper = ctx.obj["context_helper"]
     package_name = context_helper.context.package_name
-    dag_filename = f"{package_name}.py"
+    dag_filename = f"{dag_name or package_name}.py"
     template_stream = _create_template_stream(
-        context_helper, schedule_interval=cron_expression
+        context_helper, dag_name=dag_name, schedule_interval=cron_expression
     )
     return dag_filename, template_stream
 
@@ -105,6 +108,7 @@ def compile(ctx, target_path="dags/"):
     "--output",
     "output",
     type=str,
+    required=True,
     help="Location where DAG file should be uploaded, for GCS use gs:// or "
     "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
@@ -154,15 +158,27 @@ def schedule(ctx, output: str, cron_expression: str):
     "--output",
     "output",
     type=str,
+    required=True,
     help="Location where DAG file should be uploaded, for GCS use gs:// or "
     "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
+@click.option(
+    "-d",
+    "--dag-name",
+    "dag_name",
+    type=str,
+    required=False,
+    help="Allows overriding dag id and dag file name for a purpose of multiple variants"
+    " of experiments",
+)
 @click.pass_context
-def run_once(ctx, output: str):
+def run_once(ctx, output: str, dag_name: str):
     """
     Uploads pipeline to Airflow and runs once
     """
-    dag_filename, template_stream = get_dag_filename_and_template_stream(ctx)
+    dag_filename, template_stream = get_dag_filename_and_template_stream(
+        ctx, dag_name=dag_name
+    )
     context_helper = ctx.obj["context_helper"]
 
     with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
@@ -172,7 +188,7 @@ def run_once(ctx, output: str):
         context_helper.airflow_config["airflow_rest_api_uri"]
     )
     dag = airflow_client.wait_for_dag(
-        dag_id=context_helper.context.package_name,
+        dag_id=dag_name or context_helper.context.package_name,
         tag=f'commit_sha:{context_helper.session.store["git"]["commit_sha"]}',
     )
     airflow_client.trigger_dag_run(dag.dag_id)
