@@ -35,6 +35,7 @@ Options:
 
 Commands:
   compile           Create an Airflow DAG for a project
+  run-once         Uploads pipeline to Airflow and runs once
   schedule          Uploads pipeline to Airflow with given schedule
   upload-pipeline   Create and upload Airflow DAG to the directory
 ```

@@ -160,7 +160,7 @@ def schedule(ctx, output: str, cron_expression: str):
 @click.pass_context
 def run_once(ctx, output: str):
     """
-    Uploads pipeline to Airflow and runs once.
+    Uploads pipeline to Airflow and runs once
     """
     dag_filename, template_stream = get_dag_filename_and_template_stream(ctx)
     context_helper = ctx.obj["context_helper"]
