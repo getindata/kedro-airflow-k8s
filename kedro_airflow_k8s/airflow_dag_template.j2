@@ -19,7 +19,7 @@ args = {
 with DAG(
     dag_id='{{ dag_name }}',
     default_args=args,
-    schedule_interval=None,
+    schedule_interval={% if schedule_interval %}'{{ schedule_interval }}'{% else %}None{% endif %},
     start_date=days_ago(2),
     tags=['demo', 'commit_sha:{{ git_info.commit_sha }}'],
     params={"example_key": "example_value"},

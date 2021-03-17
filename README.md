@@ -35,6 +35,6 @@ Options:
 
 Commands:
   compile           Create an Airflow DAG for a project
-  upload-pipeline   Create and upload Airflow DAG to the directory 
+  schedule          Uploads pipeline to Airflow with given schedule
+  upload-pipeline   Create and upload Airflow DAG to the directory
 ```
-

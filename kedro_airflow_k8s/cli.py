@@ -10,7 +10,9 @@ from slugify import slugify
 from kedro_airflow_k8s.context_helper import ContextHelper
 
 
-def _create_template_stream(context_helper) -> TemplateStream:
+def _create_template_stream(
+    context_helper, schedule_interval: str = None
+) -> TemplateStream:
     loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
     jinja_env = jinja2.Environment(
         autoescape=True, loader=loader, lstrip_blocks=True
@@ -47,6 +49,7 @@ def _create_template_stream(context_helper) -> TemplateStream:
         bottom_nodes=bottom_nodes,
         mlflow_url=context_helper.mlflow_config["mlflow_tracking_uri"],
         env=context_helper.env,
+        schedule_interval=schedule_interval,
         include_start_mlflow_experiment_operator=(
             Path(__file__).parent / "operators/start_mlflow_experiment.py"
         ).read_text(),
@@ -98,12 +101,44 @@ def compile(ctx, target_path="dags/"):
     "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
 @click.pass_context
-def upload_pipeline(ctx, output):
+def upload_pipeline(ctx, output: str):
     """
     Uploads pipeline to Airflow DAG location
     """
     context_helper = ctx.obj["context_helper"]
     template_stream = _create_template_stream(context_helper)
+    package_name = context_helper.context.package_name
+    dag_filename = f"{package_name}.py"
+
+    with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
+        template_stream.dump(f)
+
+
+@airflow_group.command()
+@click.option(
+    "-o",
+    "--output",
+    "output",
+    type=str,
+    help="Location where DAG file should be uploaded, for GCS use gs:// or "
+    "gcs:// prefix, other notations indicate locally mounted filesystem",
+)
+@click.option(
+    "-c",
+    "--cron-expression",
+    type=str,
+    help="Cron expression for recurring run",
+    required=True,
+)
+@click.pass_context
+def schedule(ctx, output: str, cron_expression: str):
+    """
+    Uploads pipeline to Airflow with given schedule
+    """
+    context_helper = ctx.obj["context_helper"]
+    template_stream = _create_template_stream(
+        context_helper, schedule_interval=cron_expression
+    )
     package_name = context_helper.context.package_name
     dag_filename = f"{package_name}.py"
 

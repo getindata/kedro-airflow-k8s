@@ -5,6 +5,7 @@
 -   Creates mlflow experiment on pipeline start if it does not exist
 -   Temporary persistent volumes generation and removal for pipelines
 -   `upload-pipeline` command that generates DAG to Airflow directory 
+-   `schedule` command that generates DAG to Airflow directory with the given schedule
 
 ## [0.0.4] - 2021-03-10
 

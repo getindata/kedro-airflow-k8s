@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 from click.testing import CliRunner
 
-from kedro_airflow_k8s.cli import compile, upload_pipeline
+from kedro_airflow_k8s.cli import compile, schedule, upload_pipeline
 from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.context_helper import ContextHelper
 
@@ -74,6 +74,7 @@ class TestPluginCLI(unittest.TestCase):
         assert "commit_sha:abcdef" in dag_content
         assert "access_modes=['ReadWriteMany']" in dag_content
         assert "'storage':'3Gi'" in dag_content
+        assert "schedule_interval=None" in dag_content
 
     def test_upload_pipeline(self):
         context_helper = MagicMock(ContextHelper)
@@ -110,3 +111,44 @@ class TestPluginCLI(unittest.TestCase):
             Path(output_directory.name) / "kedro_airflow_k8s.py"
         ).read_text()
         assert len(dag_content) > 0
+
+    def test_schedule(self):
+        context_helper = MagicMock(ContextHelper)
+        context_helper.context.package_name = "kedro_airflow_k8s"
+        context_helper.context.pipelines.get = lambda x: pipeline_fixture()
+        context_helper.project_name = "kedro_airflow_k8s"
+        context_helper.config = {
+            "namespace": "test_ns",
+            "image": "test/image:latest",
+            "access_mode": "ReadWriteMany",
+            "request_storage": "3Gi",
+        }
+        context_helper.mlflow_config = {
+            "mlflow_tracking_uri": "mlflow.url.com"
+        }
+        context_helper.session.store["git"].commit_sha = "abcdef"
+
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        output_directory = TemporaryDirectory(
+            prefix="test_upload_pipeline", suffix=".py"
+        )
+        result = runner.invoke(
+            schedule,
+            [
+                "--output",
+                str(output_directory.name),
+                "--cron-expression",
+                "0 0 0 5 *",
+            ],
+            obj=config,
+        )
+        assert result.exit_code == 0
+        assert Path(output_directory.name).exists()
+
+        dag_content = (
+            Path(output_directory.name) / "kedro_airflow_k8s.py"
+        ).read_text()
+        assert "schedule_interval='0 0 0 5 *'" in dag_content

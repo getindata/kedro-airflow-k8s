@@ -43,6 +43,7 @@ Options:
 
 Commands:
   compile          Create an Airflow DAG for a project
+  schedule          Uploads pipeline to Airflow with given schedule
   upload-pipeline  Uploads pipeline to Airflow DAG location
 ```
 
@@ -51,7 +52,12 @@ Commands:
 `compile` command takes one argument, which is the directory name containing configuration (relative to `conf` folder). 
 As an outcome, `dag` directory contains python file with generated DAG.
 
+### `schedule`
+
+`schedule` command takes three arguments, one is the directory name containing configuration (relative to `conf` 
+folder), the second one is the output location of generated dag, the third is cron like expression that relates to 
+Airflow DAG `schedule_interval`.
 ### `upload-pipeline`
 
-`upload-pipeline` command takes two arguments, one is the directory name containing configuration (relative to conf 
-folder), the second one is output location of generated dag.
+`upload-pipeline` command takes two arguments, one is the directory name containing configuration (relative to `conf` 
+folder), the second one is the output location of generated dag.
