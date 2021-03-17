@@ -1,7 +1,6 @@
 """
 Airflow representation classes
 """
-import datetime
 from time import sleep
 from typing import Dict, List, NamedTuple, Optional
 
@@ -114,10 +113,9 @@ class AirflowClient:
         """
         session = AirflowClient.create_http_session()
 
-        now = datetime.datetime.utcnow().isoformat(timespec="seconds")
         res = session.post(
             url=f"{self.rest_api_url}/dags/{dag_id}/dagRuns",
-            json={"execution_date": f"{now}Z"},
+            json={},
             verify=AirflowClient.VERIFY,
         )
         if res.status_code != 200:
