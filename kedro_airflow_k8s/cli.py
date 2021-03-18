@@ -1,5 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
+from typing import Optional
 
 import click
 import fsspec
@@ -171,8 +172,21 @@ def schedule(ctx, output: str, cron_expression: str):
     help="Allows overriding dag id and dag file name for a purpose of multiple variants"
     " of experiments",
 )
+@click.option(
+    "-w",
+    "--wait-for-completion",
+    "wait_for_completion",
+    type=int,
+    required=False,
+    help="If set, tells plugin to wait for dag run to finish and how long (minutes)",
+)
 @click.pass_context
-def run_once(ctx, output: str, dag_name: str):
+def run_once(
+    ctx,
+    output: str,
+    dag_name: Optional[str],
+    wait_for_completion: Optional[int],
+):
     """
     Uploads pipeline to Airflow and runs once
     """
@@ -191,4 +205,12 @@ def run_once(ctx, output: str, dag_name: str):
         dag_id=dag_name or context_helper.context.package_name,
         tag=f'commit_sha:{context_helper.session.store["git"]["commit_sha"]}',
     )
-    airflow_client.trigger_dag_run(dag.dag_id)
+    dag_run_id = airflow_client.trigger_dag_run(dag.dag_id)
+
+    if (wait_for_completion or 0) > 0:
+        assert (
+            airflow_client.wait_for_dag_run_completion(
+                dag.dag_id, dag_run_id, wait_for_completion
+            )
+            == "success"
+        )
