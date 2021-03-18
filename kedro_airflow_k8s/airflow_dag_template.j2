@@ -3,47 +3,95 @@ from airflow.utils.dates import days_ago
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from airflow.operators.python import PythonOperator
 from airflow.kubernetes.secret import Secret
+from airflow.kubernetes.pod_generator import PodGenerator
 from kubernetes.client import models as k8s
+from kubernetes import client, config
+import logging
 
-EXPERIMENT_NAME = "{{ dag_name }}"
+EXPERIMENT_NAME = "{{ experiment_name }}"
 
 args = {
     'owner': 'airflow',
 }
 
+{{ include_start_mlflow_experiment_operator | safe }}
+
 with DAG(
     dag_id='{{ dag_name }}',
     default_args=args,
-    schedule_interval=None,
+    schedule_interval={% if schedule_interval %}'{{ schedule_interval }}'{% else %}None{% endif %},
     start_date=days_ago(2),
     tags=['demo', 'commit_sha:{{ git_info.commit_sha }}'],
     params={"example_key": "example_value"},
 ) as dag:
 
-    def start_mlflow_run(ti, **kwargs):
-        from mlflow.tracking import MlflowClient
+    pvc_name = '{{ project_name | safe | slugify }}.{% raw %}{{ ts_nodash | lower  }}{% endraw %}'
 
-        client = MlflowClient("{{ mlflow_url }}")
-        experiment_id = client.get_experiment_by_name(EXPERIMENT_NAME).experiment_id
-        run_id = client.create_run(experiment_id).info.run_id
-        ti.xcom_push('mlflow_run_id', run_id)
+    start_mlflow_run = StartMLflowExperimentOperator(
+        experiment_name=EXPERIMENT_NAME,
+        mlflow_url='{{ mlflow_url }}'
+    )
 
-    start_mlflow_run = PythonOperator(
-        task_id='start_mlflow_run',
-        python_callable=start_mlflow_run,
+    def create_pipeline_storage(pvc_name, ti, **kwargs):
+        with client.ApiClient(config.load_incluster_config()) as api_client:
+            v1 = client.CoreV1Api(api_client)
+
+            pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name=pvc_name, namespace='{{ config.namespace }}'),
+                    spec=k8s.V1PersistentVolumeClaimSpec(access_modes=['{{ config.access_mode }}'],
+                    resources=k8s.V1ResourceRequirements(requests={'storage':'{{ config.request_storage | safe }}'})))
+
+            v1.create_namespaced_persistent_volume_claim('{{ config.namespace }}', pvc)
+            ti.xcom_push('pvc_name', pvc_name)
+
+    create_pipeline_storage = PythonOperator(
+        task_id='create_pipeline_storage',
+        python_callable=create_pipeline_storage,
+        op_args=[pvc_name],
+    )
+
+    def delete_pipeline_storage(pvc_name, ti, **kwargs):
+        with client.ApiClient(config.load_incluster_config()) as api_client:
+            v1 = client.CoreV1Api(api_client)
+            v1.delete_namespaced_persistent_volume_claim(name=pvc_name, namespace='{{ config.namespace }}')
+
+    delete_pipeline_storage = PythonOperator(
+        task_id='delete_pipeline_storage',
+        python_callable=delete_pipeline_storage,
+        trigger_rule='all_done',
+        op_args=[pvc_name],
     )
 
     tasks = {}
     {% for node in pipeline.nodes %}
+    pod_definition = """
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: """ + PodGenerator.make_unique_pod_id('{{ node.name | safe | slugify }}') + """
+          namespace: {{ config.namespace }}
+        spec:
+          volumes:
+            - name: storage
+              persistentVolumeClaim:
+                claimName: """ + pvc_name + """
+          containers:
+            - name: base
+              image: {{ config.image }}
+              imagePullPolicy: {{ config.image_pull_policy }}
+              command:
+                - "bash"
+                - "-c"
+              args:
+                - MLFLOW_RUN_ID={% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %} kedro run -e {{ env }} --node '{{ node.name | safe }}'
+              volumeMounts:
+                - mountPath: "/home/kedro/data"
+                  name: storage
+    """
+
     tasks["{{ node.name | safe | slugify }}"] = KubernetesPodOperator(
         task_id="{{ node.name | safe | slugify  }}",
-        name="{{ node.name | safe | slugify  }}",
-        namespace='{{ config.namespace }}',
-        image='{{ config.image }}',
-        image_pull_policy='{{ config.image_pull_policy }}',
-        cmds=['bash', '-c'],
-        arguments=['MLFLOW_RUN_ID={% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %} kedro run -e {{ env }} --node \'{{ node.name | safe }}\''],
         is_delete_operator_pod=True,
+        pod_template_file=pod_definition
     )
     {% endfor %}
 
@@ -56,6 +104,11 @@ with DAG(
 
     {% for node in base_nodes %}
     start_mlflow_run >> tasks['{{ node | slugify }}']
+    create_pipeline_storage >> tasks['{{ node | slugify }}']
+    {% endfor %}
+
+    {% for node in bottom_nodes %}
+    tasks['{{ node | slugify }}'] >> delete_pipeline_storage
     {% endfor %}
 
 
