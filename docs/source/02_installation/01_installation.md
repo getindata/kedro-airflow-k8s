@@ -55,8 +55,9 @@ As an outcome, `dag` directory contains python file with generated DAG.
 
 ### `run-once`
 
-`run-once` command generates DAG from pipeline, uploads it Airflow DAG location and triggers the DAG run as soon as the 
-new DAG instance is available. 
+`run-once` command generates DAG from the pipeline, uploads it Airflow DAG location and triggers the DAG run as soon as 
+the new DAG instance is available. It optionally allows waiting for DAG run completion, checking if `success` status is 
+returned. 
 
 ### `schedule`
 

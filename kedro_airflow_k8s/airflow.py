@@ -1,6 +1,7 @@
 """
 Airflow representation classes
 """
+import datetime
 from time import sleep
 from typing import Dict, List, NamedTuple, Optional
 
@@ -121,3 +122,49 @@ class AirflowClient:
         if res.status_code != 200:
             raise RuntimeError(res.json().get("title"))
         return res.json()["dag_run_id"]
+
+    @staticmethod
+    def _check_state(response):
+        if response.status_code != 200:
+            return "unknown"
+        state = response.json()["state"]
+        return state if state != "running" else None
+
+    def _wait_for_dag_run_completion(
+        self, dag_id: str, dag_run_id: str, wait_for_completion
+    ) -> str:
+        check_start = datetime.datetime.now()
+        session = AirflowClient.create_http_session()
+        last_state = "unknown"
+        while (datetime.datetime.now() - check_start) < datetime.timedelta(
+            minutes=wait_for_completion
+        ):
+            res = session.get(
+                f"{self.rest_api_url}/dags/{dag_id}/dagRuns/{dag_run_id}",
+                headers={"Content-Type": "application/json"},
+                verify=AirflowClient.VERIFY,
+            )
+            last_state = AirflowClient._check_state(res)
+            if last_state:
+                break
+
+            sleep(self.retry_interval)
+        return last_state
+
+    def wait_for_dag_run_completion(
+        self, dag_id: str, dag_run_id: str, wait_for_completion: int = 0
+    ) -> str:
+        """
+        Waits for dag run completion, either success or failure
+        :param wait_for_completion:
+        :param dag_id:
+        :param dag_run_id:
+        :return: status "success" "running" (if didn't finish upon completion) "failed"
+                "unknown" (if wait_for_completion non-positivie)
+        """
+        if wait_for_completion:
+            return self._wait_for_dag_run_completion(
+                dag_id, dag_run_id, wait_for_completion
+            )
+        else:
+            return "unknown"
