@@ -79,3 +79,63 @@ class TestAirflow:
 
         dag_run_id = client.trigger_dag_run("test_id")
         assert dag_run_id == "test_run_id"
+
+    @responses.activate
+    def test_wait_for_dag_run_completion(self):
+        response_data = {"state": "success"}
+        responses.add(
+            responses.GET,
+            "https://test.airflow.com/api/v1/dags/test_id/dagRuns/test_dag_run_id",
+            json=response_data,
+        )
+        client = AirflowClient(
+            "https://test.airflow.com/api/v1", max_retries=0
+        )
+
+        status = client.wait_for_dag_run_completion(
+            "test_id", "test_dag_run_id", 1
+        )
+
+        assert status == "success"
+
+    @responses.activate
+    def test_wait_for_dag_run_retry(self):
+        running_response, success_response = {"state": "running"}, {
+            "state": "success"
+        }
+        responses.add(
+            responses.GET,
+            "https://test.airflow.com/api/v1/dags/test_id/dagRuns/test_dag_run_id",
+            json=running_response,
+        )
+        responses.add(
+            responses.GET,
+            "https://test.airflow.com/api/v1/dags/test_id/dagRuns/test_dag_run_id",
+            json=success_response,
+        )
+        client = AirflowClient(
+            "https://test.airflow.com/api/v1", max_retries=0, retry_interval=0
+        )
+
+        status = client.wait_for_dag_run_completion(
+            "test_id", "test_dag_run_id", 1
+        )
+
+        assert status == "success"
+
+    @responses.activate
+    def test_wait_for_dag_run_unknown(self):
+        responses.add(
+            responses.GET,
+            "https://test.airflow.com/api/v1/dags/test_id/dagRuns/test_dag_run_id",
+            status=403,
+        )
+        client = AirflowClient(
+            "https://test.airflow.com/api/v1", max_retries=0, retry_interval=0
+        )
+
+        status = client.wait_for_dag_run_completion(
+            "test_id", "test_dag_run_id", 1
+        )
+
+        assert status == "unknown"

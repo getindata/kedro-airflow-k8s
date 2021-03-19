@@ -188,3 +188,47 @@ class TestPluginCLI:
                     obj=config,
                 )
                 assert result.exit_code == 1
+
+    def test_run_once_with_wait_for_completion(self, context_helper):
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        output_directory = TemporaryDirectory(
+            prefix="test_run_once", suffix=".py"
+        )
+
+        with patch.object(
+            airflow.AirflowClient, "wait_for_dag"
+        ) as wait_for_dag:
+            with patch.object(
+                airflow.AirflowClient, "trigger_dag_run"
+            ) as trigger_dag_run:
+                wait_for_dag.return_value = airflow.DAGModel(
+                    dag_id="kedro_airflow_k8s",
+                    tags=[{"name": "demo"}, {"name": "commit_sha:abcdef"}],
+                )
+                trigger_dag_run.return_value = "test-dag-run-id"
+
+                with patch.object(
+                    airflow.AirflowClient, "wait_for_dag_run_completion"
+                ) as wait_for_dag_run_completion:
+                    wait_for_dag_run_completion.return_value = "success"
+                    result = runner.invoke(
+                        run_once,
+                        [
+                            "--output",
+                            str(output_directory.name),
+                            "--wait-for-completion",
+                            10,
+                        ],
+                        obj=config,
+                    )
+
+                assert result.exit_code == 0
+                assert Path(output_directory.name).exists()
+
+                dag_content = (
+                    Path(output_directory.name) / "kedro_airflow_k8s.py"
+                ).read_text()
+                assert len(dag_content) > 0
