@@ -5,7 +5,6 @@
 ## [0.1.1] - 2021-03-19
 
 -   Inits temporary volume with data from image kedro data directory (/home/kedro/data)
-
 -   Increased startup time for pods to 10 minutes
 
 ## [0.1.0] - 2021-03-17
