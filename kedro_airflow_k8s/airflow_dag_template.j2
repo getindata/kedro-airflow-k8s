@@ -68,6 +68,8 @@ with DAG(
       name: """ + PodGenerator.make_unique_pod_id('data-volume-init') + """
       namespace: {{ config.namespace }}
     spec:
+      securityContext:
+        fsGroup: 0
       volumes:
         - name: storage
           persistentVolumeClaim:
@@ -101,6 +103,8 @@ with DAG(
           name: """ + PodGenerator.make_unique_pod_id('{{ node.name | safe | slugify }}') + """
           namespace: {{ config.namespace }}
         spec:
+          securityContext:
+            fsGroup: 0
           volumes:
             - name: storage
               persistentVolumeClaim:
