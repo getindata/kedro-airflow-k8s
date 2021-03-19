@@ -61,6 +61,40 @@ with DAG(
         op_args=[pvc_name],
     )
 
+    data_volume_init_definition = """
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: """ + PodGenerator.make_unique_pod_id('data-volume-init') + """
+      namespace: {{ config.namespace }}
+    spec:
+      securityContext:
+        fsGroup: 0
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: """ + pvc_name + """
+      containers:
+        - name: base
+          image: {{ config.image }}
+          imagePullPolicy: {{ config.image_pull_policy }}
+          command:
+            - "bash"
+            - "-c"
+          args:
+            - cp --verbose -r /home/kedro/data/* /home/kedro/datavolume
+          volumeMounts:
+            - mountPath: "/home/kedro/datavolume"
+              name: storage
+    """
+
+    data_volume_init = KubernetesPodOperator(
+        task_id="data_volume_init",
+        is_delete_operator_pod=True,
+        startup_timeout_seconds=600,
+        pod_template_file=data_volume_init_definition
+    )
+
     tasks = {}
     {% for node in pipeline.nodes %}
     pod_definition = """
@@ -70,6 +104,8 @@ with DAG(
           name: """ + PodGenerator.make_unique_pod_id('{{ node.name | safe | slugify }}') + """
           namespace: {{ config.namespace }}
         spec:
+          securityContext:
+            fsGroup: 0
           volumes:
             - name: storage
               persistentVolumeClaim:
@@ -108,9 +144,11 @@ with DAG(
     {% endfor %}
     {%- endfor %}
 
+    create_pipeline_storage >> data_volume_init
+    data_volume_init >> delete_pipeline_storage
     {% for node in base_nodes %}
     start_mlflow_run >> tasks['{{ node | slugify }}']
-    create_pipeline_storage >> tasks['{{ node | slugify }}']
+    data_volume_init >> tasks['{{ node | slugify }}']
     {% endfor %}
 
     {% for node in bottom_nodes %}

@@ -98,6 +98,8 @@ class AirflowClient:
                 verify=AirflowClient.VERIFY,
             )
             dag_json = res.json()
+            if res.status_code != 200:
+                raise RuntimeError(dag_json.get("title"))
             dag = DAGModel(dag_id=dag_json["dag_id"], tags=dag_json["tags"])
             if [tag for dag_tag in dag.tags if dag_tag["name"] == tag]:
                 return dag
