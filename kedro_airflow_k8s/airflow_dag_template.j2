@@ -78,11 +78,14 @@ with DAG(
             - name: base
               image: {{ config.image }}
               imagePullPolicy: {{ config.image_pull_policy }}
-              command:
-                - "bash"
-                - "-c"
+              env:
+                - name: MLFLOW_RUN_ID
+                - value: {% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %}
               args:
-                - MLFLOW_RUN_ID={% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %} kedro run -e {{ env }} --node '{{ node.name | safe }}'
+                - '-e' 
+                - '{{ env }}'
+                - '--node'
+                - '{{ node.name | safe }}'
               volumeMounts:
                 - mountPath: "/home/kedro/data"
                   name: storage
@@ -91,6 +94,7 @@ with DAG(
     tasks["{{ node.name | safe | slugify }}"] = KubernetesPodOperator(
         task_id="{{ node.name | safe | slugify  }}",
         is_delete_operator_pod=True,
+        startup_timeout_seconds=600,
         pod_template_file=pod_definition
     )
     {% endfor %}
