@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2021-03-19
+
 -   Inits temporary volume with data from image kedro data directory (/home/kedro/data)
 
 -   Increased startup time for pods to 10 minutes
@@ -12,7 +14,8 @@
 -   Temporary persistent volumes generation and removal for pipelines
 -   `upload-pipeline` command that generates DAG to Airflow directory 
 -   `schedule` command that generates DAG to Airflow directory with the given schedule
--    `run-once` command that uploads pipeline to Airflow and creates the DAG run
+-   `run-once` command that uploads pipeline to Airflow and creates the DAG run
+
 ## [0.0.4] - 2021-03-10
 
 ### Fixed
@@ -31,7 +34,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.1.1...HEAD
+
+[0.1.1]: https://github.com/getindata/kedro-airflow-k8s/compare/0.1.0...0.1.1
 
 [0.1.0]: https://github.com/getindata/kedro-airflow-k8s/compare/0.0.4...0.1.0
 
