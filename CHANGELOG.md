@@ -4,6 +4,8 @@
 
 -   Inits temporary volume with data from image kedro data directory (/home/kedro/data)
 
+-   Increased startup time for pods to 10 minutes
+
 ## [0.1.0] - 2021-03-17
 
 -   Creates mlflow experiment on pipeline start if it does not exist
