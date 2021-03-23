@@ -2,6 +2,7 @@
 Airflow representation classes
 """
 import datetime
+import os
 from time import sleep
 from typing import Dict, List, NamedTuple, Optional
 
@@ -29,7 +30,7 @@ class MissingDAGException(BaseException):
 class AirflowClient:
     MAX_RETRIES = 10
     RETRY_INTERVAL = 10
-    VERIFY = False
+    VERIFY = os.environ.get("AIRFLOW__CLIENT__SSL_VERIFY", "True") == "True"
     """
     Client of Airflow. Supports both low level functionalities of Airflow and some high
      level aggregates on top of them.

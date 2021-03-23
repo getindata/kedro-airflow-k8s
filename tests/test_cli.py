@@ -7,6 +7,7 @@ from click.testing import CliRunner
 
 from kedro_airflow_k8s import airflow
 from kedro_airflow_k8s.cli import compile, run_once, schedule, upload_pipeline
+from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.context_helper import ContextHelper
 
 
@@ -41,12 +42,14 @@ class TestPluginCLI:
         context_helper.context.package_name = "kedro_airflow_k8s"
         context_helper.context.pipelines.get.return_value = pipeline
         context_helper.project_name = "kedro_airflow_k8s"
-        context_helper.config = {
-            "namespace": "test_ns",
-            "image": "test/image:latest",
-            "access_mode": "ReadWriteMany",
-            "request_storage": "3Gi",
-        }
+        context_helper.config = PluginConfig(
+            {
+                "namespace": "test_ns",
+                "image": "test/image:latest",
+                "accessMode": "ReadWriteMany",
+                "requestStorage": "3Gi",
+            }
+        )
         context_helper.mlflow_config = {
             "mlflow_tracking_uri": "mlflow.url.com"
         }
@@ -61,14 +64,16 @@ class TestPluginCLI:
 
         runner = CliRunner()
 
-        result = runner.invoke(compile, [], obj=config)
+        result = runner.invoke(
+            compile, ["--image", "image:override"], obj=config
+        )
         assert result.exit_code == 0
         assert Path("dags/kedro_airflow_k8s.py").exists()
 
         dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
         assert 'EXPERIMENT_NAME = "kedro_airflow_k8s"' in dag_content
         assert "namespace='test_ns'" in dag_content
-        assert "image: test/image:latest" in dag_content
+        assert "image: image:override" in dag_content
         assert "mlflow_url='mlflow.url.com'" in dag_content
         assert "commit_sha:abcdef" in dag_content
         assert "access_modes=['ReadWriteMany']" in dag_content
