@@ -225,7 +225,7 @@ def run_once(
     dag_name: Optional[str],
     wait_for_completion: Optional[int],
     image: Optional[str],
-):
+):  # pylint: disable=too-many-arguments
     """
     Uploads pipeline to Airflow and runs once
     """
