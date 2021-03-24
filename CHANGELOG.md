@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+-   Command `list-pipelines` allows display of pipelines which were generated with the plugin
 
 ## [0.1.1] - 2021-03-19
 

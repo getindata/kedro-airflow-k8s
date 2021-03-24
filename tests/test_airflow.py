@@ -139,3 +139,50 @@ class TestAirflow:
         )
 
         assert status == "unknown"
+
+    @responses.activate
+    def test_list_dags(self):
+        list_of_dags = {
+            "dags": [
+                {
+                    "dag_id": "match",
+                    "tags": [
+                        {"name": "generated_with_kedro_airflow_k8s:0.1.1"},
+                        {"name": "experiment_name:test_experiment"},
+                    ],
+                },
+                {
+                    "dag_id": "not_generated_by_plugin",
+                    "tags": [{"name": "experiment_name:test_experiment"}],
+                },
+                {
+                    "dag_id": "without_experiment_name",
+                    "tags": [
+                        {"name": "generated_with_kedro_airflow_k8s:0.1.1"}
+                    ],
+                },
+            ]
+        }
+
+        responses.add(
+            responses.GET,
+            "https://test.airflow.com/api/v1/dags?limit=1000",
+            json=list_of_dags,
+        )
+
+        client = AirflowClient(
+            "https://test.airflow.com/api/v1", max_retries=0, retry_interval=0
+        )
+
+        dags = client.list_dags("generated_with_kedro_airflow_k8s")
+
+        assert len(dags) == 2
+        assert dags[0].dag_id == "match"
+        assert dags[0].tags == [
+            {"name": "generated_with_kedro_airflow_k8s:0.1.1"},
+            {"name": "experiment_name:test_experiment"},
+        ]
+        assert dags[1].dag_id == "without_experiment_name"
+        assert dags[1].tags == [
+            {"name": "generated_with_kedro_airflow_k8s:0.1.1"}
+        ]

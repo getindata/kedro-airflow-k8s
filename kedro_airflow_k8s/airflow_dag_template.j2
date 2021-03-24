@@ -21,7 +21,10 @@ with DAG(
     default_args=args,
     schedule_interval={% if schedule_interval %}'{{ schedule_interval }}'{% else %}None{% endif %},
     start_date=days_ago(2),
-    tags=['demo', 'commit_sha:{{ git_info.commit_sha }}'],
+    tags=['demo',
+            'commit_sha:{{ git_info.commit_sha }}',
+            'generated_with_kedro_airflow_k8s:{{kedro_airflow_k8s_version}}',
+            'experiment_name:{{ experiment_name }}'],
     params={"example_key": "example_value"},
 ) as dag:
 
