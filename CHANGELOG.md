@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2021-03-24
+
+-   Allow override `image` parameter from CLI for `upload_pipeline`, `run_once` and `compile`
+-   Conditional SSL verification for Apache Airflow client, via AIRFLOW**CLIENT**SSL_VERIFY environment variable
+-   `run-once` with `wait-for-completion` checks for task instance failure as well
+
 ## [0.1.1] - 2021-03-19
 
 -   Inits temporary volume with data from image kedro data directory (/home/kedro/data)
@@ -33,7 +39,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.1.1...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.1.2...HEAD
+
+[0.1.2]: https://github.com/getindata/kedro-airflow-k8s/compare/0.1.1...0.1.2
 
 [0.1.1]: https://github.com/getindata/kedro-airflow-k8s/compare/0.1.0...0.1.1
 
