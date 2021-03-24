@@ -76,7 +76,7 @@ with DAG(
             claimName: """ + pvc_name + """
       containers:
         - name: base
-          image: {{ config.image }}
+          image: {{ image }}
           imagePullPolicy: {{ config.image_pull_policy }}
           command:
             - "bash"
@@ -112,7 +112,7 @@ with DAG(
                 claimName: """ + pvc_name + """
           containers:
             - name: base
-              image: {{ config.image }}
+              image: {{ image }}
               imagePullPolicy: {{ config.image_pull_policy }}
               env:
                 - name: MLFLOW_RUN_ID
