@@ -82,11 +82,20 @@ class TestAirflow:
 
     @responses.activate
     def test_wait_for_dag_run_completion(self):
-        response_data = {"state": "success"}
+        response_data_dag_run = {"state": "success"}
+        response_data_task_instance = {
+            "task_instances": [{"state": "success"}]
+        }
         responses.add(
             responses.GET,
             "https://test.airflow.com/api/v1/dags/test_id/dagRuns/test_dag_run_id",
-            json=response_data,
+            json=response_data_dag_run,
+        )
+        responses.add(
+            responses.GET,
+            "https://test.airflow.com/api/v1/dags/test_id/dagRuns/test_dag_run_id/"
+            "taskInstances",
+            json=response_data_task_instance,
         )
         client = AirflowClient(
             "https://test.airflow.com/api/v1", max_retries=0
@@ -103,6 +112,9 @@ class TestAirflow:
         running_response, success_response = {"state": "running"}, {
             "state": "success"
         }
+        response_data_task_instance = {
+            "task_instances": [{"state": "success"}]
+        }
         responses.add(
             responses.GET,
             "https://test.airflow.com/api/v1/dags/test_id/dagRuns/test_dag_run_id",
@@ -112,6 +124,12 @@ class TestAirflow:
             responses.GET,
             "https://test.airflow.com/api/v1/dags/test_id/dagRuns/test_dag_run_id",
             json=success_response,
+        )
+        responses.add(
+            responses.GET,
+            "https://test.airflow.com/api/v1/dags/test_id/dagRuns/test_dag_run_id/"
+            "taskInstances",
+            json=response_data_task_instance,
         )
         client = AirflowClient(
             "https://test.airflow.com/api/v1", max_retries=0, retry_interval=0
@@ -139,3 +157,32 @@ class TestAirflow:
         )
 
         assert status == "unknown"
+
+    @responses.activate
+    def test_wait_for_dag_run_task_instance_failed(self):
+        response_data_dag_run = {"state": "success"}
+        response_data_task_instance = {
+            "task_instances": [
+                {"task_id": "1", "state": "success"},
+                {"task_id": "2", "state": "failed"},
+            ]
+        }
+        responses.add(
+            responses.GET,
+            "https://test.airflow.com/api/v1/dags/test_id/dagRuns/test_dag_run_id",
+            json=response_data_dag_run,
+        )
+        responses.add(
+            responses.GET,
+            "https://test.airflow.com/api/v1/dags/test_id/dagRuns/test_dag_run_id/"
+            "taskInstances",
+            json=response_data_task_instance,
+        )
+        client = AirflowClient(
+            "https://test.airflow.com/api/v1", max_retries=0, retry_interval=0
+        )
+        status = client.wait_for_dag_run_completion(
+            "test_id", "test_dag_run_id", 1
+        )
+
+        assert status == "failed"

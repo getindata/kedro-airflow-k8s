@@ -131,34 +131,33 @@ class TestPluginCLI:
             prefix="test_run_once", suffix=".py"
         )
 
-        with patch.object(
-            airflow.AirflowClient, "wait_for_dag"
-        ) as wait_for_dag:
-            with patch.object(
-                airflow.AirflowClient, "trigger_dag_run"
-            ) as trigger_dag_run:
-                wait_for_dag.return_value = airflow.DAGModel(
-                    dag_id="kedro_airflow_k8s",
-                    tags=[{"name": "demo"}, {"name": "commit_sha:abcdef"}],
-                )
+        with patch("kedro_airflow_k8s.cli.AirflowClient") as AirflowMock:
+            airflow_client = AirflowMock.return_value
+            airflow_client.wait_for_dag.return_value = airflow.DAGModel(
+                dag_id="kedro_airflow_k8s",
+                tags=[{"name": "demo"}, {"name": "commit_sha:abcdef"}],
+            )
 
-                result = runner.invoke(
-                    run_once,
-                    [
-                        "--output",
-                        str(output_directory.name),
-                    ],
-                    obj=config,
-                )
-                assert result.exit_code == 0
-                trigger_dag_run.assert_called_once_with("kedro_airflow_k8s")
+            result = runner.invoke(
+                run_once,
+                [
+                    "--output",
+                    str(output_directory.name),
+                ],
+                obj=config,
+            )
+            assert result.exit_code == 0
 
-                assert Path(output_directory.name).exists()
+            airflow_client.trigger_dag_run.assert_called_once_with(
+                "kedro_airflow_k8s"
+            )
 
-                dag_content = (
-                    Path(output_directory.name) / "kedro_airflow_k8s.py"
-                ).read_text()
-                assert len(dag_content) > 0
+        assert Path(output_directory.name).exists()
+
+        dag_content = (
+            Path(output_directory.name) / "kedro_airflow_k8s.py"
+        ).read_text()
+        assert len(dag_content) > 0
 
     def test_run_once_upload_error(self, context_helper):
         config = dict(context_helper=context_helper)
@@ -198,37 +197,30 @@ class TestPluginCLI:
             prefix="test_run_once", suffix=".py"
         )
 
-        with patch.object(
-            airflow.AirflowClient, "wait_for_dag"
-        ) as wait_for_dag:
-            with patch.object(
-                airflow.AirflowClient, "trigger_dag_run"
-            ) as trigger_dag_run:
-                wait_for_dag.return_value = airflow.DAGModel(
-                    dag_id="kedro_airflow_k8s",
-                    tags=[{"name": "demo"}, {"name": "commit_sha:abcdef"}],
-                )
-                trigger_dag_run.return_value = "test-dag-run-id"
+        with patch("kedro_airflow_k8s.cli.AirflowClient") as AirflowMock:
+            airflow_client = AirflowMock.return_value
+            airflow_client.wait_for_dag.return_value = airflow.DAGModel(
+                dag_id="kedro_airflow_k8s",
+                tags=[{"name": "demo"}, {"name": "commit_sha:abcdef"}],
+            )
+            airflow_client.trigger_dag_run.return_value = "test-dag-run-id"
+            airflow_client.wait_for_dag_run_completion.return_value = "success"
 
-                with patch.object(
-                    airflow.AirflowClient, "wait_for_dag_run_completion"
-                ) as wait_for_dag_run_completion:
-                    wait_for_dag_run_completion.return_value = "success"
-                    result = runner.invoke(
-                        run_once,
-                        [
-                            "--output",
-                            str(output_directory.name),
-                            "--wait-for-completion",
-                            10,
-                        ],
-                        obj=config,
-                    )
+            result = runner.invoke(
+                run_once,
+                [
+                    "--output",
+                    str(output_directory.name),
+                    "--wait-for-completion",
+                    10,
+                ],
+                obj=config,
+            )
 
-                assert result.exit_code == 0
-                assert Path(output_directory.name).exists()
+        assert result.exit_code == 0
+        assert Path(output_directory.name).exists()
 
-                dag_content = (
-                    Path(output_directory.name) / "kedro_airflow_k8s.py"
-                ).read_text()
-                assert len(dag_content) > 0
+        dag_content = (
+            Path(output_directory.name) / "kedro_airflow_k8s.py"
+        ).read_text()
+        assert len(dag_content) > 0

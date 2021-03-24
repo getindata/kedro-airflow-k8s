@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+-   `run-once` with `wait-for-completion` checks for task instance failure as well
 
 ## [0.1.1] - 2021-03-19
 
