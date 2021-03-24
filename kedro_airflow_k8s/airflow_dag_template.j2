@@ -118,7 +118,7 @@ with DAG(
                 - name: MLFLOW_RUN_ID
                   value: {% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %}
               args:
-                - 'kedro'
+                - 'kedroa'
                 - 'run'
                 - '-e' 
                 - '{{ env }}'
