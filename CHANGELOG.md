@@ -4,6 +4,7 @@
 
 -   Allow override `image` parameter from CLI for `upload_pipeline`, `run_once` and `compile`
 -   Conditional SSL verification for Apache Airflow client, via AIRFLOW__CLIENT__SSL_VERIFY environment variable
+-   `run-once` with `wait-for-completion` checks for task instance failure as well
 
 ## [0.1.1] - 2021-03-19
 

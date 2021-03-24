@@ -127,10 +127,19 @@ class AirflowClient:
         return res.json()["dag_run_id"]
 
     @staticmethod
-    def _check_state(response):
+    def _check_task_instances_state(response) -> Optional[str]:
+        if response.status_code != 200:
+            return None
+        instances = response.json()["task_instances"]
+        failed_instances = [i for i in instances if i["state"] == "failed"]
+        return "failed" if len(failed_instances) > 0 else None
+
+    @staticmethod
+    def _check_dag_run_state(response) -> Optional[str]:
         if response.status_code != 200:
             return "unknown"
         state = response.json()["state"]
+
         return state if state != "running" else None
 
     def _wait_for_dag_run_completion(
@@ -147,9 +156,18 @@ class AirflowClient:
                 headers={"Content-Type": "application/json"},
                 verify=AirflowClient.VERIFY,
             )
-            last_state = AirflowClient._check_state(res)
-            if last_state:
-                break
+            last_state = AirflowClient._check_dag_run_state(res)
+            if last_state == "success":
+                res = session.get(
+                    f"{self.rest_api_url}/dags/{dag_id}/dagRuns/{dag_run_id}/"
+                    f"taskInstances"
+                )
+                return (
+                    AirflowClient._check_task_instances_state(res) or "success"
+                )
+
+            if last_state is not None:
+                return last_state
 
             sleep(self.retry_interval)
         return last_state
