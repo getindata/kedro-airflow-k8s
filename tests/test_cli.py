@@ -1,3 +1,4 @@
+import webbrowser
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, Mock, patch
@@ -13,6 +14,7 @@ from kedro_airflow_k8s.cli import (
     list_pipelines,
     run_once,
     schedule,
+    ui,
     upload_pipeline,
 )
 from kedro_airflow_k8s.config import PluginConfig
@@ -63,7 +65,8 @@ class TestPluginCLI:
         }
         context_helper.session.store["git"].commit_sha = "abcdef"
         context_helper.airflow_config = {
-            "airflow_rest_api_uri": "airflow.url.com/api/v1"
+            "airflow_rest_api_uri": "airflow.url.com/api/v1",
+            "airflow_ui_uri": "airflow.url.com",
         }
         return context_helper
 
@@ -282,3 +285,37 @@ class TestPluginCLI:
         assert "match2" in tabulate_result
         assert "test_experiment" in tabulate_result
         assert "zxw_experiment" in tabulate_result
+
+    def test_ui(self, context_helper):
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        webbrowser.open_new_tab = Mock()
+
+        result = runner.invoke(
+            ui,
+            [],
+            obj=config,
+        )
+
+        assert result.exit_code == 0
+        webbrowser.open_new_tab.assert_called_once_with("airflow.url.com")
+
+    def test_ui_with_dag_view(self, context_helper):
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        webbrowser.open_new_tab = Mock()
+
+        result = runner.invoke(
+            ui,
+            ["--dag-name", "test-dag"],
+            obj=config,
+        )
+
+        assert result.exit_code == 0
+        webbrowser.open_new_tab.assert_called_once_with(
+            "airflow.url.com/tree?dag_id=test-dag"
+        )

@@ -72,6 +72,10 @@ returned.
 folder), the second one is the output location of generated dag, the third is cron like expression that relates to 
 Airflow DAG `schedule_interval`.
 
+### `ui`
+
+`ui` simplifies access to Apache Airflow console. It also allows open UI for the specific DAG.
+
 ### `upload-pipeline`
 
 `upload-pipeline` command takes two arguments, one is the directory name containing configuration (relative to `conf` 

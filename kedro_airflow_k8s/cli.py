@@ -1,3 +1,4 @@
+import webbrowser
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -281,3 +282,22 @@ def list_pipelines(ctx):
     pipelines = [[name(d.tags), d.dag_id] for d in dags]
     pipelines.sort()
     click.echo(tabulate(pipelines, headers=["Name", "ID"]))
+
+
+@airflow_group.command()
+@click.option(
+    "-d",
+    "--dag-name",
+    "dag_name",
+    type=str,
+    required=False,
+    help="View for this specific DAG will be opened",
+)
+@click.pass_context
+def ui(ctx, dag_name: Optional[str] = None):
+    """Open Apache Airflow UI in new browser tab"""
+    context_helper = ctx.obj["context_helper"]
+    host = context_helper.airflow_config["airflow_ui_uri"]
+    if dag_name:
+        host = f"{host}/tree?dag_id={dag_name}"
+    webbrowser.open_new_tab(host)
