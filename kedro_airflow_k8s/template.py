@@ -9,20 +9,23 @@ from slugify import slugify
 from kedro_airflow_k8s import version
 
 
-def _create_template_stream(
-    context_helper,
-    dag_name: Optional[str] = None,
-    schedule_interval: Optional[str] = None,
-    image: Optional[str] = None,
-) -> TemplateStream:
+def _get_jinja_template():
     loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
     jinja_env = jinja2.Environment(
         autoescape=True, loader=loader, lstrip_blocks=True
     )
     jinja_env.filters["slugify"] = slugify
     template = jinja_env.get_template("airflow_dag_template.j2")
+    return template
 
-    package_name = context_helper.context.package_name
+
+def _create_template_stream(
+    context_helper,
+    dag_name: str,
+    schedule_interval: str,
+    image: str,
+) -> TemplateStream:
+    template = _get_jinja_template()
 
     pipeline = context_helper.context.pipelines.get("__default__")
     dependencies = defaultdict(list)
@@ -41,23 +44,22 @@ def _create_template_stream(
     bottom_nodes = set(node.name for node in pipeline.nodes) - all_parent_nodes
 
     return template.stream(
-        dag_name=dag_name or package_name,
-        experiment_name=package_name,
-        dependencies=dependencies,
-        project_name=context_helper.project_name,
         pipeline=pipeline,
-        config=context_helper.config,
-        image=image or context_helper.config.image,
-        git_info=context_helper.session.store["git"],
+        dependencies=dependencies,
         base_nodes=nodes_with_no_deps,
         bottom_nodes=bottom_nodes,
-        mlflow_url=context_helper.mlflow_config["mlflow_tracking_uri"],
+        config=context_helper.config,
         env=context_helper.env,
+        project_name=context_helper.project_name,
+        dag_name=dag_name,
+        image=image,
         schedule_interval=schedule_interval,
+        git_info=context_helper.session.store["git"],
+        mlflow_url=context_helper.mlflow_config["mlflow_tracking_uri"],
+        kedro_airflow_k8s_version=version,
         include_start_mlflow_experiment_operator=(
             Path(__file__).parent / "operators/start_mlflow_experiment.py"
         ).read_text(),
-        kedro_airflow_k8s_version=version,
     )
 
 
@@ -66,14 +68,20 @@ def get_dag_filename_and_template_stream(
     cron_expression: Optional[str] = None,
     dag_name: Optional[str] = None,
     image: Optional[str] = None,
+    allow_cron_override: bool = False,
 ):
-    context_helper = ctx.obj["context_helper"]
-    package_name = context_helper.context.package_name
-    dag_filename = f"{dag_name or package_name}.py"
+    config = ctx.obj["context_helper"].config
+    dag_name = dag_name or config.run_config.run_name
+
+    dag_filename = f"{dag_name}.py"
+
+    if not allow_cron_override:
+        cron_expression = cron_expression or config.run_config.cron_expression
+
     template_stream = _create_template_stream(
-        context_helper,
+        ctx.obj["context_helper"],
         dag_name=dag_name,
         schedule_interval=cron_expression,
-        image=image,
+        image=image or config.run_config.image,
     )
     return dag_filename, template_stream

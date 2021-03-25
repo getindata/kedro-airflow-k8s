@@ -60,6 +60,10 @@ setup(
     entry_points={
         "kedro.project_commands": [
             "airflow-k8s = kedro_airflow_k8s.cli:commands"
-        ]
+        ],
+        "kedro.hooks": [
+            "kubeflow_cfg_hook = "
+            "kedro_airflow_k8s.hooks:register_templated_config_loader",
+        ],
     },
 )

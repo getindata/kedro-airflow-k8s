@@ -8,7 +8,7 @@ from kubernetes.client import models as k8s
 from kubernetes import client, config
 import logging
 
-EXPERIMENT_NAME = "{{ experiment_name }}"
+EXPERIMENT_NAME = "{{ config.run_config.experiment_name | slugify }}"
 
 args = {
     'owner': 'airflow',
@@ -18,12 +18,13 @@ args = {
 
 with DAG(
     dag_id='{{ dag_name }}',
+    description='{{ config.run_config.description }}'
     default_args=args,
     schedule_interval={% if schedule_interval %}'{{ schedule_interval }}'{% else %}None{% endif %},
     start_date=days_ago(2),
     tags=['commit_sha:{{ git_info.commit_sha }}',
-            'generated_with_kedro_airflow_k8s:{{kedro_airflow_k8s_version}}',
-            'experiment_name:{{ experiment_name }}'],
+            'generated_with_kedro_airflow_k8s:{{ kedro_airflow_k8s_version }}',
+            'experiment_name:'+EXPERIMENT_NAME],
     params={"example_key": "example_value"},
 ) as dag:
 
@@ -38,11 +39,11 @@ with DAG(
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
 
-            pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name=pvc_name, namespace='{{ config.namespace }}'),
-                    spec=k8s.V1PersistentVolumeClaimSpec(access_modes=['{{ config.access_mode }}'],
-                    resources=k8s.V1ResourceRequirements(requests={'storage':'{{ config.request_storage | safe }}'})))
+            pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name=pvc_name, namespace='{{ config.run_config.namespace }}'),
+                    spec=k8s.V1PersistentVolumeClaimSpec(access_modes={{ config.run_config.volume.access_modes | safe }}, {% if config.run_config.volume.storageclass %}storage_class_name={{ config.run_config.volume.storageclass }},{% endif %}
+                    resources=k8s.V1ResourceRequirements(requests={'storage':'{{ config.run_config.volume.size }}'})))
 
-            v1.create_namespaced_persistent_volume_claim('{{ config.namespace }}', pvc)
+            v1.create_namespaced_persistent_volume_claim('{{ config.run_config.namespace }}', pvc)
             ti.xcom_push('pvc_name', pvc_name)
 
     create_pipeline_storage = PythonOperator(
@@ -54,7 +55,7 @@ with DAG(
     def delete_pipeline_storage(pvc_name, ti, **kwargs):
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
-            v1.delete_namespaced_persistent_volume_claim(name=pvc_name, namespace='{{ config.namespace }}')
+            v1.delete_namespaced_persistent_volume_claim(name=pvc_name, namespace='{{ config.run_config.namespace }}')
 
     delete_pipeline_storage = PythonOperator(
         task_id='delete_pipeline_storage',
@@ -63,15 +64,16 @@ with DAG(
         op_args=[pvc_name],
     )
 
+    {% if not config.run_config.volume.skip_init %}
     data_volume_init_definition = """
     apiVersion: v1
     kind: Pod
     metadata:
       name: """ + PodGenerator.make_unique_pod_id('data-volume-init') + """
-      namespace: {{ config.namespace }}
+      namespace: {{ config.run_config.namespace }}
     spec:
       securityContext:
-        fsGroup: 0
+        fsGroup: {{ config.run_config.volume.owner }}
       volumes:
         - name: storage
           persistentVolumeClaim:
@@ -79,7 +81,7 @@ with DAG(
       containers:
         - name: base
           image: {{ image }}
-          imagePullPolicy: {{ config.image_pull_policy }}
+          imagePullPolicy: {{ config.run_config.image_pull_policy }}
           command:
             - "bash"
             - "-c"
@@ -96,6 +98,7 @@ with DAG(
         startup_timeout_seconds=600,
         pod_template_file=data_volume_init_definition
     )
+    {% endif %}
 
     tasks = {}
     {% for node in pipeline.nodes %}
@@ -103,11 +106,11 @@ with DAG(
         apiVersion: v1
         kind: Pod
         metadata:
-          name: """ + PodGenerator.make_unique_pod_id('{{ node.name | safe | slugify }}') + """
-          namespace: {{ config.namespace }}
+          name: """ + PodGenerator.make_unique_pod_id('{{ node.name | slugify }}') + """
+          namespace: {{ config.run_config.namespace }}
         spec:
           securityContext:
-            fsGroup: 0
+            fsGroup: {{ config.run_config.volume.owner }}
           volumes:
             - name: storage
               persistentVolumeClaim:
@@ -115,7 +118,7 @@ with DAG(
           containers:
             - name: base
               image: {{ image }}
-              imagePullPolicy: {{ config.image_pull_policy }}
+              imagePullPolicy: {{ config.run_config.image_pull_policy }}
               env:
                 - name: MLFLOW_RUN_ID
                   value: {% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %}
@@ -125,14 +128,14 @@ with DAG(
                 - '-e' 
                 - '{{ env }}'
                 - '--node'
-                - '{{ node.name | safe }}'
+                - '{{ node.name }}'
               volumeMounts:
                 - mountPath: "/home/kedro/data"
                   name: storage
     """
 
-    tasks["{{ node.name | safe | slugify }}"] = KubernetesPodOperator(
-        task_id="{{ node.name | safe | slugify  }}",
+    tasks["{{ node.name | slugify }}"] = KubernetesPodOperator(
+        task_id="{{ node.name | slugify }}",
         is_delete_operator_pod=True,
         startup_timeout_seconds=600,
         pod_template_file=pod_definition
@@ -142,15 +145,22 @@ with DAG(
     
     {% for parent_node, child_nodes in dependencies.items() -%}
     {% for child in child_nodes %}
-    tasks["{{ parent_node.name | safe | slugify }}"] >> tasks["{{ child.name | safe | slugify }}"]
+    tasks["{{ parent_node.name | slugify }}"] >> tasks["{{ child.name | slugify }}"]
     {% endfor %}
     {%- endfor %}
 
+    {% if not config.run_config.volume.skip_init %}
     create_pipeline_storage >> data_volume_init
     data_volume_init >> delete_pipeline_storage
+    {% else %}
+    create_pipeline_storage >> delete_pipeline_storage
+    {% endif %}
+
     {% for node in base_nodes %}
     start_mlflow_run >> tasks['{{ node | slugify }}']
+    {% if not config.run_config.volume.skip_init %}
     data_volume_init >> tasks['{{ node | slugify }}']
+    {% endif %}
     {% endfor %}
 
     {% for node in bottom_nodes %}
