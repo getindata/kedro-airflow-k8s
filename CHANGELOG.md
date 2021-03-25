@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Command `list-pipelines` allows display of pipelines which were generated with the plugin
+
 ## [0.1.2] - 2021-03-24
 
 -   Allow override `image` parameter from CLI for `upload_pipeline`, `run_once` and `compile`

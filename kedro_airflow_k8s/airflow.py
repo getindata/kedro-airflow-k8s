@@ -189,3 +189,38 @@ class AirflowClient:
             )
         else:
             return "unknown"
+
+    def list_dags(self, tag_prefix: Optional[str] = None) -> List[DAGModel]:
+        """
+        List dags, optionally filter by tag prefix.
+        :param tag_prefix: if specify, filter
+        :return: DAGModel
+        :raises: RuntimeError on HTTP error
+        """
+        session = AirflowClient.create_http_session()
+        res = session.get(
+            f"{self.rest_api_url}/dags?limit=1000", verify=AirflowClient.VERIFY
+        )
+
+        if res.status_code != 200:
+            raise RuntimeError(res.json().get("title"))
+
+        dags = res.json()["dags"]
+
+        def contains_prefix(tags_list: List[Dict[str, str]]) -> bool:
+            return (
+                len(
+                    [
+                        tag
+                        for tag in tags_list
+                        if tag["name"].startswith(tag_prefix)
+                    ]
+                )
+                > 0
+            )
+
+        return [
+            DAGModel(dag_id=dag["dag_id"], tags=dag["tags"])
+            for dag in dags
+            if contains_prefix(dag.get("tags", []))
+        ]

@@ -2,11 +2,19 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, Mock, patch
 
+import click
 import pytest
 from click.testing import CliRunner
 
 from kedro_airflow_k8s import airflow
-from kedro_airflow_k8s.cli import compile, run_once, schedule, upload_pipeline
+from kedro_airflow_k8s.airflow import DAGModel
+from kedro_airflow_k8s.cli import (
+    compile,
+    list_pipelines,
+    run_once,
+    schedule,
+    upload_pipeline,
+)
 from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.context_helper import ContextHelper
 
@@ -229,3 +237,48 @@ class TestPluginCLI:
             Path(output_directory.name) / "kedro_airflow_k8s.py"
         ).read_text()
         assert len(dag_content) > 0
+
+    def test_list_pipelines(self, context_helper):
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        click.echo = Mock()
+        with patch.object(airflow.AirflowClient, "list_dags") as list_dags:
+            list_dags.return_value = [
+                DAGModel(
+                    dag_id="match0",
+                    tags=[
+                        {"name": "generated_with_kedro_airflow_k8s:0.1.2"},
+                        {"name": "experiment_name:zxw_experiment"},
+                    ],
+                ),
+                DAGModel(
+                    dag_id="match1",
+                    tags=[
+                        {"name": "generated_with_kedro_airflow_k8s:0.1.1"},
+                        {"name": "experiment_name:test_experiment"},
+                    ],
+                ),
+                DAGModel(
+                    dag_id="match2",
+                    tags=[
+                        {"name": "generated_with_kedro_airflow_k8s:0.1.2"},
+                        {"name": "experiment_name:test_experiment"},
+                    ],
+                ),
+            ]
+            result = runner.invoke(
+                list_pipelines,
+                [],
+                obj=config,
+            )
+
+        assert result.exit_code == 0
+        click.echo.assert_called_once()
+        tabulate_result = click.echo.call_args_list[0][0][0]
+        assert "match0" in tabulate_result
+        assert "match1" in tabulate_result
+        assert "match2" in tabulate_result
+        assert "test_experiment" in tabulate_result
+        assert "zxw_experiment" in tabulate_result
