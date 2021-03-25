@@ -15,7 +15,10 @@ from kedro_airflow_k8s.context_helper import ContextHelper
 
 
 def _create_template_stream(
-    context_helper, dag_name: str = None, schedule_interval: str = None
+    context_helper,
+    dag_name: Optional[str] = None,
+    schedule_interval: Optional[str] = None,
+    image: Optional[str] = None,
 ) -> TemplateStream:
     loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
     jinja_env = jinja2.Environment(
@@ -49,6 +52,7 @@ def _create_template_stream(
         project_name=context_helper.project_name,
         pipeline=pipeline,
         config=context_helper.config,
+        image=image or context_helper.config.image,
         git_info=context_helper.session.store["git"],
         base_nodes=nodes_with_no_deps,
         bottom_nodes=bottom_nodes,
@@ -63,13 +67,19 @@ def _create_template_stream(
 
 
 def get_dag_filename_and_template_stream(
-    ctx, cron_expression=None, dag_name=None
+    ctx,
+    cron_expression: Optional[str] = None,
+    dag_name: Optional[str] = None,
+    image: Optional[str] = None,
 ):
     context_helper = ctx.obj["context_helper"]
     package_name = context_helper.context.package_name
     dag_filename = f"{dag_name or package_name}.py"
     template_stream = _create_template_stream(
-        context_helper, dag_name=dag_name, schedule_interval=cron_expression
+        context_helper,
+        dag_name=dag_name,
+        schedule_interval=cron_expression,
+        image=image,
     )
     return dag_filename, template_stream
 
@@ -95,10 +105,20 @@ def airflow_group(ctx, metadata, env):
 
 
 @airflow_group.command()
+@click.option(
+    "-i",
+    "--image",
+    "image",
+    type=str,
+    required=False,
+    help="Image to override.",
+)
 @click.pass_context
-def compile(ctx, target_path="dags/"):
+def compile(ctx, image, target_path="dags/"):
     """Create an Airflow DAG for a project"""
-    dag_filename, template_stream = get_dag_filename_and_template_stream(ctx)
+    dag_filename, template_stream = get_dag_filename_and_template_stream(
+        ctx, image=image
+    )
 
     target_path = Path(target_path) / dag_filename
 
@@ -116,12 +136,22 @@ def compile(ctx, target_path="dags/"):
     help="Location where DAG file should be uploaded, for GCS use gs:// or "
     "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
+@click.option(
+    "-i",
+    "--image",
+    "image",
+    type=str,
+    required=False,
+    help="Image to override.",
+)
 @click.pass_context
-def upload_pipeline(ctx, output: str):
+def upload_pipeline(ctx, output: str, image: str):
     """
     Uploads pipeline to Airflow DAG location
     """
-    dag_filename, template_stream = get_dag_filename_and_template_stream(ctx)
+    dag_filename, template_stream = get_dag_filename_and_template_stream(
+        ctx, image=image
+    )
 
     with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
         template_stream.dump(f)
@@ -183,18 +213,27 @@ def schedule(ctx, output: str, cron_expression: str):
     required=False,
     help="If set, tells plugin to wait for dag run to finish and how long (minutes)",
 )
+@click.option(
+    "-i",
+    "--image",
+    "image",
+    type=str,
+    required=False,
+    help="Image to override.",
+)
 @click.pass_context
 def run_once(
     ctx,
     output: str,
     dag_name: Optional[str],
     wait_for_completion: Optional[int],
-):
+    image: Optional[str],
+):  # pylint: disable=too-many-arguments
     """
     Uploads pipeline to Airflow and runs once
     """
     dag_filename, template_stream = get_dag_filename_and_template_stream(
-        ctx, dag_name=dag_name
+        ctx, dag_name=dag_name, image=image
     )
     context_helper = ctx.obj["context_helper"]
 
