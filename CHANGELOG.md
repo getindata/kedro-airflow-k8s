@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 -   Command `list-pipelines` allows display of pipelines which were generated with the plugin
+-   Command `ui` opens webbrowser with Apache Airflow
+-   Move options to config file
 
 ## [0.1.2] - 2021-03-24
 
