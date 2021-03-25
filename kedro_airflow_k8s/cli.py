@@ -168,7 +168,7 @@ def run_once(
         template_stream.dump(f)
 
     airflow_client = AirflowClient(
-        context_helper.airflow_config["airflow_rest_api_uri"]
+        context_helper.airflow_config["airflow_uri"]
     )
     dag = airflow_client.wait_for_dag(
         dag_id=dag_name or context_helper.context.package_name,
@@ -194,7 +194,7 @@ def list_pipelines(ctx):
 
     context_helper = ctx.obj["context_helper"]
     airflow_client = AirflowClient(
-        context_helper.airflow_config["airflow_rest_api_uri"]
+        context_helper.airflow_config["airflow_uri"]
     )
 
     dags = airflow_client.list_dags("generated_with_kedro_airflow_k8s")
@@ -223,7 +223,7 @@ def list_pipelines(ctx):
 def ui(ctx, dag_name: Optional[str] = None):
     """Open Apache Airflow UI in new browser tab"""
     context_helper = ctx.obj["context_helper"]
-    host = context_helper.airflow_config["airflow_ui_uri"]
+    host = context_helper.airflow_config["airflow_uri"]
     if dag_name:
         host = f"{host}/tree?dag_id={dag_name}"
     webbrowser.open_new_tab(host)

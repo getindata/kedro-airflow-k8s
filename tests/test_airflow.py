@@ -16,9 +16,7 @@ class TestAirflow:
             "https://test.airflow.com/api/v1/dags/test_id",
             json=response_data,
         )
-        client = AirflowClient(
-            "https://test.airflow.com/api/v1", max_retries=0
-        )
+        client = AirflowClient("https://test.airflow.com", max_retries=0)
 
         dag = client.get_dag("test_id")
 
@@ -36,9 +34,7 @@ class TestAirflow:
             "https://test.airflow.com/api/v1/dags/test_id",
             json=response_data,
         )
-        client = AirflowClient(
-            "https://test.airflow.com/api/v1", max_retries=0
-        )
+        client = AirflowClient("https://test.airflow.com", max_retries=0)
 
         dag = client.wait_for_dag("test_id", "commit_sha:123456")
 
@@ -57,7 +53,7 @@ class TestAirflow:
             json=response_data,
         )
         client = AirflowClient(
-            "https://test.airflow.com/api/v1", max_retries=0, retry_interval=0
+            "https://test.airflow.com", max_retries=0, retry_interval=0
         )
 
         with pytest.raises(MissingDAGException):
@@ -73,9 +69,7 @@ class TestAirflow:
             "https://test.airflow.com/api/v1/dags/test_id/dagRuns",
             json=response_data,
         )
-        client = AirflowClient(
-            "https://test.airflow.com/api/v1", max_retries=0
-        )
+        client = AirflowClient("https://test.airflow.com", max_retries=0)
 
         dag_run_id = client.trigger_dag_run("test_id")
         assert dag_run_id == "test_run_id"
@@ -97,9 +91,7 @@ class TestAirflow:
             "taskInstances",
             json=response_data_task_instance,
         )
-        client = AirflowClient(
-            "https://test.airflow.com/api/v1", max_retries=0
-        )
+        client = AirflowClient("https://test.airflow.com", max_retries=0)
 
         status = client.wait_for_dag_run_completion(
             "test_id", "test_dag_run_id", 1
@@ -132,7 +124,7 @@ class TestAirflow:
             json=response_data_task_instance,
         )
         client = AirflowClient(
-            "https://test.airflow.com/api/v1", max_retries=0, retry_interval=0
+            "https://test.airflow.com", max_retries=0, retry_interval=0
         )
 
         status = client.wait_for_dag_run_completion(
@@ -149,7 +141,7 @@ class TestAirflow:
             status=403,
         )
         client = AirflowClient(
-            "https://test.airflow.com/api/v1", max_retries=0, retry_interval=0
+            "https://test.airflow.com", max_retries=0, retry_interval=0
         )
 
         status = client.wait_for_dag_run_completion(
@@ -179,7 +171,7 @@ class TestAirflow:
             json=response_data_task_instance,
         )
         client = AirflowClient(
-            "https://test.airflow.com/api/v1", max_retries=0, retry_interval=0
+            "https://test.airflow.com", max_retries=0, retry_interval=0
         )
         status = client.wait_for_dag_run_completion(
             "test_id", "test_dag_run_id", 1
@@ -218,7 +210,7 @@ class TestAirflow:
         )
 
         client = AirflowClient(
-            "https://test.airflow.com/api/v1", max_retries=0, retry_interval=0
+            "https://test.airflow.com", max_retries=0, retry_interval=0
         )
 
         dags = client.list_dags("generated_with_kedro_airflow_k8s")

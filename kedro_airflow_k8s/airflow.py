@@ -38,14 +38,14 @@ class AirflowClient:
 
     def __init__(
         self,
-        rest_api_url: str,
+        airflow_url: str,
         max_retries: int = MAX_RETRIES,
         retry_interval: int = RETRY_INTERVAL,
     ):
         """
         :param rest_api_url: full url to service rest API
         """
-        self.rest_api_url = rest_api_url
+        self.rest_api_url = f"{airflow_url}/api/v1"
         self.max_retries = max_retries
         self.retry_interval = retry_interval
 

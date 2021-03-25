@@ -65,8 +65,7 @@ class TestPluginCLI:
         }
         context_helper.session.store["git"].commit_sha = "abcdef"
         context_helper.airflow_config = {
-            "airflow_rest_api_uri": "airflow.url.com/api/v1",
-            "airflow_ui_uri": "airflow.url.com",
+            "airflow_uri": "airflow.url.com",
         }
         return context_helper
 
