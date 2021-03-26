@@ -153,7 +153,8 @@ image: remote.repo.url.com/airflow_k8s_plugin_demo:latest
 namespace: airflow
 ```
 
-Also mlflow configuration has to be set up as described in [mlflow section](./03_mlflow.md).
+Also mlflow configuration has to be set up (if required by the project) as described in 
+[mlflow section](./03_mlflow.md).
 
 Having configuration ready, type:
 

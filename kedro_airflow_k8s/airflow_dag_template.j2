@@ -14,7 +14,9 @@ args = {
     'owner': 'airflow',
 }
 
+{% if mlflow_url %}
 {{ include_start_mlflow_experiment_operator | safe }}
+{% endif %}
 
 with DAG(
     dag_id='{{ dag_name }}',
@@ -29,10 +31,12 @@ with DAG(
 
     pvc_name = '{{ project_name | safe | slugify }}.{% raw %}{{ ts_nodash | lower  }}{% endraw %}'
 
+    {% if mlflow_url %}
     start_mlflow_run = StartMLflowExperimentOperator(
         experiment_name=EXPERIMENT_NAME,
         mlflow_url='{{ mlflow_url }}'
     )
+    {% endif %}
 
     def create_pipeline_storage(pvc_name, ti, **kwargs):
         with client.ApiClient(config.load_incluster_config()) as api_client:
@@ -115,10 +119,10 @@ with DAG(
           containers:
             - name: base
               image: {{ image }}
-              imagePullPolicy: {{ config.image_pull_policy }}
+              imagePullPolicy: {{ config.image_pull_policy }}{% if mlflow_url %}
               env:
                 - name: MLFLOW_RUN_ID
-                  value: {% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %}
+                  value: {% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %}{% endif %}
               args:
                 - 'kedro'
                 - 'run'
@@ -149,7 +153,9 @@ with DAG(
     create_pipeline_storage >> data_volume_init
     data_volume_init >> delete_pipeline_storage
     {% for node in base_nodes %}
+    {% if mlflow_url %}
     start_mlflow_run >> tasks['{{ node | slugify }}']
+    {% endif %}
     data_volume_init >> tasks['{{ node | slugify }}']
     {% endfor %}
 
