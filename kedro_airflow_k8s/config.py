@@ -27,7 +27,7 @@ run_config:
     run_name: {project}
 
     # Apache Airflow cron expression for scheduled runs
-    cron_expression: @daily
+    cron_expression: "@daily"
 
     # Optional pipeline description
     #description: "Very Important Pipeline"
@@ -50,10 +50,6 @@ run_config:
         # Allows to specify fsGroup executing pipelines within containers
         # Default: root user group (to avoid issues with volumes in GKE)
         owner: 0
-        # Flak indicating if volume for inter-node data exchange should be
-        # kept after the pipeline is deleted
-        keep: False
-
 """
 
 
@@ -110,11 +106,8 @@ class RunConfig(Config):
 
     @property
     def volume(self):
-        if "volume" in self._raw.keys():
-            cfg = self._get_or_fail("volume")
-            return VolumeConfig(cfg)
-        else:
-            return None
+        cfg = self._get_or_default("volume", {})
+        return VolumeConfig(cfg)
 
     def _get_prefix(self):
         return "run_config."
@@ -156,7 +149,7 @@ class PluginConfig(Config):
 
     @property
     def run_config(self):
-        cfg = self._get_or_fail("run_config")
+        cfg = self._get_or_default("run_config", {})
         return RunConfig(cfg)
 
     @staticmethod

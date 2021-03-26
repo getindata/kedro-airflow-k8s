@@ -54,19 +54,23 @@ class TestPluginCLI:
         context_helper.project_name = "kedro_airflow_k8s"
         context_helper.config = PluginConfig(
             {
-                "namespace": "test_ns",
-                "image": "test/image:latest",
-                "accessMode": "ReadWriteMany",
-                "requestStorage": "3Gi",
+                "host": "airflow.url.com",
+                "run_config": {
+                    "image": "test/image:latest",
+                    "namespace": "test_ns",
+                    "experiment_name": "kedro_airflow_k8s",
+                    "cron_expression": None,
+                    "volume": {
+                        "access_modes": ["ReadWriteMany"],
+                        "size": "3Gi",
+                    },
+                },
             }
         )
         context_helper.mlflow_config = {
             "mlflow_tracking_uri": "mlflow.url.com"
         }
         context_helper.session.store["git"].commit_sha = "abcdef"
-        context_helper.airflow_config = {
-            "airflow_uri": "airflow.url.com",
-        }
         return context_helper
 
     def test_compile(self, context_helper):
@@ -81,7 +85,7 @@ class TestPluginCLI:
         assert Path("dags/kedro_airflow_k8s.py").exists()
 
         dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
-        assert 'EXPERIMENT_NAME = "kedro_airflow_k8s"' in dag_content
+        assert 'EXPERIMENT_NAME = "kedro-airflow-k8s"' in dag_content
         assert "namespace='test_ns'" in dag_content
         assert "image: image:override" in dag_content
         assert "mlflow_url='mlflow.url.com'" in dag_content
