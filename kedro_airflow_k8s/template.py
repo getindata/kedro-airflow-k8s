@@ -3,10 +3,21 @@ from pathlib import Path
 from typing import Optional
 
 import jinja2
+import kedro
 from jinja2.environment import TemplateStream
 from slugify import slugify
 
 from kedro_airflow_k8s import version
+
+
+def _get_mlflow_url(context_helper):
+    try:
+        import importlib
+
+        importlib.import_module("kedro_mlflow")
+        return context_helper.mlflow_config["mlflow_tracking_uri"]
+    except (ModuleNotFoundError, kedro.config.config.MissingConfigException):
+        return None
 
 
 def _create_template_stream(
@@ -51,7 +62,7 @@ def _create_template_stream(
         git_info=context_helper.session.store["git"],
         base_nodes=nodes_with_no_deps,
         bottom_nodes=bottom_nodes,
-        mlflow_url=context_helper.mlflow_config["mlflow_tracking_uri"],
+        mlflow_url=_get_mlflow_url(context_helper),
         env=context_helper.env,
         schedule_interval=schedule_interval,
         include_start_mlflow_experiment_operator=(

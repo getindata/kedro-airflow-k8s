@@ -33,6 +33,7 @@ EXTRA_REQUIRE = {
     "gcp": [
         "gcsfs>=0.6.2, <0.7.0",
     ],
+    "mlflow": ["kedro-mlflow>=0.4.1,<0.5"],
 }
 
 setup(

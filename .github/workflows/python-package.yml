@@ -27,7 +27,7 @@ jobs:
    
     - name: Check pre-commit status
       run: |
-        pip install .[tests]
+        pip install .[tests,mlflow]
         pip freeze
         pipdeptree
         pre-commit run --all-files
