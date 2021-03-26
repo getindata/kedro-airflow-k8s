@@ -16,7 +16,7 @@ INSTALL_REQUIRES = [
 # Dev Requirements
 EXTRA_REQUIRE = {
     "tests": [
-        "pytest>=5.4.0, <7.0.0",
+        "pytest>=6.2.2, <7.0.0",
         "pytest-cov>=2.8.0, <3.0.0",
         "tox==3.21.1",
         "pre-commit==2.9.3",
@@ -33,7 +33,7 @@ EXTRA_REQUIRE = {
     "gcp": [
         "gcsfs>=0.6.2, <0.7.0",
     ],
-    "mlflow": ["kedro-mlflow>=0.4.1,<0.5"],
+    "mlflow": ["kedro-mlflow==0.4.1"],
 }
 
 setup(
