@@ -22,3 +22,6 @@ $ kedro docker build
 ```
 
 And re-push the image to the remote registry.
+
+> If `kedro-mlflow` is not installed as dependency and configuration is not in place (missing `kedro mlflow init`), the 
+> MLflow experiment will not be initialized and available for pipeline tasks in Apache Airflow DAG.
