@@ -5,6 +5,7 @@
 -   Command `list-pipelines` allows display of pipelines which were generated with the plugin
 -   Command `ui` opens webbrowser with Apache Airflow
 -   Move options to config file and restructure
+-   `MLflow` enabled only if `kedro-mlflow` present in dependencies and configuration is in place 
 
 ## [0.1.2] - 2021-03-24
 
