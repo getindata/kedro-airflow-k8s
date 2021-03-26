@@ -24,6 +24,7 @@ jobs:
         python -m pip install virtualenv pipdeptree
         virtualenv venv
         source venv/bin/activate
+        pip install --upgrade pip
    
     - name: Check pre-commit status
       run: |
