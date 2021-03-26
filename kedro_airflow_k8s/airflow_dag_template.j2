@@ -18,7 +18,7 @@ args = {
 
 with DAG(
     dag_id='{{ dag_name }}',
-    description='{{ config.run_config.description }}'
+    description='{{ config.run_config.description }}',
     default_args=args,
     schedule_interval={% if schedule_interval %}'{{ schedule_interval }}'{% else %}None{% endif %},
     start_date=days_ago(2),
