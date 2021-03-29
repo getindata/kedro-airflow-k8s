@@ -8,7 +8,10 @@ from tabulate import tabulate
 
 from kedro_airflow_k8s.airflow import AirflowClient
 from kedro_airflow_k8s.context_helper import ContextHelper
-from kedro_airflow_k8s.template import get_dag_filename_and_template_stream
+from kedro_airflow_k8s.template import (
+    get_cron_expression,
+    get_dag_filename_and_template_stream,
+)
 
 
 @click.group("airflow-k8s")
@@ -44,7 +47,7 @@ def airflow_group(ctx, metadata, env):
 def compile(ctx, image, target_path="dags/"):
     """Create an Airflow DAG for a project"""
     dag_filename, template_stream = get_dag_filename_and_template_stream(
-        ctx, image=image
+        ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
 
     target_path = Path(target_path) / dag_filename
@@ -77,7 +80,7 @@ def upload_pipeline(ctx, output: str, image: str):
     Uploads pipeline to Airflow DAG location
     """
     dag_filename, template_stream = get_dag_filename_and_template_stream(
-        ctx, image=image
+        ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
 
     output = output or ctx.obj["context_helper"].config.output
@@ -108,7 +111,7 @@ def schedule(ctx, output: str, cron_expression: str):
     Uploads pipeline to Airflow with given schedule
     """
     dag_filename, template_stream = get_dag_filename_and_template_stream(
-        ctx, cron_expression
+        ctx, cron_expression=get_cron_expression(ctx, cron_expression)
     )
 
     output = output or ctx.obj["context_helper"].config.output
@@ -163,7 +166,7 @@ def run_once(
     Uploads pipeline to Airflow and runs once
     """
     dag_filename, template_stream = get_dag_filename_and_template_stream(
-        ctx, dag_name=dag_name, image=image, allow_cron_override=True
+        ctx, dag_name=dag_name, image=image, cron_expression=None
     )
     context_helper = ctx.obj["context_helper"]
     output = output or context_helper.config.output

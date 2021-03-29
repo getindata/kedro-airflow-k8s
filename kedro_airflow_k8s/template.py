@@ -74,20 +74,23 @@ def _create_template_stream(
     )
 
 
+def get_cron_expression(
+    ctx, cron_expression: Optional[str] = None
+) -> Optional[str]:
+    config = ctx.obj["context_helper"].config
+    return cron_expression or config.run_config.cron_expression
+
+
 def get_dag_filename_and_template_stream(
     ctx,
     cron_expression: Optional[str] = None,
     dag_name: Optional[str] = None,
     image: Optional[str] = None,
-    allow_cron_override: bool = False,
 ):
     config = ctx.obj["context_helper"].config
     dag_name = dag_name or config.run_config.run_name
 
     dag_filename = f"{dag_name}.py"
-
-    if not allow_cron_override:
-        cron_expression = cron_expression or config.run_config.cron_expression
 
     template_stream = _create_template_stream(
         ctx.obj["context_helper"],
