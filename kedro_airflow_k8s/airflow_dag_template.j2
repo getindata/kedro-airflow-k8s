@@ -43,7 +43,7 @@ with DAG(
             v1 = client.CoreV1Api(api_client)
 
             pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name=pvc_name, namespace='{{ config.run_config.namespace }}'),
-                    spec=k8s.V1PersistentVolumeClaimSpec(access_modes={{ config.run_config.volume.access_modes | safe }}, {% if config.run_config.volume.storageclass %}storage_class_name={{ config.run_config.volume.storageclass }},{% endif %}
+                    spec=k8s.V1PersistentVolumeClaimSpec(access_modes={{ config.run_config.volume.access_modes | safe }}, {% if config.run_config.volume.storageclass %}storage_class_name='{{ config.run_config.volume.storageclass }}',{% endif %}
                     resources=k8s.V1ResourceRequirements(requests={'storage':'{{ config.run_config.volume.size }}'})))
 
             v1.create_namespaced_persistent_volume_claim('{{ config.run_config.namespace }}', pvc)
