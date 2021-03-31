@@ -7,6 +7,7 @@ import fsspec
 from tabulate import tabulate
 
 from kedro_airflow_k8s.airflow import AirflowClient
+from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.context_helper import ContextHelper
 from kedro_airflow_k8s.template import (
     get_cron_expression,
@@ -229,3 +230,41 @@ def ui(ctx, dag_name: Optional[str] = None):
     if dag_name:
         host = f"{host}/tree?dag_id={dag_name}"
     webbrowser.open_new_tab(host)
+
+
+@airflow_group.command()
+@click.argument("airflow_url", type=str)
+@click.option("--with-github-actions", is_flag=True, default=False)
+@click.option("--output", type=str, default=False)
+@click.pass_context
+def init(ctx, airflow_url: str, with_github_actions: bool, output: str):
+    """Initializes configuration for the plugin"""
+    context_helper = ctx.obj["context_helper"]
+    project_name = context_helper.context.project_path.name
+    if with_github_actions:
+        image = f"gcr.io/${{google_project_id}}/{project_name}:${{commit_id}}"
+        run_name = f"{project_name}:${{commit_id}}"
+    else:
+        image = project_name
+        run_name = project_name
+
+    sample_config = PluginConfig.sample_config(
+        url=airflow_url,
+        image=image,
+        project=project_name,
+        run_name=run_name,
+        output=output,
+    )
+    config_path = Path.cwd().joinpath("conf/base/airflow-k8s.yaml")
+    config_path.parent.mkdir(exist_ok=True, parents=True)
+    with open(config_path, "w") as f:
+        f.write(sample_config)
+
+    click.echo(f"Configuration generated in {config_path}")
+
+    if with_github_actions:
+        PluginConfig.initialize_github_actions(
+            project_name,
+            where=Path.cwd(),
+            templates_dir=Path(__file__).parent / "templates",
+        )

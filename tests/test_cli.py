@@ -1,3 +1,4 @@
+import os
 import webbrowser
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -11,6 +12,7 @@ from kedro_airflow_k8s import airflow
 from kedro_airflow_k8s.airflow import DAGModel
 from kedro_airflow_k8s.cli import (
     compile,
+    init,
     list_pipelines,
     run_once,
     schedule,
@@ -324,3 +326,49 @@ class TestPluginCLI:
         webbrowser.open_new_tab.assert_called_once_with(
             "airflow.url.com/tree?dag_id=test-dag"
         )
+
+    def test_init(self, context_helper):
+        context_helper.context.project_path = Path("test-name")
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        cwd = os.getcwd()
+        try:
+            with TemporaryDirectory() as td:
+                os.chdir(td)
+                result = runner.invoke(
+                    init,
+                    [
+                        "--with-github-actions",
+                        "--output=gs://dag.bucket",
+                        "https://test.apache.airflow.com",
+                    ],
+                    obj=config,
+                )
+
+                assert result.exit_code == 0
+
+                assert (Path(td) / "conf/base/airflow-k8s.yaml").exists()
+                assert (
+                    "{{"
+                    not in (
+                        Path(td) / "conf/base/airflow-k8s.yaml"
+                    ).read_text()
+                )
+                assert (
+                    Path(td) / ".github/workflows/on-merge-to-master.yml"
+                ).exists()
+                assert (
+                    "PROJECT_NAME: test-name"
+                    in (
+                        Path(td) / ".github/workflows/on-merge-to-master.yml"
+                    ).read_text()
+                )
+                assert (Path(td) / ".github/workflows/on-push.yml").exists()
+                assert (
+                    "PROJECT_NAME: test-name"
+                    in (Path(td) / ".github/workflows/on-push.yml").read_text()
+                )
+        finally:
+            os.chdir(cwd)
