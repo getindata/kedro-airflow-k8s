@@ -63,6 +63,7 @@ class TestPluginCLI:
                     "volume": {
                         "access_modes": ["ReadWriteMany"],
                         "size": "3Gi",
+                        "storageclass": "with-encryption",
                     },
                 },
             }
@@ -93,6 +94,7 @@ class TestPluginCLI:
         assert "access_modes=['ReadWriteMany']" in dag_content
         assert "'storage':'3Gi'" in dag_content
         assert "schedule_interval=None" in dag_content
+        assert "storage_class_name='with-encryption'" in dag_content
 
     def test_upload_pipeline(self, context_helper):
         config = dict(context_helper=context_helper)
