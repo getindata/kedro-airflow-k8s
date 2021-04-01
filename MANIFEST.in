@@ -1,1 +1,3 @@
 include kedro_airflow_k8s/airflow_dag_template.j2
+include templates/github-on-merge-to-master.yml
+include templates/github-on-push.yml

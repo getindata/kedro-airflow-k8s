@@ -1,3 +1,5 @@
+import os
+
 from kedro.config import MissingConfigException
 
 DEFAULT_CONFIG_TEMPLATE = """
@@ -18,13 +20,13 @@ run_config:
     image_pull_policy: IfNotPresent
 
     # Namespace for Airflow pods to be created
-    namespace: {namespace}
+    namespace: airflow
 
     # Name of the Airflow experiment to be created
     experiment_name: {project}
 
     # Name of the dag as it's presented in Airflow
-    run_name: {project}
+    run_name: {run_name}
 
     # Apache Airflow cron expression for scheduled runs
     cron_expression: "@daily"
@@ -155,3 +157,12 @@ class PluginConfig(Config):
     @staticmethod
     def sample_config(**kwargs):
         return DEFAULT_CONFIG_TEMPLATE.format(**kwargs)
+
+    @staticmethod
+    def initialize_github_actions(project_name, where, templates_dir):
+        os.makedirs(where / ".github/workflows", exist_ok=True)
+        for template in ["on-merge-to-master.yml", "on-push.yml"]:
+            file_path = where / ".github/workflows" / template
+            template_file = templates_dir / f"github-{template}"
+            with open(template_file, "r") as tfile, open(file_path, "w") as f:
+                f.write(tfile.read().format(project_name=project_name))
