@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2021-04-01
+
+-   Command `list-pipelines` allows display of pipelines which were generated with the plugin
+-   Command `ui` opens webbrowser with Apache Airflow
+-   Move options to config file and restructure
+-   `MLflow` enabled only if `kedro-mlflow` present in dependencies and configuration is in place 
+-   Command `init` to initialize configuration for the plugin in kedro project
+
 ## [0.1.2] - 2021-03-24
 
 -   Allow override `image` parameter from CLI for `upload_pipeline`, `run_once` and `compile`
@@ -39,7 +47,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.1.2...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.2.0...HEAD
+
+[0.2.0]: https://github.com/getindata/kedro-airflow-k8s/compare/0.1.2...0.2.0
 
 [0.1.2]: https://github.com/getindata/kedro-airflow-k8s/compare/0.1.1...0.1.2
 

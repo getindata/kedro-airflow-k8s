@@ -1,84 +1,18 @@
-from collections import defaultdict
+import webbrowser
 from pathlib import Path
-from typing import Optional
+from typing import Dict, List, Optional
 
 import click
 import fsspec
-import jinja2
-from jinja2.environment import TemplateStream
-from slugify import slugify
+from tabulate import tabulate
 
 from kedro_airflow_k8s.airflow import AirflowClient
+from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.context_helper import ContextHelper
-
-
-def _create_template_stream(
-    context_helper,
-    dag_name: Optional[str] = None,
-    schedule_interval: Optional[str] = None,
-    image: Optional[str] = None,
-) -> TemplateStream:
-    loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
-    jinja_env = jinja2.Environment(
-        autoescape=True, loader=loader, lstrip_blocks=True
-    )
-    jinja_env.filters["slugify"] = slugify
-    template = jinja_env.get_template("airflow_dag_template.j2")
-
-    package_name = context_helper.context.package_name
-
-    pipeline = context_helper.context.pipelines.get("__default__")
-    dependencies = defaultdict(list)
-
-    nodes_with_no_deps = set(node.name for node in pipeline.nodes)
-    for node, parent_nodes in pipeline.node_dependencies.items():
-        for parent in parent_nodes:
-            dependencies[parent].append(node)
-            nodes_with_no_deps = nodes_with_no_deps - set([node.name])
-
-    all_parent_nodes = set()
-    for _, parent_nodes in pipeline.node_dependencies.items():
-        all_parent_nodes = all_parent_nodes.union(
-            set(parent.name for parent in parent_nodes)
-        )
-    bottom_nodes = set(node.name for node in pipeline.nodes) - all_parent_nodes
-
-    return template.stream(
-        dag_name=dag_name or package_name,
-        experiment_name=package_name,
-        dependencies=dependencies,
-        project_name=context_helper.project_name,
-        pipeline=pipeline,
-        config=context_helper.config,
-        image=image or context_helper.config.image,
-        git_info=context_helper.session.store["git"],
-        base_nodes=nodes_with_no_deps,
-        bottom_nodes=bottom_nodes,
-        mlflow_url=context_helper.mlflow_config["mlflow_tracking_uri"],
-        env=context_helper.env,
-        schedule_interval=schedule_interval,
-        include_start_mlflow_experiment_operator=(
-            Path(__file__).parent / "operators/start_mlflow_experiment.py"
-        ).read_text(),
-    )
-
-
-def get_dag_filename_and_template_stream(
-    ctx,
-    cron_expression: Optional[str] = None,
-    dag_name: Optional[str] = None,
-    image: Optional[str] = None,
-):
-    context_helper = ctx.obj["context_helper"]
-    package_name = context_helper.context.package_name
-    dag_filename = f"{dag_name or package_name}.py"
-    template_stream = _create_template_stream(
-        context_helper,
-        dag_name=dag_name,
-        schedule_interval=cron_expression,
-        image=image,
-    )
-    return dag_filename, template_stream
+from kedro_airflow_k8s.template import (
+    get_cron_expression,
+    get_dag_filename_and_template_stream,
+)
 
 
 @click.group("airflow-k8s")
@@ -114,7 +48,7 @@ def airflow_group(ctx, metadata, env):
 def compile(ctx, image, target_path="dags/"):
     """Create an Airflow DAG for a project"""
     dag_filename, template_stream = get_dag_filename_and_template_stream(
-        ctx, image=image
+        ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
 
     target_path = Path(target_path) / dag_filename
@@ -129,7 +63,7 @@ def compile(ctx, image, target_path="dags/"):
     "--output",
     "output",
     type=str,
-    required=True,
+    required=False,
     help="Location where DAG file should be uploaded, for GCS use gs:// or "
     "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
@@ -147,9 +81,10 @@ def upload_pipeline(ctx, output: str, image: str):
     Uploads pipeline to Airflow DAG location
     """
     dag_filename, template_stream = get_dag_filename_and_template_stream(
-        ctx, image=image
+        ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
 
+    output = output or ctx.obj["context_helper"].config.output
     with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
         template_stream.dump(f)
 
@@ -160,6 +95,7 @@ def upload_pipeline(ctx, output: str, image: str):
     "--output",
     "output",
     type=str,
+    required=False,
     help="Location where DAG file should be uploaded, for GCS use gs:// or "
     "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
@@ -168,7 +104,7 @@ def upload_pipeline(ctx, output: str, image: str):
     "--cron-expression",
     type=str,
     help="Cron expression for recurring run",
-    required=True,
+    required=False,
 )
 @click.pass_context
 def schedule(ctx, output: str, cron_expression: str):
@@ -176,9 +112,10 @@ def schedule(ctx, output: str, cron_expression: str):
     Uploads pipeline to Airflow with given schedule
     """
     dag_filename, template_stream = get_dag_filename_and_template_stream(
-        ctx, cron_expression
+        ctx, cron_expression=get_cron_expression(ctx, cron_expression)
     )
 
+    output = output or ctx.obj["context_helper"].config.output
     with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
         template_stream.dump(f)
 
@@ -189,7 +126,7 @@ def schedule(ctx, output: str, cron_expression: str):
     "--output",
     "output",
     type=str,
-    required=True,
+    required=False,
     help="Location where DAG file should be uploaded, for GCS use gs:// or "
     "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
@@ -221,7 +158,7 @@ def schedule(ctx, output: str, cron_expression: str):
 @click.pass_context
 def run_once(
     ctx,
-    output: str,
+    output: Optional[str],
     dag_name: Optional[str],
     wait_for_completion: Optional[int],
     image: Optional[str],
@@ -230,18 +167,17 @@ def run_once(
     Uploads pipeline to Airflow and runs once
     """
     dag_filename, template_stream = get_dag_filename_and_template_stream(
-        ctx, dag_name=dag_name, image=image
+        ctx, dag_name=dag_name, image=image, cron_expression=None
     )
     context_helper = ctx.obj["context_helper"]
+    output = output or context_helper.config.output
 
     with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
         template_stream.dump(f)
 
-    airflow_client = AirflowClient(
-        context_helper.airflow_config["airflow_rest_api_uri"]
-    )
+    airflow_client = AirflowClient(context_helper.config.host)
     dag = airflow_client.wait_for_dag(
-        dag_id=dag_name or context_helper.context.package_name,
+        dag_id=dag_name or context_helper.config.run_config.run_name,
         tag=f'commit_sha:{context_helper.session.store["git"]["commit_sha"]}',
     )
     dag_run_id = airflow_client.trigger_dag_run(dag.dag_id)
@@ -252,4 +188,83 @@ def run_once(
                 dag.dag_id, dag_run_id, wait_for_completion
             )
             == "success"
+        )
+
+
+@airflow_group.command()
+@click.pass_context
+def list_pipelines(ctx):
+    """
+    List pipelines generated by this plugin
+    """
+
+    context_helper = ctx.obj["context_helper"]
+    airflow_client = AirflowClient(context_helper.config.host)
+
+    dags = airflow_client.list_dags("generated_with_kedro_airflow_k8s")
+
+    def name(tags: List[Dict[str, str]]) -> str:
+        experiment_tag = [
+            t["name"] for t in tags if t["name"].startswith("experiment_name")
+        ][0]
+        return experiment_tag[len("experiment_name") + 1 :]  # noqa: E203
+
+    pipelines = [[name(d.tags), d.dag_id] for d in dags]
+    pipelines.sort()
+    click.echo(tabulate(pipelines, headers=["Name", "ID"]))
+
+
+@airflow_group.command()
+@click.option(
+    "-d",
+    "--dag-name",
+    "dag_name",
+    type=str,
+    required=False,
+    help="View for this specific DAG will be opened",
+)
+@click.pass_context
+def ui(ctx, dag_name: Optional[str] = None):
+    """Open Apache Airflow UI in new browser tab"""
+    host = ctx.obj["context_helper"].config.host
+    if dag_name:
+        host = f"{host}/tree?dag_id={dag_name}"
+    webbrowser.open_new_tab(host)
+
+
+@airflow_group.command()
+@click.argument("airflow_url", type=str)
+@click.option("--with-github-actions", is_flag=True, default=False)
+@click.option("--output", type=str, default=False)
+@click.pass_context
+def init(ctx, airflow_url: str, with_github_actions: bool, output: str):
+    """Initializes configuration for the plugin"""
+    context_helper = ctx.obj["context_helper"]
+    project_name = context_helper.context.project_path.name
+    if with_github_actions:
+        image = f"gcr.io/${{google_project_id}}/{project_name}:${{commit_id}}"
+        run_name = f"{project_name}:${{commit_id}}"
+    else:
+        image = project_name
+        run_name = project_name
+
+    sample_config = PluginConfig.sample_config(
+        url=airflow_url,
+        image=image,
+        project=project_name,
+        run_name=run_name,
+        output=output,
+    )
+    config_path = Path.cwd().joinpath("conf/base/airflow-k8s.yaml")
+    config_path.parent.mkdir(exist_ok=True, parents=True)
+    with open(config_path, "w") as f:
+        f.write(sample_config)
+
+    click.echo(f"Configuration generated in {config_path}")
+
+    if with_github_actions:
+        PluginConfig.initialize_github_actions(
+            project_name,
+            where=Path.cwd(),
+            templates_dir=Path(__file__).parent / "templates",
         )
