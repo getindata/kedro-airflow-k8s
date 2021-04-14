@@ -38,6 +38,7 @@ with DAG(
     )
     {% endif %}
 
+    {% if not config.run_config.volume.disabled %}
     def create_pipeline_storage(pvc_name, ti, **kwargs):
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
@@ -67,7 +68,7 @@ with DAG(
         op_args=[pvc_name],
     )
 
-    {% if not config.run_config.volume.skip_init %}
+       {% if not config.run_config.volume.skip_init %}
     data_volume_init_definition = """
     apiVersion: v1
     kind: Pod
@@ -101,8 +102,8 @@ with DAG(
         startup_timeout_seconds=600,
         pod_template_file=data_volume_init_definition
     )
+        {% endif %}
     {% endif %}
-
     tasks = {}
     {% for node in pipeline.nodes %}
     pod_definition = """
@@ -174,26 +175,29 @@ with DAG(
     {% endfor %}
     {%- endfor %}
 
-    {% if not config.run_config.volume.skip_init %}
+    {% if not config.run_config.volume.disabled %}
+        {% if not config.run_config.volume.skip_init %}
     create_pipeline_storage >> data_volume_init
     data_volume_init >> delete_pipeline_storage
-    {% else %}
+        {% else %}
     create_pipeline_storage >> delete_pipeline_storage
+        {% endif %}
     {% endif %}
 
     {% for node in base_nodes %}
     {% if mlflow_url %}
     start_mlflow_run >> tasks['{{ node | slugify }}']
     {% endif %}
-    {% if not config.run_config.volume.skip_init %}
+    {% if not config.run_config.volume.disabled and not config.run_config.volume.skip_init %}
     data_volume_init >> tasks['{{ node | slugify }}']
     {% endif %}
     {% endfor %}
 
+    {% if not config.run_config.volume.disabled %}
     {% for node in bottom_nodes %}
     tasks['{{ node | slugify }}'] >> delete_pipeline_storage
     {% endfor %}
-
+    {% endif %}
 
 if __name__ == "__main__":
     dag.cli()
