@@ -115,10 +115,12 @@ with DAG(
         spec:
           securityContext:
             fsGroup: {{ config.run_config.volume.owner }}
+          {%- if not config.run_config.volume.disabled %}
           volumes:
             - name: storage
               persistentVolumeClaim:
                 claimName: """ + pvc_name + """
+          {%- endif %}
           containers:
             - name: base
               image: {{ image }}
@@ -133,9 +135,11 @@ with DAG(
                 - '{{ env }}'
                 - '--node'
                 - '{{ node.name }}'
+              {%- if not config.run_config.volume.disabled %}
               volumeMounts:
                 - mountPath: "/home/kedro/data"
                   name: storage
+              {%- endif %}
               resources:
                 requests:
                 {%- if resources[node.name].requests.cpu %}
