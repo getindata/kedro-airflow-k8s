@@ -1,6 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 import jinja2
 import kedro
@@ -8,6 +8,7 @@ from jinja2.environment import TemplateStream
 from slugify import slugify
 
 from kedro_airflow_k8s import version
+from kedro_airflow_k8s.config import ResourceConfig
 
 
 def _get_mlflow_url(context_helper):
@@ -28,6 +29,21 @@ def _get_jinja_template():
     jinja_env.filters["slugify"] = slugify
     template = jinja_env.get_template("airflow_dag_template.j2")
     return template
+
+
+def _node_resources(nodes, config) -> Dict[str, ResourceConfig]:
+    result = {}
+    default_config = config.__default__
+    for node in nodes:
+        resources = [
+            tag[len("resources:") :]  # noqa: E203
+            for tag in node.tags
+            if "resources:" in tag
+        ]
+        result[node.name] = (
+            config[resources[0]] if resources else default_config
+        )
+    return result
 
 
 def _create_template_stream(
@@ -60,6 +76,9 @@ def _create_template_stream(
         base_nodes=nodes_with_no_deps,
         bottom_nodes=bottom_nodes,
         config=context_helper.config,
+        resources=_node_resources(
+            pipeline.nodes, context_helper.config.run_config.resources
+        ),
         mlflow_url=_get_mlflow_url(context_helper),
         env=context_helper.env,
         project_name=context_helper.project_name,

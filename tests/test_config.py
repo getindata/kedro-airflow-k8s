@@ -22,6 +22,19 @@ run_config:
         access_modes: [ReadWriteMany]
         skip_init: True
         owner: 1000
+    resources:
+        __default__:
+            labels:
+                size: mammoth
+            requests:
+                cpu: "1"
+                memory: "1Gi"
+            limits:
+                cpu: "2"
+                memory: "2Gi"
+        custom_resource_config_name:
+            requests:
+                cpu: "8"
 """
 
 
@@ -45,6 +58,24 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.volume.access_modes == ["ReadWriteMany"]
         assert cfg.run_config.volume.skip_init is True
         assert cfg.run_config.volume.owner == 1000
+        assert cfg.run_config.resources
+        resources = cfg.run_config.resources
+        assert resources.__default__
+        assert resources.__default__.labels
+        assert resources.__default__.labels["size"] == "mammoth"
+        assert resources.__default__.requests
+        assert resources.__default__.requests.cpu == "1"
+        assert resources.__default__.requests.memory == "1Gi"
+        assert resources.__default__.limits
+        assert resources.__default__.limits.cpu == "2"
+        assert resources.__default__.limits.memory == "2Gi"
+        assert resources.custom_resource_config_name
+        assert not resources.custom_resource_config_name.labels
+        assert resources.custom_resource_config_name.requests
+        assert resources.custom_resource_config_name.requests.cpu == "8"
+        assert not resources.custom_resource_config_name.requests.memory
+        assert not resources.custom_resource_config_name.limits.memory
+        assert not resources.custom_resource_config_name.limits.cpu
 
     def test_defaults(self):
         cfg = PluginConfig({"run_config": {}})
@@ -60,6 +91,7 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.volume.access_modes == ["ReadWriteOnce"]
         assert cfg.run_config.volume.skip_init is False
         assert cfg.run_config.volume.owner == 0
+        assert cfg.run_config.resources
 
     def test_run_name_is_experiment_name_by_default(self):
         cfg = PluginConfig(

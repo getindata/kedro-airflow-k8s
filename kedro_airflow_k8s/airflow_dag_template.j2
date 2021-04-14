@@ -135,6 +135,28 @@ with DAG(
               volumeMounts:
                 - mountPath: "/home/kedro/data"
                   name: storage
+              resources:
+                requests:
+                {%- if resources[node.name].requests.cpu %}
+                  cpu: "{{ resources[node.name].requests.cpu }}"
+                {%- endif %}
+                {%- if resources[node.name].requests.memory %}
+                  memory: "{{ resources[node.name].requests.memory }}"
+                {%- endif %}
+                limits:
+                {%- if resources[node.name].limits.cpu %}
+                  cpu: "{{ resources[node.name].limits.cpu }}"
+                {%- endif %}
+                {%- if resources[node.name].limits.memory %}
+                  memory: "{{ resources[node.name].limits.memory }}"
+                {%- endif %}
+          {%- if resources[node.name].labels %}
+          nodeSelector:
+            {%- for key, value in resources[node.name].labels.items() %}
+            {{ key }}: {{ value }}
+            {%- endfor %}
+          {% endif %}
+
     """
 
     tasks["{{ node.name | slugify }}"] = KubernetesPodOperator(

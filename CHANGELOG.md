@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Resources configuration added that allows describing cpu and memory resources required in k8s by pods 
+
 ## [0.2.0] - 2021-04-01
 
 -   Command `list-pipelines` allows display of pipelines which were generated with the plugin
