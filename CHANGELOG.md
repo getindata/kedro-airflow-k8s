@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2021-04-15
+
 -   Resources configuration added that allows describing cpu and memory resources required in k8s by pods
 -   Shared persistent volume can be made optional
 -   Pod startup timeout is configurable, with default to 600 seconds
@@ -51,7 +53,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.3.0...HEAD
+
+[0.3.0]: https://github.com/getindata/kedro-airflow-k8s/compare/0.2.0...0.3.0
 
 [0.2.0]: https://github.com/getindata/kedro-airflow-k8s/compare/0.1.2...0.2.0
 
