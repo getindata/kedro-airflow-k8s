@@ -16,6 +16,7 @@ run_config:
     run_name: test-experiment-branch
     cron_expression: "@hourly"
     description: "test pipeline"
+    startup_timeout: 120
     volume:
         storageclass: kms
         size: 3Gi
@@ -48,6 +49,7 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config
         assert cfg.run_config.image == "test.image:1234"
         assert cfg.run_config.image_pull_policy == "Always"
+        assert cfg.run_config.startup_timeout == 120
         assert cfg.run_config.namespace == "airflow-test"
         assert cfg.run_config.experiment_name == "test-experiment"
         assert cfg.run_config.run_name == "test-experiment-branch"
@@ -84,6 +86,7 @@ class TestPluginConfig(unittest.TestCase):
 
         assert cfg.run_config
         assert cfg.run_config.image_pull_policy == "IfNotPresent"
+        assert cfg.run_config.startup_timeout == 600
         assert cfg.run_config.cron_expression == "@daily"
         assert cfg.run_config.description is None
 

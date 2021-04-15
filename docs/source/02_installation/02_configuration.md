@@ -18,6 +18,9 @@ run_config:
     # Pull policy to be used for the steps. Use Always if you push the images
     # on the same tag, or Never if you use only local images
     image_pull_policy: IfNotPresent
+    
+    # Pod startup timeout in seconds - if timeout passes the pipeline fails, default to 600 
+    startup_time: 600
 
     # Namespace for Airflow pods to be created
     namespace: airflow
