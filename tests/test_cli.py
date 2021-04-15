@@ -26,13 +26,15 @@ from kedro_airflow_k8s.context_helper import ContextHelper
 class TestPluginCLI:
     @pytest.fixture(scope="class")
     def pipeline(self):
-        def node(name):
+        def node(name, resource=None):
             nd = MagicMock()
             nd.name = name
+            if resource:
+                nd.tags = set({f"resources:{resource}"})
             return nd
 
         start = node("start")
-        task_1, task_2 = node("task_1"), node("task_2")
+        task_1, task_2 = node("task_1"), node("task_2", resource="huge")
         finish = node("finish")
         nodes = [start, task_1, task_2, finish]
 
@@ -62,10 +64,24 @@ class TestPluginCLI:
                     "namespace": "test_ns",
                     "experiment_name": "kedro_airflow_k8s",
                     "cron_expression": None,
+                    "startup_timeout": 120,
                     "volume": {
                         "access_modes": ["ReadWriteMany"],
                         "size": "3Gi",
                         "storageclass": "with-encryption",
+                    },
+                    "resources": {
+                        "__default__": {
+                            "requests": {"cpu": "2", "memory": "1Gi"},
+                            "limits": {"cpu": "4", "memory": "4Gi"},
+                        },
+                        "huge": {
+                            "labels": {
+                                "target/k8s.io": "mammoth",
+                                "custom_label": "test",
+                            },
+                            "requests": {"cpu": "16", "memory": "128Gi"},
+                        },
                     },
                 },
             }
@@ -97,6 +113,14 @@ class TestPluginCLI:
         assert "'storage':'3Gi'" in dag_content
         assert "schedule_interval=None" in dag_content
         assert "storage_class_name='with-encryption'" in dag_content
+        assert 'memory: "1Gi"' in dag_content
+        assert 'memory: "4Gi"' in dag_content
+        assert 'memory: "128Gi"' in dag_content
+        assert 'cpu: "2"' in dag_content
+        assert 'cpu: "4"' in dag_content
+        assert 'cpu: "16"' in dag_content
+        assert "target/k8s.io: mammoth" in dag_content
+        assert "startup_timeout_seconds=120" in dag_content
 
     def test_upload_pipeline(self, context_helper):
         config = dict(context_helper=context_helper)

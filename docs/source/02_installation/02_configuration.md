@@ -18,6 +18,9 @@ run_config:
     # Pull policy to be used for the steps. Use Always if you push the images
     # on the same tag, or Never if you use only local images
     image_pull_policy: IfNotPresent
+    
+    # Pod startup timeout in seconds - if timeout passes the pipeline fails, default to 600 
+    startup_time: 600
 
     # Namespace for Airflow pods to be created
     namespace: airflow
@@ -52,6 +55,60 @@ run_config:
         # Allows to specify fsGroup executing pipelines within containers
         # Default: root user group (to avoid issues with volumes in GKE)
         owner: 0
+        # If set to True, shared persistent volume will not be created at all and all other parameters under
+        # `volume` are discarded
+        disabled: False
+
+    # Optional resources specification
+    resources:
+        # Default configuration used by all nodes that do not declare the
+        # resource configuration. It's optional. If node does not declare the resource
+        # configuration, __default__ is assigned by default, otherwise cluster defaults
+        # will be used.
+        __default__:
+            # Optional labels to be put into pod node selector
+            labels:
+                #Labels are user provided key value pairs
+                node_pool_label/k8s.io: example_value
+            requests:
+                #Optional amount of cpu resources requested from k8s
+                cpu: "1"
+                Optional amount of memory resource requested from k8s
+                memory: "1Gi"
+            limits:
+                #Optional amount of cpu resources limit on k8s
+                cpu: "1"
+                #Optional amount of memory resource limit on k8s
+                memory: "1Gi"
+        # Other arbitrary configurations to use, for example to indicate some exception resources
+        huge_machines:
+            labels:
+                big_node_pool: huge.10x
+            requests:
+                cpu: "16"
+                memory: "128Gi"
+            limits:
+                cpu: "32"
+                memory: "256Gi"
+```
+
+## Indicate resources in pipeline nodes
+
+Every node declared in `kedro` pipelines is executed inside pod. Pod definition declares resources to be used based
+on provided plugin configuration and presence of the tag `resources` in `kedro` node definition.
+
+If no such tag is present, plugin will assign `__default__` from plugin `resources` configuration.
+If no `__default__` is given in plugin `resources` configuration or no `resources` configuration is given, pod 
+definition will not be given any information on how to allocate resources to pod, thus default k8s cluster values
+will be used.
+
+```python
+# train_model node is assigned resources from `huge_machines` configuration, if no such configuration exists,
+# `__default__` is used, and if __default__ does not exist, k8s cluster default values are used
+node(func=train_model, inputs=["X_train", "y_train"], outputs="regressor", name='train_model', tags=['resources:huge_machines'])
+# evaluate_model node is assigned resources `__default__` configuration and if it does not exist,
+# k8s cluster default values are used
+node(func=evaluate_model, inputs=["X_train", "y_train"], outputs="regressor", name='evaluate_model')
 ```
 
 ## Dynamic configuration support

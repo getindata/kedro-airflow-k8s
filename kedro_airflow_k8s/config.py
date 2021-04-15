@@ -19,6 +19,9 @@ run_config:
     # on the same tag, or Never if you use only local images
     image_pull_policy: IfNotPresent
 
+    # Pod startup timeout in seconds
+    startup_timeout: 600
+
     # Namespace for Airflow pods to be created
     namespace: airflow
 
@@ -52,6 +55,47 @@ run_config:
         # Allows to specify fsGroup executing pipelines within containers
         # Default: root user group (to avoid issues with volumes in GKE)
         owner: 0
+        # Tells if volume should not be used at all, false by default
+        disabled: False
+
+    # Optional resources specification
+    #resources:
+        # Default configuration used by all nodes that do not declare the
+        # resource configuration. It's optional. If node does not declare the resource
+        # configuration, __default__ is assigned by default, otherwise cluster defaults
+        # will be used.
+        #__default__:
+            # Optional labels to be put into pod node selector
+            #labels:
+                #Labels are user provided key value pairs
+                #label_key: label_value
+            #requests:
+                #Optional amount of cpu resources requested from k8s
+                #cpu: "1"
+                #Optional amount of memory resource requested from k8s
+                #memory: "1Gi"
+            #limits:
+                #Optional amount of cpu resources limit on k8s
+                #cpu: "1"
+                #Optional amount of memory resource limit on k8s
+                #memory: "1Gi"
+        # Other arbitrary configurations to use
+        #custom_resource_config_name:
+            # Optional labels to be put into pod node selector
+            #labels:
+                #Labels are user provided key value pairs
+                #label_key: label_value
+            #requests:
+                #Optional amount of cpu resources requested from k8s
+                #cpu: "1"
+                #Optional amount of memory resource requested from k8s
+                #memory: "1Gi"
+            #limits:
+                #Optional amount of cpu resources limit on k8s
+                #cpu: "1"
+                #Optional amount of memory resource limit on k8s
+                #memory: "1Gi"
+
 """
 
 
@@ -77,6 +121,38 @@ class Config(object):
         return self._raw == other._raw
 
 
+class ResourceNodeConfig(Config):
+    @property
+    def cpu(self):
+        return self._get_or_default("cpu", None)
+
+    @property
+    def memory(self):
+        return self._get_or_default("memory", None)
+
+
+class ResourceConfig(Config):
+    @property
+    def labels(self):
+        return self._get_or_default("labels", {})
+
+    @property
+    def requests(self):
+        return ResourceNodeConfig(self._get_or_default("requests", {}))
+
+    @property
+    def limits(self):
+        return ResourceNodeConfig(self._get_or_default("limits", {}))
+
+
+class ResourcesConfig(Config):
+    def __getattr__(self, item):
+        return self[item]
+
+    def __getitem__(self, item):
+        return ResourceConfig(self._get_or_default(item, {}))
+
+
 class RunConfig(Config):
     @property
     def image(self):
@@ -85,6 +161,10 @@ class RunConfig(Config):
     @property
     def image_pull_policy(self):
         return self._get_or_default("image_pull_policy", "IfNotPresent")
+
+    @property
+    def startup_timeout(self):
+        return self._get_or_default("startup_timeout", 600)
 
     @property
     def namespace(self):
@@ -111,11 +191,20 @@ class RunConfig(Config):
         cfg = self._get_or_default("volume", {})
         return VolumeConfig(cfg)
 
+    @property
+    def resources(self):
+        cfg = self._get_or_default("resources", {})
+        return ResourcesConfig(cfg)
+
     def _get_prefix(self):
         return "run_config."
 
 
 class VolumeConfig(Config):
+    @property
+    def disabled(self):
+        return self._get_or_default("disabled", False)
+
     @property
     def storageclass(self):
         return self._get_or_default("storageclass", None)

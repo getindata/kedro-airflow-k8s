@@ -26,7 +26,7 @@ with DAG(
     tags=['commit_sha:{{ git_info.commit_sha }}',
             'generated_with_kedro_airflow_k8s:{{ kedro_airflow_k8s_version }}',
             'experiment_name:'+EXPERIMENT_NAME],
-    params={"example_key": "example_value"},
+    params={},
 ) as dag:
 
     pvc_name = '{{ project_name | safe | slugify }}.{% raw %}{{ ts_nodash | lower  }}{% endraw %}'
@@ -38,6 +38,7 @@ with DAG(
     )
     {% endif %}
 
+    {% if not config.run_config.volume.disabled %}
     def create_pipeline_storage(pvc_name, ti, **kwargs):
         with client.ApiClient(config.load_incluster_config()) as api_client:
             v1 = client.CoreV1Api(api_client)
@@ -67,7 +68,7 @@ with DAG(
         op_args=[pvc_name],
     )
 
-    {% if not config.run_config.volume.skip_init %}
+       {% if not config.run_config.volume.skip_init %}
     data_volume_init_definition = """
     apiVersion: v1
     kind: Pod
@@ -98,11 +99,11 @@ with DAG(
     data_volume_init = KubernetesPodOperator(
         task_id="data_volume_init",
         is_delete_operator_pod=True,
-        startup_timeout_seconds=600,
+        startup_timeout_seconds={{ config.run_config.startup_timeout }},
         pod_template_file=data_volume_init_definition
     )
+        {% endif %}
     {% endif %}
-
     tasks = {}
     {% for node in pipeline.nodes %}
     pod_definition = """
@@ -114,10 +115,12 @@ with DAG(
         spec:
           securityContext:
             fsGroup: {{ config.run_config.volume.owner }}
+          {%- if not config.run_config.volume.disabled %}
           volumes:
             - name: storage
               persistentVolumeClaim:
                 claimName: """ + pvc_name + """
+          {%- endif %}
           containers:
             - name: base
               image: {{ image }}
@@ -132,15 +135,39 @@ with DAG(
                 - '{{ env }}'
                 - '--node'
                 - '{{ node.name }}'
+              {%- if not config.run_config.volume.disabled %}
               volumeMounts:
                 - mountPath: "/home/kedro/data"
                   name: storage
+              {%- endif %}
+              resources:
+                requests:
+                {%- if resources[node.name].requests.cpu %}
+                  cpu: "{{ resources[node.name].requests.cpu }}"
+                {%- endif %}
+                {%- if resources[node.name].requests.memory %}
+                  memory: "{{ resources[node.name].requests.memory }}"
+                {%- endif %}
+                limits:
+                {%- if resources[node.name].limits.cpu %}
+                  cpu: "{{ resources[node.name].limits.cpu }}"
+                {%- endif %}
+                {%- if resources[node.name].limits.memory %}
+                  memory: "{{ resources[node.name].limits.memory }}"
+                {%- endif %}
+          {%- if resources[node.name].labels %}
+          nodeSelector:
+            {%- for key, value in resources[node.name].labels.items() %}
+            {{ key }}: {{ value }}
+            {%- endfor %}
+          {% endif %}
+
     """
 
     tasks["{{ node.name | slugify }}"] = KubernetesPodOperator(
         task_id="{{ node.name | slugify }}",
         is_delete_operator_pod=True,
-        startup_timeout_seconds=600,
+        startup_timeout_seconds={{ config.run_config.startup_timeout }},
         pod_template_file=pod_definition
     )
     {% endfor %}
@@ -152,26 +179,29 @@ with DAG(
     {% endfor %}
     {%- endfor %}
 
-    {% if not config.run_config.volume.skip_init %}
+    {% if not config.run_config.volume.disabled %}
+        {% if not config.run_config.volume.skip_init %}
     create_pipeline_storage >> data_volume_init
     data_volume_init >> delete_pipeline_storage
-    {% else %}
+        {% else %}
     create_pipeline_storage >> delete_pipeline_storage
+        {% endif %}
     {% endif %}
 
     {% for node in base_nodes %}
     {% if mlflow_url %}
     start_mlflow_run >> tasks['{{ node | slugify }}']
     {% endif %}
-    {% if not config.run_config.volume.skip_init %}
+    {% if not config.run_config.volume.disabled and not config.run_config.volume.skip_init %}
     data_volume_init >> tasks['{{ node | slugify }}']
     {% endif %}
     {% endfor %}
 
+    {% if not config.run_config.volume.disabled %}
     {% for node in bottom_nodes %}
     tasks['{{ node | slugify }}'] >> delete_pipeline_storage
     {% endfor %}
-
+    {% endif %}
 
 if __name__ == "__main__":
     dag.cli()
