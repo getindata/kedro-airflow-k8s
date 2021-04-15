@@ -22,6 +22,7 @@ run_config:
         access_modes: [ReadWriteMany]
         skip_init: True
         owner: 1000
+        disabled: True
     resources:
         __default__:
             labels:
@@ -58,6 +59,7 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.volume.access_modes == ["ReadWriteMany"]
         assert cfg.run_config.volume.skip_init is True
         assert cfg.run_config.volume.owner == 1000
+        assert cfg.run_config.volume.disabled is True
         assert cfg.run_config.resources
         resources = cfg.run_config.resources
         assert resources.__default__
@@ -86,6 +88,7 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.description is None
 
         assert cfg.run_config.volume
+        assert cfg.run_config.volume.disabled is False
         assert cfg.run_config.volume.storageclass is None
         assert cfg.run_config.volume.size == "1Gi"
         assert cfg.run_config.volume.access_modes == ["ReadWriteOnce"]

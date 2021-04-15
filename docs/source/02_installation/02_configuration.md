@@ -52,6 +52,9 @@ run_config:
         # Allows to specify fsGroup executing pipelines within containers
         # Default: root user group (to avoid issues with volumes in GKE)
         owner: 0
+        # If set to True, shared persistent volume will not be created at all and all other parameters under
+        # `volume` are discarded
+        disabled: False
 
     # Optional resources specification
     resources:
