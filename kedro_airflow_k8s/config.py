@@ -52,6 +52,8 @@ run_config:
         # Allows to specify fsGroup executing pipelines within containers
         # Default: root user group (to avoid issues with volumes in GKE)
         owner: 0
+        # Tells if volume should not be used at all, false by default
+        disabled: False
 
     # Optional resources specification
     #resources:
@@ -192,6 +194,10 @@ class RunConfig(Config):
 
 
 class VolumeConfig(Config):
+    @property
+    def disabled(self):
+        return self._get_or_default("disabled", False)
+
     @property
     def storageclass(self):
         return self._get_or_default("storageclass", None)

@@ -4,6 +4,7 @@
 
 -   Resources configuration added that allows describing cpu and memory resources required in k8s by pods 
 -   Support of S3 as DAG destination
+-   Shared persistent volume can be made optional
 
 ## [0.2.0] - 2021-04-01
 
