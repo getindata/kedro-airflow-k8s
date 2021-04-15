@@ -64,6 +64,7 @@ class TestPluginCLI:
                     "namespace": "test_ns",
                     "experiment_name": "kedro_airflow_k8s",
                     "cron_expression": None,
+                    "startup_timeout": 120,
                     "volume": {
                         "access_modes": ["ReadWriteMany"],
                         "size": "3Gi",
@@ -119,6 +120,7 @@ class TestPluginCLI:
         assert 'cpu: "4"' in dag_content
         assert 'cpu: "16"' in dag_content
         assert "target/k8s.io: mammoth" in dag_content
+        assert "startup_timeout_seconds=120" in dag_content
 
     def test_upload_pipeline(self, context_helper):
         config = dict(context_helper=context_helper)

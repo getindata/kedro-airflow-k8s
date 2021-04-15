@@ -19,6 +19,9 @@ run_config:
     # on the same tag, or Never if you use only local images
     image_pull_policy: IfNotPresent
 
+    # Pod startup timeout in seconds
+    startup_timeout: 600
+
     # Namespace for Airflow pods to be created
     namespace: airflow
 
@@ -158,6 +161,10 @@ class RunConfig(Config):
     @property
     def image_pull_policy(self):
         return self._get_or_default("image_pull_policy", "IfNotPresent")
+
+    @property
+    def startup_timeout(self):
+        return self._get_or_default("startup_timeout", 600)
 
     @property
     def namespace(self):

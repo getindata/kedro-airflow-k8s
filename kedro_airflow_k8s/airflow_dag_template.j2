@@ -99,7 +99,7 @@ with DAG(
     data_volume_init = KubernetesPodOperator(
         task_id="data_volume_init",
         is_delete_operator_pod=True,
-        startup_timeout_seconds=600,
+        startup_timeout_seconds={{ config.run_config.startup_timeout }},
         pod_template_file=data_volume_init_definition
     )
         {% endif %}
@@ -167,7 +167,7 @@ with DAG(
     tasks["{{ node.name | slugify }}"] = KubernetesPodOperator(
         task_id="{{ node.name | slugify }}",
         is_delete_operator_pod=True,
-        startup_timeout_seconds=600,
+        startup_timeout_seconds={{ config.run_config.startup_timeout }},
         pod_template_file=pod_definition
     )
     {% endfor %}
