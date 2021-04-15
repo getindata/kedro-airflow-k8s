@@ -26,7 +26,7 @@ with DAG(
     tags=['commit_sha:{{ git_info.commit_sha }}',
             'generated_with_kedro_airflow_k8s:{{ kedro_airflow_k8s_version }}',
             'experiment_name:'+EXPERIMENT_NAME],
-    params={"example_key": "example_value"},
+    params={},
 ) as dag:
 
     pvc_name = '{{ project_name | safe | slugify }}.{% raw %}{{ ts_nodash | lower  }}{% endraw %}'
