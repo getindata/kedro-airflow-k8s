@@ -16,6 +16,9 @@ args = {
 {% if mlflow_url %}
 {{ include_start_mlflow_experiment_operator | safe }}
 {% endif %}
+{% if not config.run_config.volume.disabled %}
+{{ include_create_pipeline_storage_operator | safe }}
+{% endif %}
 
 with DAG(
     dag_id='{{ dag_name }}',
@@ -39,21 +42,12 @@ with DAG(
     {% endif %}
 
     {% if not config.run_config.volume.disabled %}
-    def create_pipeline_storage(pvc_name, ti, **kwargs):
-        with client.ApiClient(config.load_incluster_config()) as api_client:
-            v1 = client.CoreV1Api(api_client)
-
-            pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name=pvc_name, namespace='{{ config.run_config.namespace }}'),
-                    spec=k8s.V1PersistentVolumeClaimSpec(access_modes={{ config.run_config.volume.access_modes | safe }}, {% if config.run_config.volume.storageclass %}storage_class_name='{{ config.run_config.volume.storageclass }}',{% endif %}
-                    resources=k8s.V1ResourceRequirements(requests={'storage':'{{ config.run_config.volume.size }}'})))
-
-            v1.create_namespaced_persistent_volume_claim('{{ config.run_config.namespace }}', pvc)
-            ti.xcom_push('pvc_name', pvc_name)
-
-    create_pipeline_storage = PythonOperator(
-        task_id='create_pipeline_storage',
-        python_callable=create_pipeline_storage,
-        op_args=[pvc_name],
+    create_pipeline_storage = CreatePipelineStorageOperator(
+        pvc_name=pvc_name,
+        namespace='{{ config.run_config.namespace }}',
+        access_modes={{config.run_config.volume.access_modes | safe}},
+        volume_size='{{ config.run_config.volume.size }}',
+        storage_class_name='{{ config.run_config.volume.storageclass }}'
     )
 
     def delete_pipeline_storage(pvc_name, ti, **kwargs):

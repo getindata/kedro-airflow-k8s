@@ -53,7 +53,7 @@ class StartMLflowExperimentOperator(PythonOperator):
         On pipeline start it may be required to create experiment if it does not exist
         which happens in this method. Obtains experiment run_id and passes to xcom as
          `mlflow_run_id` so it can be referenced by ML related tasks.
-        :param task_instance: airflow ti
+        :param ti: airflow ti
         :return: mlflow experiment run_id
         """
         from mlflow.protos.databricks_pb2 import (

@@ -90,6 +90,9 @@ def _create_template_stream(
         include_start_mlflow_experiment_operator=(
             Path(__file__).parent / "operators/start_mlflow_experiment.py"
         ).read_text(),
+        include_create_pipeline_storage_operator=(
+            Path(__file__).parent / "operators/create_pipeline_storage.py"
+        ).read_text(),
     )
 
 
