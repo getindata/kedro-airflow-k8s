@@ -7,10 +7,10 @@ from airflow.models import TaskInstance
 from airflow.utils import timezone
 from kubernetes import client
 
-from kedro_airflow_k8s.operators import create_pipeline_storage
+from kedro_airflow_k8s.operators import delete_pipeline_storage
 
 
-class TestCreatePipelineStorageOperator(unittest.TestCase):
+class TestDeletePipelineStorageOperator(unittest.TestCase):
     @staticmethod
     def create_context(task):
         dag = DAG(dag_id="dag")
@@ -24,22 +24,19 @@ class TestCreatePipelineStorageOperator(unittest.TestCase):
             "ti": task_instance,
         }
 
-    def test_create_pipeline_storage(self):
+    def test_delete_pipeline_storage(self):
         with patch("kubernetes.config.load_incluster_config"), patch(
             "kubernetes.client.ApiClient"
         ), patch.object(
-            client.CoreV1Api, "create_namespaced_persistent_volume_claim"
-        ) as create:
-            op = create_pipeline_storage.CreatePipelineStorageOperator(
+            client.CoreV1Api, "delete_namespaced_persistent_volume_claim"
+        ) as delete:
+            op = delete_pipeline_storage.DeletePipelineStorageOperator(
                 task_id="test",
                 pvc_name="some_{{ ts_nodash }}",
                 namespace="test_ns",
-                access_modes=["ReadWriteOnce"],
-                volume_size="10Gi",
-                storage_class_name="fast-ssd",
             )
 
             context = self.create_context(op)
 
-            assert op.execute(context=context) == "some_{{ ts_nodash }}"
-            create.assert_called_once()
+            op.execute(context=context)
+            delete.assert_called_once()

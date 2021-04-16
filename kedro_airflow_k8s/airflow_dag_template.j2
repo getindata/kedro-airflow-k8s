@@ -18,6 +18,7 @@ args = {
 {% endif %}
 {% if not config.run_config.volume.disabled %}
 {{ include_create_pipeline_storage_operator | safe }}
+{{ include_delete_pipeline_storage_operator | safe }}
 {% endif %}
 
 with DAG(
@@ -50,16 +51,9 @@ with DAG(
         storage_class_name='{{ config.run_config.volume.storageclass }}'
     )
 
-    def delete_pipeline_storage(pvc_name, ti, **kwargs):
-        with client.ApiClient(config.load_incluster_config()) as api_client:
-            v1 = client.CoreV1Api(api_client)
-            v1.delete_namespaced_persistent_volume_claim(name=pvc_name, namespace='{{ config.run_config.namespace }}')
-
-    delete_pipeline_storage = PythonOperator(
-        task_id='delete_pipeline_storage',
-        python_callable=delete_pipeline_storage,
-        trigger_rule='all_done',
-        op_args=[pvc_name],
+    delete_pipeline_storage = DeletePipelineStorageOperator(
+        pvc_name=pvc_name,
+        namespace='{{ config.run_config.namespace }}'
     )
 
        {% if not config.run_config.volume.skip_init %}

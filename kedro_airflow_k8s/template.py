@@ -93,6 +93,9 @@ def _create_template_stream(
         include_create_pipeline_storage_operator=(
             Path(__file__).parent / "operators/create_pipeline_storage.py"
         ).read_text(),
+        include_delete_pipeline_storage_operator=(
+            Path(__file__).parent / "operators/delete_pipeline_storage.py"
+        ).read_text(),
     )
 
 
