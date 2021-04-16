@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Support of S3 as DAG destination
+
 ## [0.3.0] - 2021-04-15
 
 -   Resources configuration added that allows describing cpu and memory resources required in k8s by pods
