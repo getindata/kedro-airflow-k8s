@@ -42,3 +42,15 @@ class TestContextHelper(unittest.TestCase):
             create().load_context().config_loader.get.return_value = {}
             helper = ContextHelper.init(metadata, "test")
             assert helper.config == PluginConfig({})
+
+    def test_pipeline_selection(self):
+        metadata = Mock()
+        metadata.package_name = "test_package"
+        context = MagicMock()
+        context.pipelines = {"feature_engineering": "pipeline_mock"}
+        with patch.object(KedroSession, "create") as create:
+            create().load_context.return_value = context
+            helper = ContextHelper.init(
+                metadata, "test", "feature_engineering"
+            )
+            assert helper.pipeline == "pipeline_mock"

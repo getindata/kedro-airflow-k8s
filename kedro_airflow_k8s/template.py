@@ -54,7 +54,7 @@ def _create_template_stream(
 ) -> TemplateStream:
     template = _get_jinja_template()
 
-    pipeline = context_helper.context.pipelines.get("__default__")
+    pipeline = context_helper.pipeline
     dependencies = defaultdict(list)
 
     nodes_with_no_deps = set(node.name for node in pipeline.nodes)
@@ -84,6 +84,7 @@ def _create_template_stream(
         project_name=context_helper.project_name,
         dag_name=dag_name,
         image=image,
+        pipeline_name=context_helper.pipeline_name,
         schedule_interval=schedule_interval,
         git_info=context_helper.session.store["git"],
         kedro_airflow_k8s_version=version,

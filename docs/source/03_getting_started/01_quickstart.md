@@ -73,6 +73,7 @@ Usage: kedro airflow-k8s [OPTIONS] COMMAND [ARGS]...
 
 Options:
 -e, --env TEXT  Environment to use.
+-p, --pipeline TEXT  Pipeline name to pick.
 -h, --help      Show this message and exit.
 
 Commands:
@@ -183,3 +184,6 @@ or `gs://` prefix in the parameter (this requires plugin to be installed with `p
 
 In order to use AWS S3 as storage, prefix output with `s3://` (this requires plugin to be installed with 
 `pip install kedro-airflow-k8s[aws]`).
+
+> It's optional to indicate which pipeline to pick, with `-p` option. By default, pipeline name `__default__` is
+> used. Option `-p` can refer to other pipeline by name it's registered inside kedro hook.

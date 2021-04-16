@@ -28,11 +28,20 @@ def commands():
 @click.option(
     "-e", "--env", "env", type=str, default="local", help="Environment to use."
 )
+@click.option(
+    "-p",
+    "--pipeline",
+    "pipeline",
+    type=str,
+    default="__default__",
+    required=False,
+    help="Pipeline name to pick.",
+)
 @click.pass_obj
 @click.pass_context
-def airflow_group(ctx, metadata, env):
+def airflow_group(ctx, metadata, env, pipeline):
     ctx.ensure_object(dict)
-    ctx.obj["context_helper"] = ContextHelper.init(metadata, env)
+    ctx.obj["context_helper"] = ContextHelper.init(metadata, env, pipeline)
 
 
 @airflow_group.command()
