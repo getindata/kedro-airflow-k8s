@@ -1,3 +1,8 @@
+"""
+Module contains Apache Airflow operator that creates k8s pod for execution of
+kedro node.
+"""
+
 from typing import Dict, Optional
 
 from airflow.kubernetes.pod_generator import PodGenerator
@@ -8,15 +13,20 @@ from kubernetes.client import models as k8s
 
 
 class NodePodOperator(KubernetesPodOperator):
+    """
+    Operator starts pod with target image with kedro projects and executes one node from
+    the pipeline. This class simplifies creation of pods by providing convenient options.
+    """
+
     def __init__(
         self,
         node_name: str,
         namespace: str,
-        pvc_name: str,
         image: str,
         image_pull_policy: str,
         env: str,
         task_id: str,
+        pvc_name: Optional[str] = None,
         startup_timeout: int = 600,
         volume_disabled: bool = False,
         volume_owner: int = 0,
@@ -28,6 +38,27 @@ class NodePodOperator(KubernetesPodOperator):
         node_selector_labels: Optional[Dict[str, str]] = None,
         source: str = "/home/kedro/data",
     ):
+        """
+
+        :param node_name: name from the kedro pipeline
+        :param namespace: k8s namespace the pod will execute in
+        :param pvc_name: name of the shared storage attached to this pod
+        :param image: image to be mounted
+        :param image_pull_policy: k8s image pull policy
+        :param env: kedro pipeline configuration name, provided with '-e' option
+        :param task_id: Airflow id to override
+        :param startup_timeout: fter the amount provided in seconds the pod start is
+                                timed out
+        :param volume_disabled: if set to true, shared volume is not attached
+        :param volume_owner: if volume is not disabled, fs group associated with this pod
+        :param mlflow_enabled: if mlflow_run_id value is passed from xcom
+        :param requests_cpu: k8s requests cpu value
+        :param requests_memory: k8s requests memory value
+        :param limits_cpu: k8s limits cpu value
+        :param limits_memory: k8s limits memory value
+        :param node_selector_labels: dictionary of labels to be put into pod node selector
+        :param source: mount point of shared storage
+        """
         self._task_id = task_id
         self._volume_disabled = volume_disabled
         self._pvc_name = pvc_name
@@ -35,7 +66,7 @@ class NodePodOperator(KubernetesPodOperator):
 
         super().__init__(
             task_id=task_id,
-            security_context=self.create_security_context(
+            security_context=self._create_security_context(
                 volume_disabled, volume_owner
             ),
             namespace=namespace,
@@ -47,7 +78,7 @@ class NodePodOperator(KubernetesPodOperator):
             ]
             if not volume_disabled
             else [],
-            resources=self.create_resources(
+            resources=self._create_resources(
                 requests_cpu, requests_memory, limits_cpu, limits_memory
             ),
             startup_timeout_seconds=startup_timeout,
@@ -56,7 +87,7 @@ class NodePodOperator(KubernetesPodOperator):
             node_selector=node_selector_labels,
         )
 
-    def create_resources(
+    def _create_resources(
         self, requests_cpu, requests_memory, limits_cpu, limits_memory
     ):
         requests = {}
@@ -73,6 +104,12 @@ class NodePodOperator(KubernetesPodOperator):
 
     @property
     def minimal_pod_template(self):
+        """
+        This template is required since 'volumes' arguments are not templated via direct
+        API nor passing xcom values in pod definition.
+        :return: partial pod definition that should be complemented by other operator
+                parameters
+        """
         minimal_pod_template = f"""
 apiVersion: v1
 kind: Pod
@@ -97,7 +134,7 @@ spec:
 """
         return minimal_pod_template
 
-    def create_security_context(
+    def _create_security_context(
         self, volume_disabled: bool, volume_owner: int
     ) -> k8s.V1PodSecurityContext:
         return (

@@ -1,3 +1,8 @@
+"""
+Module contains Apache Airflow operator that initialize attached PV with data sourced
+ from image.
+"""
+
 from airflow.kubernetes.pod_generator import PodGenerator
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
     KubernetesPodOperator,
@@ -5,6 +10,13 @@ from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
 
 
 class DataVolumeInitOperator(KubernetesPodOperator):
+    """
+    Operator starts pod with target image and copies pointed data to attached PV.
+    In some cases, initial data is provided in the image and it should be copied
+    to the shared storage before the pipeline processing starts. This class simplifies
+    creation of pods by providing convenient options.
+    """
+
     def __init__(
         self,
         namespace: str,
@@ -16,6 +28,17 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         source: str = "/home/kedro/data",
         task_id: str = "data_volume_init",
     ):
+        """
+        :param namespace: pod is started in this k8s namespace
+        :param pvc_name: name of the pvc the data is copied to
+        :param image: image to be mounted
+        :param volume_owner: indicates fs group to use in security context
+        :param image_pull_policy: k8s image pull policy
+        :param startup_timeout: after the amount provided in seconds the pod start is
+                                timed out
+        :param source: the location where the data is provided inside the image
+        :param task_id: Airflow id to override
+        """
         self._namespace = namespace
         self._volume_owner = volume_owner
         self._pvc_name = pvc_name
@@ -32,6 +55,10 @@ class DataVolumeInitOperator(KubernetesPodOperator):
 
     @property
     def definition(self):
+        """
+        :return: definition of pod which is used here instead of API directly, since
+             since it's fully templated and PVC name has dynamic part
+        """
         data_volume_init_definition = f"""
 apiVersion: v1
 kind: Pod
