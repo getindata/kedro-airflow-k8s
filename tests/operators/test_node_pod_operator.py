@@ -1,27 +1,9 @@
 import unittest
 
-import pendulum
-from airflow import DAG
-from airflow.models import TaskInstance
-from airflow.utils import timezone
-
 from kedro_airflow_k8s.operators.node_pod import NodePodOperator
 
 
 class TestNodePodOperator(unittest.TestCase):
-    @staticmethod
-    def create_context(task):
-        dag = DAG(dag_id="dag")
-        tzinfo = pendulum.timezone("Europe/Amsterdam")
-        execution_date = timezone.datetime(2016, 1, 1, 1, 0, 0, tzinfo=tzinfo)
-        task_instance = TaskInstance(task=task, execution_date=execution_date)
-        return {
-            "dag": dag,
-            "ts_nodash": execution_date.isoformat().replace("-", "_"),
-            "task": task,
-            "ti": task_instance,
-        }
-
     def test_task_create(self):
         task = NodePodOperator(
             node_name="test_node_name",
@@ -61,7 +43,38 @@ class TestNodePodOperator(unittest.TestCase):
             "--node",
             "test_node_name",
         ]
-        assert pod.spec.security_context == {"fsGroup": 100}
+
+        assert len(pod.spec.volumes) == 1
+        volume = pod.spec.volumes[0]
+        assert volume.name == "storage"
+        assert volume.persistent_volume_claim.claim_name == "shared_storage"
+        assert len(container.volume_mounts) == 1
+        volume_mount = container.volume_mounts[0]
+        assert volume_mount.mount_path == "/home/kedro/data"
+        assert volume_mount.name == "storage"
+
+        assert pod.spec.security_context.fs_group == 100
         assert container.resources.limits == {"cpu": "2", "memory": "10Gi"}
         assert container.resources.requests == {"cpu": "500m", "memory": "2Gi"}
         assert pod.spec.node_selector == {"size/k8s.io": "huge"}
+
+    def test_task_create_no_limits_and_requests(self):
+        task = NodePodOperator(
+            node_name="test_node_name",
+            namespace="airflow",
+            pvc_name="shared_storage",
+            image="registry.gitlab.com/test_image",
+            image_pull_policy="Always",
+            env="test-pipelines",
+            task_id="test-node-name",
+            volume_owner=100,
+            mlflow_enabled=False,
+        )
+
+        pod = task.create_pod_request_obj()
+
+        assert len(pod.spec.containers) == 1
+        container = pod.spec.containers[0]
+        assert container.resources.limits == {}
+        assert container.resources.requests == {}
+        assert pod.spec.node_selector is None

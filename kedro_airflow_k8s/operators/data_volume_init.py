@@ -21,13 +21,13 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         self._pvc_name = pvc_name
         self._image = image
         self._source = source
-        self._image_pull_policy = image_pull_policy
 
         super().__init__(
             task_id=task_id,
             is_delete_operator_pod=True,
             startup_timeout_seconds=startup_timeout,
             pod_template_file=self.definition,
+            image_pull_policy=image_pull_policy,
         )
 
     @property
@@ -48,7 +48,6 @@ spec:
   containers:
     - name: base
       image: {self._image}
-      imagePullPolicy: {self._image_pull_policy}
       command:
         - "bash"
         - "-c"

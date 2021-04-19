@@ -12,13 +12,13 @@ class NodePodOperator(KubernetesPodOperator):
         self,
         node_name: str,
         namespace: str,
-        volume_disabled: bool,
         pvc_name: str,
         image: str,
         image_pull_policy: str,
         env: str,
         task_id: str,
         startup_timeout: int = 600,
+        volume_disabled: bool = False,
         volume_owner: int = 0,
         mlflow_enabled: bool = True,
         requests_cpu: Optional[str] = None,
@@ -99,5 +99,9 @@ spec:
 
     def create_security_context(
         self, volume_disabled: bool, volume_owner: int
-    ) -> Dict[str, str]:
-        return {"fsGroup": volume_owner} if not volume_disabled else {}
+    ) -> k8s.V1PodSecurityContext:
+        return (
+            k8s.V1PodSecurityContext(fs_group=volume_owner)
+            if not volume_disabled
+            else k8s.V1PodSecurityContext()
+        )
