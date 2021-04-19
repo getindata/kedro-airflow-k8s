@@ -96,6 +96,12 @@ def _create_template_stream(
         include_delete_pipeline_storage_operator=(
             Path(__file__).parent / "operators/delete_pipeline_storage.py"
         ).read_text(),
+        include_data_volume_init_operator=(
+            Path(__file__).parent / "operators/data_volume_init.py"
+        ).read_text(),
+        include_node_pod_operator=(
+            Path(__file__).parent / "operators/node_pod.py"
+        ).read_text(),
     )
 
 

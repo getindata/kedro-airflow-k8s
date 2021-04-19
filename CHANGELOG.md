@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 -   Support of S3 as DAG destination
+-   Operators extracted from DAG template as reusable components
 
 ## [0.3.0] - 2021-04-15
 
