@@ -1,14 +1,14 @@
 """
 Module contains Apache Airflow operator that starts experiment in mlflow.
 """
-
 import logging
+from typing import Dict
 
-from airflow.operators.python import PythonOperator
+from airflow.operators.python import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 
-class StartMLflowExperimentOperator(PythonOperator):
+class StartMLflowExperimentOperator(BaseOperator):
     """
     This class manages start of experiment in mlflow, by injecting experiment run_id to
     xcom. It's also creates new mlflow experiment if required.
@@ -30,9 +30,7 @@ class StartMLflowExperimentOperator(PythonOperator):
         :param task_id: name of the task represented by operator
         :param kwargs:
         """
-        super().__init__(
-            task_id=task_id, python_callable=self.start_mlflow_run, **kwargs
-        )
+        super().__init__(task_id=task_id, **kwargs)
         self.experiment_name = experiment_name
         self.mlflow_url = mlflow_url
 
@@ -48,12 +46,12 @@ class StartMLflowExperimentOperator(PythonOperator):
 
     # pylint: disable=W0613
     # pylint: disable=C0103
-    def start_mlflow_run(self, ti, **kwargs):
+    def execute(self, context: Dict):
         """
         On pipeline start it may be required to create experiment if it does not exist
         which happens in this method. Obtains experiment run_id and passes to xcom as
          `mlflow_run_id` so it can be referenced by ML related tasks.
-        :param ti: airflow ti
+        :param context: Airflow context
         :return: mlflow experiment run_id
         """
         from mlflow.protos.databricks_pb2 import (
@@ -91,6 +89,6 @@ class StartMLflowExperimentOperator(PythonOperator):
             )
 
         run_id = mlflow_client.create_run(experiment_id).info.run_id
-        ti.xcom_push("mlflow_run_id", run_id)
+        context["ti"].xcom_push("mlflow_run_id", run_id)
 
         return run_id
