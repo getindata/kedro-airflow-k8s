@@ -24,6 +24,7 @@ class TestNodePodOperator(unittest.TestCase):
             node_selector_labels={
                 "size/k8s.io": "huge",
             },
+            pipeline="data_science_pipeline",
         )
 
         pod = task.create_pod_request_obj()
@@ -40,6 +41,8 @@ class TestNodePodOperator(unittest.TestCase):
             "run",
             "-e",
             "test-pipelines",
+            "--pipeline",
+            "data_science_pipeline",
             "--node",
             "test_node_name",
         ]

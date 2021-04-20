@@ -26,6 +26,7 @@ class NodePodOperator(KubernetesPodOperator):
         image_pull_policy: str,
         env: str,
         task_id: str,
+        pipeline: str = "__default__",
         pvc_name: Optional[str] = None,
         startup_timeout: int = 600,
         volume_disabled: bool = False,
@@ -46,6 +47,7 @@ class NodePodOperator(KubernetesPodOperator):
         :param image: image to be mounted
         :param image_pull_policy: k8s image pull policy
         :param env: kedro pipeline configuration name, provided with '-e' option
+        :param pipeline: kedro pipeline name, provided with '--pipeline' option
         :param task_id: Airflow id to override
         :param startup_timeout: fter the amount provided in seconds the pod start is
                                 timed out
@@ -72,7 +74,16 @@ class NodePodOperator(KubernetesPodOperator):
             namespace=namespace,
             image=image,
             image_pull_policy=image_pull_policy,
-            arguments=["kedro", "run", "-e", env, "--node", node_name],
+            arguments=[
+                "kedro",
+                "run",
+                "-e",
+                env,
+                "--pipeline",
+                pipeline,
+                "--node",
+                node_name,
+            ],
             volume_mounts=[
                 k8s.V1VolumeMount(mount_path=source, name="storage")
             ]
