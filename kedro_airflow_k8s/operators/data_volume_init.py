@@ -88,4 +88,9 @@ spec:
 
     @staticmethod
     def create_name():
+        """
+        Dynamically created name for the pod. Name should be unique so it does not
+        collide with parallel runs.
+        :return:
+        """
         return PodGenerator.make_unique_pod_id("data-volume-init")

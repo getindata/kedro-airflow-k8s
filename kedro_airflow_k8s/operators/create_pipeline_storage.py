@@ -58,8 +58,10 @@ class CreatePipelineStorageOperator(BaseOperator):
         """
         with client.ApiClient(config.load_incluster_config()) as api_client:
             pvc = self.create_pvc()
-            v1 = client.CoreV1Api(api_client)
-            v1.create_namespaced_persistent_volume_claim(self._namespace, pvc)
+            k8s_client = client.CoreV1Api(api_client)
+            k8s_client.create_namespaced_persistent_volume_claim(
+                self._namespace, pvc
+            )
             context["ti"].xcom_push("pvc_name", self.pvc_name)
 
             return self.pvc_name

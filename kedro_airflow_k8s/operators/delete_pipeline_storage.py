@@ -47,7 +47,15 @@ class DeletePipelineStorageOperator(BaseOperator):
         :param context: Airflow context
         """
         with client.ApiClient(config.load_incluster_config()) as api_client:
-            v1 = client.CoreV1Api(api_client)
-            v1.delete_namespaced_persistent_volume_claim(
-                name=self.pvc_name, namespace=self._namespace
-            )
+            self.delete_namespace(api_client)
+
+    def delete_namespace(self, api_client):
+        """
+        Delete namespace with given k8s client
+        :param api_client:
+        :return:
+        """
+        k8s_client = client.CoreV1Api(api_client)
+        k8s_client.delete_namespaced_persistent_volume_claim(
+            name=self.pvc_name, namespace=self._namespace
+        )

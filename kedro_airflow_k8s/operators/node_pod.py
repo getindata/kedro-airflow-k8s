@@ -18,6 +18,7 @@ class NodePodOperator(KubernetesPodOperator):
     the pipeline. This class simplifies creation of pods by providing convenient options.
     """
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         node_name: str,
@@ -38,7 +39,7 @@ class NodePodOperator(KubernetesPodOperator):
         limits_memory: Optional[str] = None,
         node_selector_labels: Optional[Dict[str, str]] = None,
         source: str = "/home/kedro/data",
-    ):  # pylint: disable=too-many-arguments
+    ):
         """
 
         :param node_name: name from the kedro pipeline
@@ -101,7 +102,15 @@ class NodePodOperator(KubernetesPodOperator):
     @staticmethod
     def create_resources(
         requests_cpu, requests_memory, limits_cpu, limits_memory
-    ):
+    ) -> k8s.V1ResourceRequirements:
+        """
+        Creates k8s resources based on requests and limits
+        :param requests_cpu:
+        :param requests_memory:
+        :param limits_cpu:
+        :param limits_memory:
+        :return:
+        """
         requests = {}
         if requests_cpu:
             requests["cpu"] = requests_cpu
@@ -150,6 +159,12 @@ spec:
     def create_security_context(
         volume_disabled: bool, volume_owner: int
     ) -> k8s.V1PodSecurityContext:
+        """
+        Creates security context based on volume information
+        :param volume_disabled:
+        :param volume_owner:
+        :return:
+        """
         return (
             k8s.V1PodSecurityContext(fs_group=volume_owner)
             if not volume_disabled
