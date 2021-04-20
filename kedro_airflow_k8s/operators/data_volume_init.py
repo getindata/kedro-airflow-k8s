@@ -63,7 +63,7 @@ class DataVolumeInitOperator(KubernetesPodOperator):
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {PodGenerator.make_unique_pod_id('data-volume-init')}
+  name: {self.create_name()}
   namespace: {self._namespace}
 spec:
   securityContext:
@@ -85,3 +85,7 @@ spec:
           name: storage
             """
         return data_volume_init_definition
+
+    @staticmethod
+    def create_name():
+        return PodGenerator.make_unique_pod_id("data-volume-init")

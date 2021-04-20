@@ -38,7 +38,7 @@ class NodePodOperator(KubernetesPodOperator):
         limits_memory: Optional[str] = None,
         node_selector_labels: Optional[Dict[str, str]] = None,
         source: str = "/home/kedro/data",
-    ):
+    ):  # pylint: disable=too-many-arguments
         """
 
         :param node_name: name from the kedro pipeline
@@ -68,7 +68,7 @@ class NodePodOperator(KubernetesPodOperator):
 
         super().__init__(
             task_id=task_id,
-            security_context=self._create_security_context(
+            security_context=self.create_security_context(
                 volume_disabled, volume_owner
             ),
             namespace=namespace,
@@ -89,7 +89,7 @@ class NodePodOperator(KubernetesPodOperator):
             ]
             if not volume_disabled
             else [],
-            resources=self._create_resources(
+            resources=self.create_resources(
                 requests_cpu, requests_memory, limits_cpu, limits_memory
             ),
             startup_timeout_seconds=startup_timeout,
@@ -98,8 +98,9 @@ class NodePodOperator(KubernetesPodOperator):
             node_selector=node_selector_labels,
         )
 
-    def _create_resources(
-        self, requests_cpu, requests_memory, limits_cpu, limits_memory
+    @staticmethod
+    def create_resources(
+        requests_cpu, requests_memory, limits_cpu, limits_memory
     ):
         requests = {}
         if requests_cpu:
@@ -145,8 +146,9 @@ spec:
 """
         return minimal_pod_template
 
-    def _create_security_context(
-        self, volume_disabled: bool, volume_owner: int
+    @staticmethod
+    def create_security_context(
+        volume_disabled: bool, volume_owner: int
     ) -> k8s.V1PodSecurityContext:
         return (
             k8s.V1PodSecurityContext(fs_group=volume_owner)
