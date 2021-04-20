@@ -49,7 +49,7 @@ class NodePodOperator(KubernetesPodOperator):
         :param env: kedro pipeline configuration name, provided with '-e' option
         :param pipeline: kedro pipeline name, provided with '--pipeline' option
         :param task_id: Airflow id to override
-        :param startup_timeout: fter the amount provided in seconds the pod start is
+        :param startup_timeout: after the amount provided in seconds the pod start is
                                 timed out
         :param volume_disabled: if set to true, shared volume is not attached
         :param volume_owner: if volume is not disabled, fs group associated with this pod
