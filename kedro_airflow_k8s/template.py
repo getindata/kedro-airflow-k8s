@@ -54,7 +54,7 @@ def _create_template_stream(
 ) -> TemplateStream:
     template = _get_jinja_template()
 
-    pipeline = context_helper.context.pipelines.get("__default__")
+    pipeline = context_helper.pipeline
     dependencies = defaultdict(list)
 
     nodes_with_no_deps = set(node.name for node in pipeline.nodes)
@@ -84,11 +84,24 @@ def _create_template_stream(
         project_name=context_helper.project_name,
         dag_name=dag_name,
         image=image,
+        pipeline_name=context_helper.pipeline_name,
         schedule_interval=schedule_interval,
         git_info=context_helper.session.store["git"],
         kedro_airflow_k8s_version=version,
         include_start_mlflow_experiment_operator=(
             Path(__file__).parent / "operators/start_mlflow_experiment.py"
+        ).read_text(),
+        include_create_pipeline_storage_operator=(
+            Path(__file__).parent / "operators/create_pipeline_storage.py"
+        ).read_text(),
+        include_delete_pipeline_storage_operator=(
+            Path(__file__).parent / "operators/delete_pipeline_storage.py"
+        ).read_text(),
+        include_data_volume_init_operator=(
+            Path(__file__).parent / "operators/data_volume_init.py"
+        ).read_text(),
+        include_node_pod_operator=(
+            Path(__file__).parent / "operators/node_pod.py"
         ).read_text(),
     )
 

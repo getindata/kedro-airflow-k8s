@@ -10,10 +10,11 @@ CONFIG_FILE_PATTERN = "airflow-k8s*"
 
 
 class ContextHelper(object):
-    def __init__(self, metadata, env):
+    def __init__(self, metadata, env, pipeline_name):
         self._metadata = metadata
         self._env = env
         self._session = None
+        self._pipeline_name = pipeline_name
 
     @property
     def env(self):
@@ -26,6 +27,14 @@ class ContextHelper(object):
     @property
     def context(self):
         return self.session.load_context()
+
+    @property
+    def pipeline(self):
+        return self.context.pipelines.get(self._pipeline_name)
+
+    @property
+    def pipeline_name(self):
+        return self._pipeline_name
 
     @property
     def session(self):
@@ -50,12 +59,12 @@ class ContextHelper(object):
         return self.context.config_loader.get("mlflow*")
 
     @staticmethod
-    def init(metadata, env):
+    def init(metadata, env, pipeline_name="__default__"):
         version = VersionInfo.parse(kedro_version)
         if version.match(">=0.17.0"):
-            return ContextHelper(metadata, env)
+            return ContextHelper(metadata, env, pipeline_name)
         else:
-            return ContextHelper16(metadata, env)
+            return ContextHelper16(metadata, env, pipeline_name)
 
 
 class ContextHelper16(ContextHelper):

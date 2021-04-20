@@ -21,6 +21,7 @@ EXTRA_REQUIRE = {
         "tox==3.21.1",
         "pre-commit==2.9.3",
         "apache-airflow==2.0.1",
+        "apache-airflow-providers-cncf-kubernetes==1.1.0",
         "mlflow==1.14.1",
         "sqlalchemy==1.3.23",
         "responses>=0.13.0",
@@ -33,12 +34,13 @@ EXTRA_REQUIRE = {
     "gcp": [
         "gcsfs>=0.6.2, <0.7.0",
     ],
+    "aws": ["s3fs>=0.6.0"],
     "mlflow": ["kedro-mlflow==0.4.1"],
 }
 
 setup(
     name="kedro-airflow-k8s",
-    version="0.3.0",
+    version="0.4.0",
     description="Kedro plugin with Airflow on Kubernetes support",
     long_description=README,
     long_description_content_type="text/markdown",

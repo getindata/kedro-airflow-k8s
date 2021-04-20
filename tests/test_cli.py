@@ -54,7 +54,8 @@ class TestPluginCLI:
     def context_helper(self, pipeline):
         context_helper = MagicMock(ContextHelper)
         context_helper.context.package_name = "kedro_airflow_k8s"
-        context_helper.context.pipelines.get.return_value = pipeline
+        context_helper.pipeline = pipeline
+        context_helper.pipeline_name = "test_pipeline_name"
         context_helper.project_name = "kedro_airflow_k8s"
         context_helper.config = PluginConfig(
             {
@@ -106,21 +107,22 @@ class TestPluginCLI:
         dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
         assert 'EXPERIMENT_NAME = "kedro-airflow-k8s"' in dag_content
         assert "namespace='test_ns'" in dag_content
-        assert "image: image:override" in dag_content
+        assert 'image="image:override"' in dag_content
         assert "mlflow_url='mlflow.url.com'" in dag_content
         assert "commit_sha:abcdef" in dag_content
         assert "access_modes=['ReadWriteMany']" in dag_content
-        assert "'storage':'3Gi'" in dag_content
+        assert "volume_size='3Gi'" in dag_content
         assert "schedule_interval=None" in dag_content
         assert "storage_class_name='with-encryption'" in dag_content
-        assert 'memory: "1Gi"' in dag_content
-        assert 'memory: "4Gi"' in dag_content
-        assert 'memory: "128Gi"' in dag_content
-        assert 'cpu: "2"' in dag_content
-        assert 'cpu: "4"' in dag_content
-        assert 'cpu: "16"' in dag_content
-        assert "target/k8s.io: mammoth" in dag_content
-        assert "startup_timeout_seconds=120" in dag_content
+        assert 'requests_memory="1Gi"' in dag_content
+        assert 'limits_memory="4Gi"' in dag_content
+        assert 'requests_memory="128Gi"' in dag_content
+        assert 'requests_cpu="2"' in dag_content
+        assert 'limits_cpu="4"' in dag_content
+        assert 'requests_cpu="16"' in dag_content
+        assert '"target/k8s.io": "mammoth"' in dag_content
+        assert "startup_timeout=120" in dag_content
+        assert 'pipeline="test_pipeline_name"' in dag_content
 
     def test_upload_pipeline(self, context_helper):
         config = dict(context_helper=context_helper)
