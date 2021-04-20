@@ -16,6 +16,14 @@ args = {
 {% if mlflow_url %}
 {{ include_start_mlflow_experiment_operator | safe }}
 {% endif %}
+{% if not config.run_config.volume.disabled %}
+{{ include_create_pipeline_storage_operator | safe }}
+{{ include_delete_pipeline_storage_operator | safe }}
+{% if not config.run_config.volume.skip_init %}
+{{ include_data_volume_init_operator | safe }}
+{% endif %}
+{% endif %}
+{{ include_node_pod_operator | safe }}
 
 with DAG(
     dag_id='{{ dag_name }}',
@@ -39,142 +47,58 @@ with DAG(
     {% endif %}
 
     {% if not config.run_config.volume.disabled %}
-    def create_pipeline_storage(pvc_name, ti, **kwargs):
-        with client.ApiClient(config.load_incluster_config()) as api_client:
-            v1 = client.CoreV1Api(api_client)
-
-            pvc = k8s.V1PersistentVolumeClaim(metadata=k8s.V1ObjectMeta(name=pvc_name, namespace='{{ config.run_config.namespace }}'),
-                    spec=k8s.V1PersistentVolumeClaimSpec(access_modes={{ config.run_config.volume.access_modes | safe }}, {% if config.run_config.volume.storageclass %}storage_class_name='{{ config.run_config.volume.storageclass }}',{% endif %}
-                    resources=k8s.V1ResourceRequirements(requests={'storage':'{{ config.run_config.volume.size }}'})))
-
-            v1.create_namespaced_persistent_volume_claim('{{ config.run_config.namespace }}', pvc)
-            ti.xcom_push('pvc_name', pvc_name)
-
-    create_pipeline_storage = PythonOperator(
-        task_id='create_pipeline_storage',
-        python_callable=create_pipeline_storage,
-        op_args=[pvc_name],
+    create_pipeline_storage = CreatePipelineStorageOperator(
+        pvc_name=pvc_name,
+        namespace='{{ config.run_config.namespace }}',
+        access_modes={{config.run_config.volume.access_modes | safe}},
+        volume_size='{{ config.run_config.volume.size }}',
+        storage_class_name='{{ config.run_config.volume.storageclass }}'
     )
 
-    def delete_pipeline_storage(pvc_name, ti, **kwargs):
-        with client.ApiClient(config.load_incluster_config()) as api_client:
-            v1 = client.CoreV1Api(api_client)
-            v1.delete_namespaced_persistent_volume_claim(name=pvc_name, namespace='{{ config.run_config.namespace }}')
-
-    delete_pipeline_storage = PythonOperator(
-        task_id='delete_pipeline_storage',
-        python_callable=delete_pipeline_storage,
-        trigger_rule='all_done',
-        op_args=[pvc_name],
+    delete_pipeline_storage=DeletePipelineStorageOperator(
+        pvc_name=pvc_name,
+        namespace='{{ config.run_config.namespace }}'
     )
 
-       {% if not config.run_config.volume.skip_init %}
-    data_volume_init_definition = """
-    apiVersion: v1
-    kind: Pod
-    metadata:
-      name: """ + PodGenerator.make_unique_pod_id('data-volume-init') + """
-      namespace: {{ config.run_config.namespace }}
-    spec:
-      securityContext:
-        fsGroup: {{ config.run_config.volume.owner }}
-      volumes:
-        - name: storage
-          persistentVolumeClaim:
-            claimName: """ + pvc_name + """
-      containers:
-        - name: base
-          image: {{ image }}
-          imagePullPolicy: {{ config.run_config.image_pull_policy }}
-          command:
-            - "bash"
-            - "-c"
-          args:
-            - cp --verbose -r /home/kedro/data/* /home/kedro/datavolume
-          volumeMounts:
-            - mountPath: "/home/kedro/datavolume"
-              name: storage
-    """
-
-    data_volume_init = KubernetesPodOperator(
-        task_id="data_volume_init",
-        is_delete_operator_pod=True,
-        startup_timeout_seconds={{ config.run_config.startup_timeout }},
-        pod_template_file=data_volume_init_definition
+    {% if not config.run_config.volume.skip_init %}
+    data_volume_init=DataVolumeInitOperator(
+        namespace='{{ config.run_config.namespace }}',
+        pvc_name=pvc_name,
+        image='{{ image }}',
+        image_pull_policy='{{ config.run_config.image_pull_policy }}',
+        startup_timeout={{ config.run_config.startup_timeout }},
+        volume_owner={{ config.run_config.volume.owner }}
     )
-        {% endif %}
     {% endif %}
+    {% endif %}
+
     tasks = {}
     {% for node in pipeline.nodes %}
-    pod_definition = """
-        apiVersion: v1
-        kind: Pod
-        metadata:
-          name: """ + PodGenerator.make_unique_pod_id('{{ node.name | slugify }}') + """
-          namespace: {{ config.run_config.namespace }}
-        spec:
-          securityContext:
-            fsGroup: {{ config.run_config.volume.owner }}
-          {%- if not config.run_config.volume.disabled %}
-          volumes:
-            - name: storage
-              persistentVolumeClaim:
-                claimName: """ + pvc_name + """
-          {%- endif %}
-          containers:
-            - name: base
-              image: {{ image }}
-              imagePullPolicy: {{ config.run_config.image_pull_policy }}{% if mlflow_url %}
-              env:
-                - name: MLFLOW_RUN_ID
-                  value: {% raw %}{{ task_instance.xcom_pull(key="mlflow_run_id") }}{% endraw %}{% endif %}
-              args:
-                - 'kedro'
-                - 'run'
-                - '-e' 
-                - '{{ env }}'
-                - '--pipeline'
-                - '{{ pipeline_name }}'
-                - '--node'
-                - '{{ node.name }}'
-              {%- if not config.run_config.volume.disabled %}
-              volumeMounts:
-                - mountPath: "/home/kedro/data"
-                  name: storage
-              {%- endif %}
-              resources:
-                requests:
-                {%- if resources[node.name].requests.cpu %}
-                  cpu: "{{ resources[node.name].requests.cpu }}"
-                {%- endif %}
-                {%- if resources[node.name].requests.memory %}
-                  memory: "{{ resources[node.name].requests.memory }}"
-                {%- endif %}
-                limits:
-                {%- if resources[node.name].limits.cpu %}
-                  cpu: "{{ resources[node.name].limits.cpu }}"
-                {%- endif %}
-                {%- if resources[node.name].limits.memory %}
-                  memory: "{{ resources[node.name].limits.memory }}"
-                {%- endif %}
-          {%- if resources[node.name].labels %}
-          nodeSelector:
-            {%- for key, value in resources[node.name].labels.items() %}
-            {{ key }}: {{ value }}
-            {%- endfor %}
-          {% endif %}
-
-    """
-
-    tasks["{{ node.name | slugify }}"] = KubernetesPodOperator(
+    tasks["{{ node.name | slugify }}"] = NodePodOperator(
+        node_name="{{node.name}}",
+        namespace="{{config.run_config.namespace}}",
+        volume_disabled={{config.run_config.volume.disabled}},
+        pvc_name=pvc_name,
+        image="{{ image }}",
+        image_pull_policy="{{ config.run_config.image_pull_policy }}",
+        env="{{env}}",
+        pipeline="{{ pipeline_name }}",
         task_id="{{ node.name | slugify }}",
-        is_delete_operator_pod=True,
-        startup_timeout_seconds={{ config.run_config.startup_timeout }},
-        pod_template_file=pod_definition
+        startup_timeout={{ config.run_config.startup_timeout }},
+        volume_owner={{ config.run_config.volume.owner }},
+        mlflow_enabled={% if mlflow_url %}True{% else %}False{% endif %},
+        requests_cpu="{{resources[node.name].requests.cpu if resources[node.name].requests.cpu}}",
+        requests_memory="{{resources[node.name].requests.memory if resources[node.name].requests.memory}}",
+        limits_cpu="{{resources[node.name].limits.cpu if resources[node.name].limits.cpu}}",
+        limits_memory="{{resources[node.name].limits.memory if resources[node.name].limits.memory}}",
+        node_selector_labels={
+        {%- for key, value in resources[node.name].labels.items() %}
+            "{{ key }}": "{{ value }}",
+            {%- endfor %}
+        }
     )
     {% endfor %}
 
-    
     {% for parent_node, child_nodes in dependencies.items() -%}
     {% for child in child_nodes %}
     tasks["{{ parent_node.name | slugify }}"] >> tasks["{{ child.name | slugify }}"]

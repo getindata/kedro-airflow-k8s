@@ -91,6 +91,18 @@ def _create_template_stream(
         include_start_mlflow_experiment_operator=(
             Path(__file__).parent / "operators/start_mlflow_experiment.py"
         ).read_text(),
+        include_create_pipeline_storage_operator=(
+            Path(__file__).parent / "operators/create_pipeline_storage.py"
+        ).read_text(),
+        include_delete_pipeline_storage_operator=(
+            Path(__file__).parent / "operators/delete_pipeline_storage.py"
+        ).read_text(),
+        include_data_volume_init_operator=(
+            Path(__file__).parent / "operators/data_volume_init.py"
+        ).read_text(),
+        include_node_pod_operator=(
+            Path(__file__).parent / "operators/node_pod.py"
+        ).read_text(),
     )
 
 
