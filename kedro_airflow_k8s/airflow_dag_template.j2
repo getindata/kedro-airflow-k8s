@@ -133,6 +133,8 @@ with DAG(
                 - 'run'
                 - '-e' 
                 - '{{ env }}'
+                - '--pipeline'
+                - '{{ pipeline_name }}'
                 - '--node'
                 - '{{ node.name }}'
               {%- if not config.run_config.volume.disabled %}

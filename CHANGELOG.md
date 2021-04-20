@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 -   Support of S3 as DAG destination
+-   Selection of specific pipeline by name from CLI
 
 ## [0.3.0] - 2021-04-15
 
