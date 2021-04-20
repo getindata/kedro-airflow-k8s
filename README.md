@@ -31,6 +31,7 @@ Usage: kedro airflow-k8s [OPTIONS] COMMAND [ARGS]...
  
 Options:
   -e, --env TEXT  Environment to use.
+  -p, --pipeline TEXT  Pipeline name to pick.
   -h, --help      Show this message and exit.
 
 Commands:

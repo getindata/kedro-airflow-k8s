@@ -54,7 +54,8 @@ class TestPluginCLI:
     def context_helper(self, pipeline):
         context_helper = MagicMock(ContextHelper)
         context_helper.context.package_name = "kedro_airflow_k8s"
-        context_helper.context.pipelines.get.return_value = pipeline
+        context_helper.pipeline = pipeline
+        context_helper.pipeline_name = "test_pipeline_name"
         context_helper.project_name = "kedro_airflow_k8s"
         context_helper.config = PluginConfig(
             {
@@ -121,6 +122,7 @@ class TestPluginCLI:
         assert 'requests_cpu="16"' in dag_content
         assert '"target/k8s.io": "mammoth"' in dag_content
         assert "startup_timeout=120" in dag_content
+        assert 'pipeline="test_pipeline_name"' in dag_content
 
     def test_upload_pipeline(self, context_helper):
         config = dict(context_helper=context_helper)

@@ -82,6 +82,7 @@ with DAG(
         image="{{ image }}",
         image_pull_policy="{{ config.run_config.image_pull_policy }}",
         env="{{env}}",
+        pipeline="{{ pipeline_name }}",
         task_id="{{ node.name | slugify }}",
         startup_timeout={{ config.run_config.startup_timeout }},
         volume_owner={{ config.run_config.volume.owner }},
