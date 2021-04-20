@@ -18,8 +18,7 @@ class NodePodOperator(KubernetesPodOperator):
     the pipeline. This class simplifies creation of pods by providing convenient options.
     """
 
-    # pylint: disable=too-many-arguments
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         node_name: str,
         namespace: str,
