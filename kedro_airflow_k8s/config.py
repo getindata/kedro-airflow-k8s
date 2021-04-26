@@ -132,6 +132,15 @@ class ResourceNodeConfig(Config):
 
 
 class ResourceConfig(Config):
+
+    @property
+    def tolerations(self):
+        return self._get_or_default("tolerations", {})
+
+    @property
+    def node_selectors(self):
+        return self._get_or_default("node_selectors", {})
+
     @property
     def labels(self):
         return self._get_or_default("labels", {})

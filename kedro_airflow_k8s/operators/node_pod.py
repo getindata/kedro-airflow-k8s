@@ -3,7 +3,7 @@ Module contains Apache Airflow operator that creates k8s pod for execution of
 kedro node.
 """
 
-from typing import Dict, Optional
+from typing import List, Dict, Optional
 
 from airflow.kubernetes.pod_generator import PodGenerator
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
@@ -37,6 +37,8 @@ class NodePodOperator(KubernetesPodOperator):
         limits_cpu: Optional[str] = None,
         limits_memory: Optional[str] = None,
         node_selector_labels: Optional[Dict[str, str]] = None,
+        labels: Optional[Dict[str, str]] = None,
+        tolerations: Optional[List[Dict[str, str]]] = None,
         source: str = "/home/kedro/data",
     ):
         """
@@ -96,6 +98,9 @@ class NodePodOperator(KubernetesPodOperator):
             is_delete_operator_pod=True,
             pod_template_file=self.minimal_pod_template,
             node_selector=node_selector_labels,
+            node_selectors=node_selector_labels,
+            labels=labels,
+            tolerations=tolerations
         )
 
     @staticmethod

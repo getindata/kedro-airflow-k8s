@@ -24,6 +24,16 @@ class TestNodePodOperator(unittest.TestCase):
             node_selector_labels={
                 "size/k8s.io": "huge",
             },
+            labels={
+                "running": "airflow"
+            },
+            tolerations=[
+                {
+                   "key": "group",
+                   "value": "data-processing",
+                   "effect": "NoExecute"
+                }
+            ],
             pipeline="data_science_pipeline",
         )
 
@@ -60,6 +70,8 @@ class TestNodePodOperator(unittest.TestCase):
         assert container.resources.limits == {"cpu": "2", "memory": "10Gi"}
         assert container.resources.requests == {"cpu": "500m", "memory": "2Gi"}
         assert pod.spec.node_selector == {"size/k8s.io": "huge"}
+        assert pod.spec.tolerations[0].value == "data-processing"
+
 
     def test_task_create_no_limits_and_requests(self):
         task = NodePodOperator(
