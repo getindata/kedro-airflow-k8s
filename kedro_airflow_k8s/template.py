@@ -56,6 +56,9 @@ def _create_template_stream(
 
     pipeline = context_helper.pipeline
     dependencies = defaultdict(list)
+    for node, parent_nodes in pipeline.node_dependencies.items():
+        for parent in parent_nodes:
+            dependencies[parent].append(node)
 
     return template.stream(
         pipeline=pipeline,

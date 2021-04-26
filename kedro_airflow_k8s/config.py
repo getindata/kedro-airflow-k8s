@@ -153,6 +153,28 @@ class ResourcesConfig(Config):
         return ResourceConfig(self._get_or_default(item, {}))
 
 
+class ExternalDependenyConfig(Config):
+    @property
+    def dag_id(self):
+        return self._get_or_fail("dag_id")
+
+    @property
+    def task_id(self):
+        return self._get_or_default("task_id", None)
+
+    @property
+    def check_existence(self):
+        return self._get_or_default("check_existence", True)
+
+    @property
+    def execution_delta(self):
+        return self._get_or_default("execution_delta", 0)
+
+    @property
+    def timeout(self):
+        return self._get_or_default("timeout", 60 * 24)
+
+
 class RunConfig(Config):
     @property
     def image(self):
@@ -195,6 +217,11 @@ class RunConfig(Config):
     def resources(self):
         cfg = self._get_or_default("resources", {})
         return ResourcesConfig(cfg)
+
+    @property
+    def external_dependencies(self):
+        deps = self._get_or_default("external_dependencies", [])
+        return [ExternalDependenyConfig(cfg) for cfg in deps]
 
     def _get_prefix(self):
         return "run_config."

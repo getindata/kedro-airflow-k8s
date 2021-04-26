@@ -1,6 +1,8 @@
 from airflow import DAG
 from airflow.utils.dates import days_ago
 from airflow.utils.task_group import TaskGroup
+from airflow.sensors.external_task import ExternalTaskSensor
+from datetime import timedelta
 import logging
 
 EXPERIMENT_NAME = "{{ config.run_config.experiment_name | slugify }}"
@@ -101,6 +103,17 @@ with DAG(
         tasks["{{ parent_node.name | slugify }}"] >> tasks["{{ child.name | slugify }}"]
     {% endfor %}
     {%- endfor %}
+
+    {% for dependency in config.run_config.external_dependencies %}
+    with TaskGroup("external_pipelines", prefix_group_id=False):
+        ExternalTaskSensor(external_dag_id='{{ dependency.dag_id }}',
+                            external_task_id='{{ dependency.task_id if dependency.task_id }}',
+                            check_existence={{ dependency.check_existence }},
+                            execution_delta=timedelta(minutes={{ dependency.execution_delta }}),
+                            task_id='wait_for_{{ dependency.dag_id }}_{{ dependency.task_id }}',
+                            timeout={{ dependency.timeout }} * 60,
+                            ) >> kedro_group
+    {% endfor %}
 
     {% if not config.run_config.volume.disabled %}
         {% if not config.run_config.volume.skip_init %}
