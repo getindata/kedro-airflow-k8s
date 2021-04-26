@@ -208,6 +208,43 @@ class TestPluginCLI:
         ).read_text()
         assert len(dag_content) > 0
 
+    def test_run_once_with_dependency(self, context_helper):
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        output_directory = TemporaryDirectory(
+            prefix="test_run_once_with_dependency", suffix=".py"
+        )
+
+        with patch("kedro_airflow_k8s.cli.AirflowClient") as AirflowMock:
+            airflow_client = AirflowMock.return_value
+            airflow_client.wait_for_dag.return_value = airflow.DAGModel(
+                dag_id="kedro_airflow_k8s",
+                tags=[{"name": "demo"}, {"name": "commit_sha:abcdef"}],
+            )
+
+            result = runner.invoke(
+                run_once,
+                [
+                    "--output",
+                    str(output_directory.name),
+                ],
+                obj=config,
+            )
+            assert result.exit_code == 0
+
+            airflow_client.trigger_dag_run.assert_called_once_with(
+                "kedro_airflow_k8s"
+            )
+
+        assert Path(output_directory.name).exists()
+
+        dag_content = (
+            Path(output_directory.name) / "kedro_airflow_k8s.py"
+        ).read_text()
+        assert len(dag_content) > 0
+
     def test_run_once_upload_error(self, context_helper):
         config = dict(context_helper=context_helper)
 

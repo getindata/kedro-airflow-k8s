@@ -57,24 +57,9 @@ def _create_template_stream(
     pipeline = context_helper.pipeline
     dependencies = defaultdict(list)
 
-    nodes_with_no_deps = set(node.name for node in pipeline.nodes)
-    for node, parent_nodes in pipeline.node_dependencies.items():
-        for parent in parent_nodes:
-            dependencies[parent].append(node)
-            nodes_with_no_deps = nodes_with_no_deps - set([node.name])
-
-    all_parent_nodes = set()
-    for _, parent_nodes in pipeline.node_dependencies.items():
-        all_parent_nodes = all_parent_nodes.union(
-            set(parent.name for parent in parent_nodes)
-        )
-    bottom_nodes = set(node.name for node in pipeline.nodes) - all_parent_nodes
-
     return template.stream(
         pipeline=pipeline,
         dependencies=dependencies,
-        base_nodes=nodes_with_no_deps,
-        bottom_nodes=bottom_nodes,
         config=context_helper.config,
         resources=_node_resources(
             pipeline.nodes, context_helper.config.run_config.resources
