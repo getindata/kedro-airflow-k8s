@@ -44,29 +44,30 @@ with DAG(
     )
     {% endif %}
 
+    with TaskGroup("storage", prefix_group_id=False):
     {% if not config.run_config.volume.disabled %}
-    create_pipeline_storage = CreatePipelineStorageOperator(
-        pvc_name=pvc_name,
-        namespace='{{ config.run_config.namespace }}',
-        access_modes={{config.run_config.volume.access_modes | safe}},
-        volume_size='{{ config.run_config.volume.size }}',
-        storage_class_name='{{ config.run_config.volume.storageclass }}'
-    )
+        create_pipeline_storage = CreatePipelineStorageOperator(
+            pvc_name=pvc_name,
+            namespace='{{ config.run_config.namespace }}',
+            access_modes={{config.run_config.volume.access_modes | safe}},
+            volume_size='{{ config.run_config.volume.size }}',
+            storage_class_name='{{ config.run_config.volume.storageclass }}'
+        )
 
-    delete_pipeline_storage=DeletePipelineStorageOperator(
-        pvc_name=pvc_name,
-        namespace='{{ config.run_config.namespace }}'
-    )
+        delete_pipeline_storage=DeletePipelineStorageOperator(
+            pvc_name=pvc_name,
+            namespace='{{ config.run_config.namespace }}'
+        )
 
-    {% if not config.run_config.volume.skip_init %}
-    data_volume_init=DataVolumeInitOperator(
-        namespace='{{ config.run_config.namespace }}',
-        pvc_name=pvc_name,
-        image='{{ image }}',
-        image_pull_policy='{{ config.run_config.image_pull_policy }}',
-        startup_timeout={{ config.run_config.startup_timeout }},
-        volume_owner={{ config.run_config.volume.owner }}
-    )
+        {% if not config.run_config.volume.skip_init %}
+        data_volume_init=DataVolumeInitOperator(
+            namespace='{{ config.run_config.namespace }}',
+            pvc_name=pvc_name,
+            image='{{ image }}',
+            image_pull_policy='{{ config.run_config.image_pull_policy }}',
+            startup_timeout={{ config.run_config.startup_timeout }},
+            volume_owner={{ config.run_config.volume.owner }}
+        )
     {% endif %}
     {% endif %}
 
