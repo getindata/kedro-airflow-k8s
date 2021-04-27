@@ -34,6 +34,8 @@ run_config:
                 - key: "group"
                   value: "data-processing"
                   effect: "NoExecute"
+            annotations:
+                iam.amazonaws.com/role: airflow
             requests:
                 cpu: "1"
                 memory: "1Gi"
@@ -77,6 +79,8 @@ class TestPluginConfig(unittest.TestCase):
         assert resources.__default__.labels["running"] == "airflow"
         assert resources.__default__.tolerations
         assert resources.__default__.tolerations[0] == {"key": "group","value": "data-processing","effect": "NoExecute",}
+        assert resources.__default__.annotations
+        assert resources.__default__.annotations['iam.amazonaws.com/role'] == "airflow"
         assert resources.__default__.requests
         assert resources.__default__.requests.cpu == "1"
         assert resources.__default__.requests.memory == "1Gi"

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Support for labels, tolerations and annotations in k8s
+
 ## [0.4.0] - 2021-04-20
 
 -   Support of S3 as DAG destination

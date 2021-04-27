@@ -34,6 +34,9 @@ class TestNodePodOperator(unittest.TestCase):
                    "effect": "NoExecute"
                 }
             ],
+            annotations={
+                "iam.amazonaws.com/role": "airflow"
+            },
             pipeline="data_science_pipeline",
         )
 
@@ -71,6 +74,7 @@ class TestNodePodOperator(unittest.TestCase):
         assert container.resources.requests == {"cpu": "500m", "memory": "2Gi"}
         assert pod.spec.node_selector == {"size/k8s.io": "huge"}
         assert pod.spec.tolerations[0].value == "data-processing"
+        assert pod.metadata.annotations["iam.amazonaws.com/role"] == "airflow"
 
 
     def test_task_create_no_limits_and_requests(self):

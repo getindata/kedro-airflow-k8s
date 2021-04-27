@@ -73,6 +73,9 @@ run_config:
             # Optional labels to apply on pods
             labels:
               running: airflow
+            # Optional annotations to apply on pods
+            annotations:
+              iam.amazonaws.com/role: airflow
             # Optional list of kubernetes tolerations
             tolerations:
                 - key: "group"
