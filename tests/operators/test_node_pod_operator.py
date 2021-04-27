@@ -24,19 +24,15 @@ class TestNodePodOperator(unittest.TestCase):
             node_selector_labels={
                 "size/k8s.io": "huge",
             },
-            labels={
-                "running": "airflow"
-            },
+            labels={"running": "airflow"},
             tolerations=[
                 {
-                   "key": "group",
-                   "value": "data-processing",
-                   "effect": "NoExecute"
+                    "key": "group",
+                    "value": "data-processing",
+                    "effect": "NoExecute",
                 }
             ],
-            annotations={
-                "iam.amazonaws.com/role": "airflow"
-            },
+            annotations={"iam.amazonaws.com/role": "airflow"},
             pipeline="data_science_pipeline",
         )
 
@@ -75,7 +71,6 @@ class TestNodePodOperator(unittest.TestCase):
         assert pod.spec.node_selector == {"size/k8s.io": "huge"}
         assert pod.spec.tolerations[0].value == "data-processing"
         assert pod.metadata.annotations["iam.amazonaws.com/role"] == "airflow"
-
 
     def test_task_create_no_limits_and_requests(self):
         task = NodePodOperator(

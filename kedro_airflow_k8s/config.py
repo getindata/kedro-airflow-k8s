@@ -147,7 +147,6 @@ class ResourceNodeConfig(Config):
 
 
 class ResourceConfig(Config):
-
     @property
     def annotations(self):
         return self._get_or_fail("annotations")

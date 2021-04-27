@@ -3,7 +3,7 @@ Module contains Apache Airflow operator that creates k8s pod for execution of
 kedro node.
 """
 
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 from airflow.kubernetes.pod_generator import PodGenerator
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
@@ -105,7 +105,7 @@ class NodePodOperator(KubernetesPodOperator):
             node_selectors=node_selector_labels,
             labels=labels,
             tolerations=self.create_tolerations(tolerations),
-            annotations=annotations
+            annotations=annotations,
         )
 
     @staticmethod
@@ -196,6 +196,7 @@ spec:
                 effect=toleration.get("effect"),
                 key=toleration.get("key"),
                 operator=toleration.get("operator"),
-                value=toleration.get("value"))
+                value=toleration.get("value"),
+            )
             for toleration in tolerations
         ]
