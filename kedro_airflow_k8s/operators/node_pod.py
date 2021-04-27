@@ -61,7 +61,8 @@ class NodePodOperator(KubernetesPodOperator):
         :param requests_memory: k8s requests memory value
         :param limits_cpu: k8s limits cpu value
         :param limits_memory: k8s limits memory value
-        :param node_selector_labels: dictionary of node selector label to be put into pod node selector
+        :param node_selector_labels: dictionary of node selector labels to be put into
+                                     pod node selector
         :param labels: dictionary of labels to apply on pod
         :param tolerations: dictionary tolerations for nodes
         :param annotations: dictionary of annotations to apply on pod
