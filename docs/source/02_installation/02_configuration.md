@@ -90,6 +90,23 @@ run_config:
             limits:
                 cpu: "32"
                 memory: "256Gi"
+    # Optional external dependencies configuration
+    external_dependencies:
+        # Can just select dag as a whole 
+        - dag_id: upstream-dag
+        # or detailed
+        - dag_id: another-upstream-dag
+        # with specific task to wait on
+          task_id: with-precise-task
+        # Maximum time (minute) to wait for the external dag to finish before this
+        # pipeline fails, the default is 1440 == 1 day  
+          timeout: 2
+        # Checks if the external dag exists before waiting for it to finish. If it
+        # does not exists, fail this pipeline. By default is set to true. 
+          check_existence: False
+        # Time difference with the previous execution to look at (minutes),
+        # the default is 0 meaning no difference
+          execution_delta: 10
 ```
 
 ## Indicate resources in pipeline nodes

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   External dependencies can be added as optionals in configuration 
+
 ## [0.4.0] - 2021-04-20
 
 -   Support of S3 as DAG destination
