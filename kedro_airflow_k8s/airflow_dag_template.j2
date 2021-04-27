@@ -104,6 +104,7 @@ with DAG(
     {% endfor %}
     {%- endfor %}
 
+    {% if with_external_dependencies %}
     {% for dependency in config.run_config.external_dependencies %}
     with TaskGroup("external_pipelines", prefix_group_id=False):
         ExternalTaskSensor(external_dag_id='{{ dependency.dag_id }}',
@@ -114,6 +115,7 @@ with DAG(
                             timeout={{ dependency.timeout }} * 60,
                             ) >> kedro_group
     {% endfor %}
+    {% endif %}
 
     {% if not config.run_config.volume.disabled %}
         {% if not config.run_config.volume.skip_init %}

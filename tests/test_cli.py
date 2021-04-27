@@ -189,6 +189,9 @@ class TestPluginCLI:
         assert "schedule_interval='0 0 0 5 *'" in dag_content
 
     def test_run_once(self, context_helper):
+        context_helper.config._raw["run_config"].update(
+            {"external_dependencies": [{"dag_id": "parent_dag"}]}
+        )
         config = dict(context_helper=context_helper)
 
         runner = CliRunner()
@@ -224,6 +227,7 @@ class TestPluginCLI:
             Path(output_directory.name) / "kedro_airflow_k8s.py"
         ).read_text()
         assert len(dag_content) > 0
+        assert "xternalTaskSensor(external_dag_id=" not in dag_content
 
     def test_run_once_upload_error(self, context_helper):
         config = dict(context_helper=context_helper)

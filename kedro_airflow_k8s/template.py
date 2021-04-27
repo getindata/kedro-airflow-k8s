@@ -51,6 +51,7 @@ def _create_template_stream(
     dag_name: str,
     schedule_interval: str,
     image: str,
+    with_external_dependencies: bool,
 ) -> TemplateStream:
     template = _get_jinja_template()
 
@@ -63,6 +64,7 @@ def _create_template_stream(
     return template.stream(
         pipeline=pipeline,
         dependencies=dependencies,
+        with_external_dependencies=with_external_dependencies,
         config=context_helper.config,
         resources=_node_resources(
             pipeline.nodes, context_helper.config.run_config.resources
@@ -106,6 +108,7 @@ def get_dag_filename_and_template_stream(
     cron_expression: Optional[str] = None,
     dag_name: Optional[str] = None,
     image: Optional[str] = None,
+    with_external_dependencies: bool = True,
 ):
     config = ctx.obj["context_helper"].config
     dag_name = dag_name or config.run_config.run_name
@@ -117,5 +120,6 @@ def get_dag_filename_and_template_stream(
         dag_name=dag_name,
         schedule_interval=cron_expression,
         image=image or config.run_config.image,
+        with_external_dependencies=with_external_dependencies,
     )
     return dag_filename, template_stream
