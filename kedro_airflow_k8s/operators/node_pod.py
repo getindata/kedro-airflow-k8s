@@ -2,8 +2,9 @@
 Module contains Apache Airflow operator that creates k8s pod for execution of
 kedro node.
 """
+
 import logging
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from airflow.kubernetes.pod_generator import PodGenerator
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
@@ -37,6 +38,9 @@ class NodePodOperator(KubernetesPodOperator):
         limits_cpu: Optional[str] = None,
         limits_memory: Optional[str] = None,
         node_selector_labels: Optional[Dict[str, str]] = None,
+        labels: Optional[Dict[str, str]] = None,
+        tolerations: Optional[List[Dict[str, str]]] = None,
+        annotations: Optional[Dict[str, str]] = None,
         source: str = "/home/kedro/data",
     ):
         """
@@ -58,7 +62,11 @@ class NodePodOperator(KubernetesPodOperator):
         :param requests_memory: k8s requests memory value
         :param limits_cpu: k8s limits cpu value
         :param limits_memory: k8s limits memory value
-        :param node_selector_labels: dictionary of labels to be put into pod node selector
+        :param node_selector_labels: dictionary of node selector labels to be put into
+                                     pod node selector
+        :param labels: dictionary of labels to apply on pod
+        :param tolerations: dictionary tolerations for nodes
+        :param annotations: dictionary of annotations to apply on pod
         :param source: mount point of shared storage
         """
         self._task_id = task_id
@@ -95,7 +103,10 @@ class NodePodOperator(KubernetesPodOperator):
             startup_timeout_seconds=startup_timeout,
             is_delete_operator_pod=True,
             pod_template_file=self.minimal_pod_template,
-            node_selector=node_selector_labels,
+            node_selectors=node_selector_labels,
+            labels=labels,
+            tolerations=self.create_tolerations(tolerations),
+            annotations=annotations,
         )
 
     def execute(self, context):
@@ -178,3 +189,24 @@ spec:
             if not volume_disabled
             else k8s.V1PodSecurityContext()
         )
+
+    @staticmethod
+    def create_tolerations(
+        tolerations: Optional[List[Dict[str, str]]] = None
+    ) -> List[k8s.V1Toleration]:
+        """
+        Creates k8s tolerations
+        :param tolerations:
+        :return:
+        """
+        if not tolerations:
+            return []
+        return [
+            k8s.V1Toleration(
+                effect=toleration.get("effect"),
+                key=toleration.get("key"),
+                operator=toleration.get("operator"),
+                value=toleration.get("value"),
+            )
+            for toleration in tolerations
+        ]
