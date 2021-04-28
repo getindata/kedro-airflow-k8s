@@ -187,3 +187,9 @@ In order to use AWS S3 as storage, prefix output with `s3://` (this requires plu
 
 > It's optional to indicate which pipeline to pick, with `-p` option. By default, pipeline name `__default__` is
 > used. Option `-p` can refer to other pipeline by name it's registered inside kedro hook.
+
+## Diagnose execution
+
+Every kedro node is transformed into Airflow DAG task. DAG also contains other, supporting tasks, which are handled
+by a set of custom operators. In order to diagnose DAG run, every task is logging information with standar python
+logging library. The outcome is available in Airflow `Log` tab.

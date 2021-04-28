@@ -2,6 +2,7 @@
 Module contains Apache Airflow operator that deletes dynamic PV used  by
 experiment tasks.
 """
+import logging
 from typing import Dict
 
 from airflow.operators.python import BaseOperator
@@ -47,7 +48,9 @@ class DeletePipelineStorageOperator(BaseOperator):
         :param context: Airflow context
         """
         with client.ApiClient(config.load_incluster_config()) as api_client:
+            logging.info(f"Deleteing PVC [{self._namespace}:{self.pvc_name}]")
             self.delete_namespace(api_client)
+            logging.info("PVC deleted")
 
     def delete_namespace(self, api_client):
         """

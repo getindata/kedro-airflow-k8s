@@ -77,7 +77,7 @@ class TestPluginCLI:
                             "limits": {"cpu": "4", "memory": "4Gi"},
                         },
                         "huge": {
-                            "labels": {
+                            "node_selectors": {
                                 "target/k8s.io": "mammoth",
                                 "custom_label": "test",
                             },

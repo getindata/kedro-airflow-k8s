@@ -66,9 +66,24 @@ run_config:
         # will be used.
         #__default__:
             # Optional labels to be put into pod node selector
+            #node_selectors:
+              #Labels are user provided key value pairs
+              #node_pool_label/k8s.io: example_value
+            # Optional labels to apply on pods
             #labels:
-                #Labels are user provided key value pairs
-                #label_key: label_value
+              #running: airflow
+            # Optional annotations to apply on pods
+            #annotations:
+              #iam.amazonaws.com/role: airflow
+            # Optional list of kubernetes tolerations
+            #tolerations:
+                #- key: "group"
+                  #value: "data-processing"
+                  #effect: "NoExecute"
+                #- key: "group"
+                  #operator: "Equal",
+                  #value: "data-processing",
+                  #effect: "NoSchedule"
             #requests:
                 #Optional amount of cpu resources requested from k8s
                 #cpu: "1"
@@ -149,6 +164,18 @@ class ResourceNodeConfig(Config):
 
 
 class ResourceConfig(Config):
+    @property
+    def annotations(self):
+        return self._get_or_default("annotations", {})
+
+    @property
+    def tolerations(self):
+        return self._get_or_default("tolerations", {})
+
+    @property
+    def node_selectors(self):
+        return self._get_or_default("node_selectors", {})
+
     @property
     def labels(self):
         return self._get_or_default("labels", {})

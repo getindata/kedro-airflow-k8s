@@ -26,8 +26,16 @@ run_config:
         disabled: True
     resources:
         __default__:
-            labels:
+            node_selectors:
                 size: mammoth
+            labels:
+                running: airflow
+            tolerations:
+                - key: "group"
+                  value: "data-processing"
+                  effect: "NoExecute"
+            annotations:
+                iam.amazonaws.com/role: airflow
             requests:
                 cpu: "1"
                 memory: "1Gi"
@@ -72,8 +80,21 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.resources
         resources = cfg.run_config.resources
         assert resources.__default__
+        assert resources.__default__.node_selectors
+        assert resources.__default__.node_selectors["size"] == "mammoth"
         assert resources.__default__.labels
-        assert resources.__default__.labels["size"] == "mammoth"
+        assert resources.__default__.labels["running"] == "airflow"
+        assert resources.__default__.tolerations
+        assert resources.__default__.tolerations[0] == {
+            "key": "group",
+            "value": "data-processing",
+            "effect": "NoExecute",
+        }
+        assert resources.__default__.annotations
+        assert (
+            resources.__default__.annotations["iam.amazonaws.com/role"]
+            == "airflow"
+        )
         assert resources.__default__.requests
         assert resources.__default__.requests.cpu == "1"
         assert resources.__default__.requests.memory == "1Gi"
@@ -81,7 +102,9 @@ class TestPluginConfig(unittest.TestCase):
         assert resources.__default__.limits.cpu == "2"
         assert resources.__default__.limits.memory == "2Gi"
         assert resources.custom_resource_config_name
+        assert not resources.custom_resource_config_name.node_selectors
         assert not resources.custom_resource_config_name.labels
+        assert not resources.custom_resource_config_name.tolerations
         assert resources.custom_resource_config_name.requests
         assert resources.custom_resource_config_name.requests.cpu == "8"
         assert not resources.custom_resource_config_name.requests.memory
