@@ -149,7 +149,7 @@ class ResourceNodeConfig(Config):
 class ResourceConfig(Config):
     @property
     def annotations(self):
-        return self._get_or_fail("annotations")
+        return self._get_or_default("annotations", {})
 
     @property
     def tolerations(self):
