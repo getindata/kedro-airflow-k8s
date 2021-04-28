@@ -3,6 +3,7 @@ Module contains Apache Airflow operator that creates k8s pod for execution of
 kedro node.
 """
 
+import logging
 from typing import Dict, List, Optional
 
 from airflow.kubernetes.pod_generator import PodGenerator
@@ -107,6 +108,15 @@ class NodePodOperator(KubernetesPodOperator):
             tolerations=self.create_tolerations(tolerations),
             annotations=annotations,
         )
+
+    def execute(self, context):
+        """
+        Executes task in pod with provided configuration (super implementation used).
+        :param context:
+        :return:
+        """
+        logging.info(self.create_pod_request_obj())
+        return super().execute(context)
 
     @staticmethod
     def create_resources(

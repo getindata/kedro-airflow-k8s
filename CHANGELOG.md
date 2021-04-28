@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 -   Support for labels, tolerations and annotations in k8s
+-   Logging added to operators
 
 ## [0.4.0] - 2021-04-20
 
