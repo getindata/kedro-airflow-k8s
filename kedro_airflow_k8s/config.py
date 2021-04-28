@@ -111,6 +111,23 @@ run_config:
                 #Optional amount of memory resource limit on k8s
                 #memory: "1Gi"
 
+    # Optional external dependencies configuration
+    #external_dependencies:
+        # Can just select dag as a whole
+        #- dag_id: upstream-dag
+        # or detailed
+        #- dag_id: another-upstream-dag
+        # with specific task to wait on
+        #  task_id: with-precise-task
+        # Maximum time (minute) to wait for the external dag to finish before this
+        # pipeline fails, the default is 1440 == 1 day
+        #  timeout: 2
+        # Checks if the external dag exists before waiting for it to finish. If it
+        # does not exists, fail this pipeline. By default is set to true.
+        #  check_existence: False
+        # Time difference with the previous execution to look at (minutes),
+        # the default is 0 meaning no difference
+        #  execution_delta: 10
 """
 
 
@@ -180,6 +197,28 @@ class ResourcesConfig(Config):
         return ResourceConfig(self._get_or_default(item, {}))
 
 
+class ExternalDependenyConfig(Config):
+    @property
+    def dag_id(self):
+        return self._get_or_fail("dag_id")
+
+    @property
+    def task_id(self):
+        return self._get_or_default("task_id", None)
+
+    @property
+    def check_existence(self):
+        return self._get_or_default("check_existence", True)
+
+    @property
+    def execution_delta(self):
+        return self._get_or_default("execution_delta", 0)
+
+    @property
+    def timeout(self):
+        return self._get_or_default("timeout", 60 * 24)
+
+
 class RunConfig(Config):
     @property
     def image(self):
@@ -222,6 +261,11 @@ class RunConfig(Config):
     def resources(self):
         cfg = self._get_or_default("resources", {})
         return ResourcesConfig(cfg)
+
+    @property
+    def external_dependencies(self):
+        deps = self._get_or_default("external_dependencies", [])
+        return [ExternalDependenyConfig(cfg) for cfg in deps]
 
     def _get_prefix(self):
         return "run_config."

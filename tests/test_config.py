@@ -45,6 +45,13 @@ run_config:
         custom_resource_config_name:
             requests:
                 cpu: "8"
+    external_dependencies:
+        - dag_id: test-parent-dag
+        - dag_id: test-another-parent-dag
+          task_id: test-parent-task
+          timeout: 2
+          check_existence: False
+          execution_delta: 10
 """
 
 
@@ -103,6 +110,18 @@ class TestPluginConfig(unittest.TestCase):
         assert not resources.custom_resource_config_name.requests.memory
         assert not resources.custom_resource_config_name.limits.memory
         assert not resources.custom_resource_config_name.limits.cpu
+        dependencies = cfg.run_config.external_dependencies
+        assert len(dependencies) == 2
+        assert dependencies[0].dag_id == "test-parent-dag"
+        assert dependencies[0].task_id is None
+        assert dependencies[0].check_existence
+        assert dependencies[0].timeout == 60 * 24
+        assert dependencies[0].execution_delta == 0
+        assert dependencies[1].dag_id == "test-another-parent-dag"
+        assert dependencies[1].task_id == "test-parent-task"
+        assert dependencies[1].check_existence is False
+        assert dependencies[1].timeout == 2
+        assert dependencies[1].execution_delta == 10
 
     def test_defaults(self):
         cfg = PluginConfig({"run_config": {}})
@@ -121,6 +140,8 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.volume.skip_init is False
         assert cfg.run_config.volume.owner == 0
         assert cfg.run_config.resources
+
+        assert not cfg.run_config.external_dependencies
 
     def test_run_name_is_experiment_name_by_default(self):
         cfg = PluginConfig(

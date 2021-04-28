@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+-   External dependencies can be added as optionals in configuration
 -   Support for labels, tolerations and annotations in k8s
 -   Logging added to operators
 
