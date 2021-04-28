@@ -98,6 +98,11 @@ spec:
         return PodGenerator.make_unique_pod_id("data-volume-init")
 
     def execute(self, context):
+        """
+        Executes task in pod with provided configuration (super implementation used).
+        :param context:
+        :return:
+        """
         logging.info(
             f"Copy image {self._image} data from {self._source} to {self._target}"
         )

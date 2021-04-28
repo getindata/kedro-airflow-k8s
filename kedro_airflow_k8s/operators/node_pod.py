@@ -99,6 +99,11 @@ class NodePodOperator(KubernetesPodOperator):
         )
 
     def execute(self, context):
+        """
+        Executes task in pod with provided configuration (super implementation used).
+        :param context:
+        :return:
+        """
         logging.info(self.create_pod_request_obj())
         return super().execute(context)
 
