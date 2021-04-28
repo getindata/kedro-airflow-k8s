@@ -1,11 +1,14 @@
-from airflow import DAG
-from airflow.utils.dates import days_ago
-from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
-from airflow.operators.python import PythonOperator
-from airflow.kubernetes.pod_generator import PodGenerator
-from kubernetes.client import models as k8s
-from kubernetes import client, config
 import logging
+
+from airflow import DAG
+from airflow.kubernetes.pod_generator import PodGenerator
+from airflow.operators.python import PythonOperator
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
+    KubernetesPodOperator,
+)
+from airflow.utils.dates import days_ago
+from kubernetes import client, config
+from kubernetes.client import models as k8s
 
 EXPERIMENT_NAME = "{{ config.run_config.experiment_name | slugify }}"
 
@@ -92,10 +95,29 @@ with DAG(
         limits_cpu="{{resources[node.name].limits.cpu if resources[node.name].limits.cpu}}",
         limits_memory="{{resources[node.name].limits.memory if resources[node.name].limits.memory}}",
         node_selector_labels={
+        {%- for key, value in resources[node.name].node_selectors.items() %}
+            "{{ key }}": "{{ value }}",
+            {%- endfor %}
+        },
+        labels={
         {%- for key, value in resources[node.name].labels.items() %}
             "{{ key }}": "{{ value }}",
             {%- endfor %}
-        }
+        },
+        tolerations=[
+        {%- for tolerations_items in resources[node.name].tolerations %}
+            {
+            {%- for key, value in tolerations_items.items() %}
+               "{{ key }}": "{{ value }}",
+            {%- endfor %}
+            },
+        {%- endfor %}
+        ],
+        annotations={
+        {%- for key, value in resources[node.name].annotations.items() %}
+            "{{ key }}": "{{ value }}",
+        {%- endfor %}
+        },
     )
     {% endfor %}
 

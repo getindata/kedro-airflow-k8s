@@ -100,9 +100,10 @@ class TestAirflow:
 
     @responses.activate
     def test_wait_for_dag_run_retry(self, client):
-        running_response, success_response = {"state": "running"}, {
-            "state": "success"
-        }
+        running_response, success_response = (
+            {"state": "running"},
+            {"state": "success"},
+        )
         response_data_task_instance = {
             "task_instances": [{"state": "success"}]
         }

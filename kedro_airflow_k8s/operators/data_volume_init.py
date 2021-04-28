@@ -2,6 +2,7 @@
 Module contains Apache Airflow operator that initialize attached PV with data sourced
  from image.
 """
+import logging
 
 from airflow.kubernetes.pod_generator import PodGenerator
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
@@ -44,6 +45,7 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         self._pvc_name = pvc_name
         self._image = image
         self._source = source
+        self._target = f"{self._source}volume"
 
         super().__init__(
             task_id=task_id,
@@ -79,9 +81,9 @@ spec:
         - "bash"
         - "-c"
       args:
-        - cp --verbose -r {self._source}/* {self._source}volume
+        - cp --verbose -r {self._source}/* {self._target}
       volumeMounts:
-        - mountPath: "{self._source}volume"
+        - mountPath: "{self._target}"
           name: storage
             """
         return data_volume_init_definition
@@ -94,3 +96,15 @@ spec:
         :return:
         """
         return PodGenerator.make_unique_pod_id("data-volume-init")
+
+    def execute(self, context):
+        """
+        Executes task in pod with provided configuration (super implementation used).
+        :param context:
+        :return:
+        """
+        logging.info(
+            f"Copy image {self._image} data from {self._source} to {self._target}"
+        )
+        logging.info(str(self.create_pod_request_obj()))
+        return super().execute(context)
