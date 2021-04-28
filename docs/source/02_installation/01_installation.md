@@ -2,12 +2,10 @@
 
 ## Kedro setup
 
-First, you need to install base Kedro package in ``<17.0`` version
-
-> Kedro 17.0 is supported by kedro-airflow-k8s, but [not by kedro-mlflow](https://github.com/Galileo-Galilei/kedro-mlflow/issues/144) yet, so the latest version from 0.16 family is recommended.
+First, you need to install base Kedro package in ``>=0.17.3`` version
 
 ```console
-$ pip install 'kedro<0.17'
+$ pip install 'kedro>=0.17.3,<0.18'
 ```
 
 ## Plugin installation

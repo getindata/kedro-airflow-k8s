@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Remove support for kedro <0.17.3
+
 ## [0.4.0] - 2021-04-20
 
 -   Support of S3 as DAG destination
