@@ -77,7 +77,7 @@ class TestPluginCLI:
                             "limits": {"cpu": "4", "memory": "4Gi"},
                         },
                         "huge": {
-                            "labels": {
+                            "node_selectors": {
                                 "target/k8s.io": "mammoth",
                                 "custom_label": "test",
                             },
@@ -123,6 +123,23 @@ class TestPluginCLI:
         assert '"target/k8s.io": "mammoth"' in dag_content
         assert "startup_timeout=120" in dag_content
         assert 'pipeline="test_pipeline_name"' in dag_content
+
+    def test_compile_with_dependencies(self, context_helper):
+        context_helper.config._raw["run_config"].update(
+            {"external_dependencies": [{"dag_id": "parent_dag"}]}
+        )
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        result = runner.invoke(compile, [], obj=config)
+        assert result.exit_code == 0
+        assert Path("dags/kedro_airflow_k8s.py").exists()
+
+        dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
+        assert "ExternalTaskSensor" in dag_content
+        assert "external_dag_id='parent_dag'," in dag_content
+        assert "task_id='wait_for_parent_dag_None'," in dag_content
 
     def test_upload_pipeline(self, context_helper):
         config = dict(context_helper=context_helper)
@@ -172,6 +189,9 @@ class TestPluginCLI:
         assert "schedule_interval='0 0 0 5 *'" in dag_content
 
     def test_run_once(self, context_helper):
+        context_helper.config._raw["run_config"].update(
+            {"external_dependencies": [{"dag_id": "parent_dag"}]}
+        )
         config = dict(context_helper=context_helper)
 
         runner = CliRunner()
@@ -207,6 +227,7 @@ class TestPluginCLI:
             Path(output_directory.name) / "kedro_airflow_k8s.py"
         ).read_text()
         assert len(dag_content) > 0
+        assert "xternalTaskSensor(external_dag_id=" not in dag_content
 
     def test_run_once_upload_error(self, context_helper):
         config = dict(context_helper=context_helper)

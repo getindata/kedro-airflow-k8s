@@ -2,6 +2,7 @@
 Module contains Apache Airflow operator that creates dynamic PV for data shared by
 experiment tasks.
 """
+import logging
 from typing import Dict, List, Optional
 
 from airflow.operators.python import BaseOperator
@@ -57,11 +58,18 @@ class CreatePipelineStorageOperator(BaseOperator):
         :return: pvc name
         """
         with client.ApiClient(config.load_incluster_config()) as api_client:
+            logging.info(
+                f"Creating PVC [{self._namespace}:{self.pvc_name}] "
+                f"of size {self._volumes_size} "
+                f"with storage class {self._storage_class_name} "
+                f"and access modes: {str(self._access_modes)}"
+            )
             pvc = self.create_pvc()
             k8s_client = client.CoreV1Api(api_client)
             k8s_client.create_namespaced_persistent_volume_claim(
                 self._namespace, pvc
             )
+            logging.info("PVC created")
             context["ti"].xcom_push("pvc_name", self.pvc_name)
 
             return self.pvc_name

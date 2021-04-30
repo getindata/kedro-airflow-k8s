@@ -67,9 +67,24 @@ run_config:
         # will be used.
         __default__:
             # Optional labels to be put into pod node selector
+            node_selectors:
+              #Labels are user provided key value pairs
+              node_pool_label/k8s.io: example_value
+            # Optional labels to apply on pods
             labels:
-                #Labels are user provided key value pairs
-                node_pool_label/k8s.io: example_value
+              running: airflow
+            # Optional annotations to apply on pods
+            annotations:
+              iam.amazonaws.com/role: airflow
+            # Optional list of kubernetes tolerations
+            tolerations:
+                - key: "group"
+                  value: "data-processing"
+                  effect: "NoExecute"
+                - key: "group"
+                  operator: "Equal",
+                  value: "data-processing",
+                  effect: "NoSchedule"
             requests:
                 #Optional amount of cpu resources requested from k8s
                 cpu: "1"
@@ -82,7 +97,7 @@ run_config:
                 memory: "1Gi"
         # Other arbitrary configurations to use, for example to indicate some exception resources
         huge_machines:
-            labels:
+            node_selectors:
                 big_node_pool: huge.10x
             requests:
                 cpu: "16"
@@ -90,6 +105,23 @@ run_config:
             limits:
                 cpu: "32"
                 memory: "256Gi"
+    # Optional external dependencies configuration
+    external_dependencies:
+        # Can just select dag as a whole 
+        - dag_id: upstream-dag
+        # or detailed
+        - dag_id: another-upstream-dag
+        # with specific task to wait on
+          task_id: with-precise-task
+        # Maximum time (minute) to wait for the external dag to finish before this
+        # pipeline fails, the default is 1440 == 1 day  
+          timeout: 2
+        # Checks if the external dag exists before waiting for it to finish. If it
+        # does not exists, fail this pipeline. By default is set to true. 
+          check_existence: False
+        # Time difference with the previous execution to look at (minutes),
+        # the default is 0 meaning no difference
+          execution_delta: 10
 ```
 
 ## Indicate resources in pipeline nodes

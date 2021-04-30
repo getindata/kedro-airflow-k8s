@@ -1,11 +1,10 @@
+import logging
+
 from airflow import DAG
 from airflow.utils.dates import days_ago
-from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
-from airflow.operators.python import PythonOperator
-from airflow.kubernetes.pod_generator import PodGenerator
-from kubernetes.client import models as k8s
-from kubernetes import client, config
-import logging
+from airflow.utils.task_group import TaskGroup
+from airflow.sensors.external_task import ExternalTaskSensor
+from datetime import timedelta
 
 EXPERIMENT_NAME = "{{ config.run_config.experiment_name | slugify }}"
 
@@ -73,37 +72,70 @@ with DAG(
     {% endif %}
 
     tasks = {}
+    with TaskGroup("kedro", prefix_group_id=False) as kedro_group:
     {% for node in pipeline.nodes %}
-    tasks["{{ node.name | slugify }}"] = NodePodOperator(
-        node_name="{{node.name}}",
-        namespace="{{config.run_config.namespace}}",
-        volume_disabled={{config.run_config.volume.disabled}},
-        pvc_name=pvc_name,
-        image="{{ image }}",
-        image_pull_policy="{{ config.run_config.image_pull_policy }}",
-        env="{{env}}",
-        pipeline="{{ pipeline_name }}",
-        task_id="{{ node.name | slugify }}",
-        startup_timeout={{ config.run_config.startup_timeout }},
-        volume_owner={{ config.run_config.volume.owner }},
-        mlflow_enabled={% if mlflow_url %}True{% else %}False{% endif %},
-        requests_cpu="{{resources[node.name].requests.cpu if resources[node.name].requests.cpu}}",
-        requests_memory="{{resources[node.name].requests.memory if resources[node.name].requests.memory}}",
-        limits_cpu="{{resources[node.name].limits.cpu if resources[node.name].limits.cpu}}",
-        limits_memory="{{resources[node.name].limits.memory if resources[node.name].limits.memory}}",
-        node_selector_labels={
-        {%- for key, value in resources[node.name].labels.items() %}
-            "{{ key }}": "{{ value }}",
+        tasks["{{ node.name | slugify }}"] = NodePodOperator(
+            node_name="{{node.name}}",
+            namespace="{{config.run_config.namespace}}",
+            volume_disabled={{config.run_config.volume.disabled}},
+            pvc_name=pvc_name,
+            image="{{ image }}",
+            image_pull_policy="{{ config.run_config.image_pull_policy }}",
+            env="{{env}}",
+            pipeline="{{ pipeline_name }}",
+            task_id="{{ node.name | slugify }}",
+            startup_timeout={{ config.run_config.startup_timeout }},
+            volume_owner={{ config.run_config.volume.owner }},
+            mlflow_enabled={% if mlflow_url %}True{% else %}False{% endif %},
+            requests_cpu="{{resources[node.name].requests.cpu if resources[node.name].requests.cpu}}",
+            requests_memory="{{resources[node.name].requests.memory if resources[node.name].requests.memory}}",
+            limits_cpu="{{resources[node.name].limits.cpu if resources[node.name].limits.cpu}}",
+            limits_memory="{{resources[node.name].limits.memory if resources[node.name].limits.memory}}",
+            node_selector_labels={
+            {%- for key, value in resources[node.name].node_selectors.items() %}
+                "{{ key }}": "{{ value }}",
+                {%- endfor %}
+            },
+            labels={
+            {%- for key, value in resources[node.name].labels.items() %}
+                "{{ key }}": "{{ value }}",
+                {%- endfor %}
+            },
+            tolerations=[
+            {%- for tolerations_items in resources[node.name].tolerations %}
+                {
+                {%- for key, value in tolerations_items.items() %}
+                   "{{ key }}": "{{ value }}",
+                {%- endfor %}
+                },
             {%- endfor %}
-        }
-    )
+            ],
+            annotations={
+            {%- for key, value in resources[node.name].annotations.items() %}
+                "{{ key }}": "{{ value }}",
+            {%- endfor %}
+            },
+        )
     {% endfor %}
 
     {% for parent_node, child_nodes in dependencies.items() -%}
     {% for child in child_nodes %}
-    tasks["{{ parent_node.name | slugify }}"] >> tasks["{{ child.name | slugify }}"]
+        tasks["{{ parent_node.name | slugify }}"] >> tasks["{{ child.name | slugify }}"]
     {% endfor %}
     {%- endfor %}
+
+    {% if with_external_dependencies %}
+    {% for dependency in config.run_config.external_dependencies %}
+    with TaskGroup("external_pipelines", prefix_group_id=False):
+        ExternalTaskSensor(external_dag_id='{{ dependency.dag_id }}',
+                            external_task_id='{{ dependency.task_id if dependency.task_id }}',
+                            check_existence={{ dependency.check_existence }},
+                            execution_delta=timedelta(minutes={{ dependency.execution_delta }}),
+                            task_id='wait_for_{{ dependency.dag_id }}_{{ dependency.task_id }}',
+                            timeout={{ dependency.timeout }} * 60,
+                            ) >> kedro_group
+    {% endfor %}
+    {% endif %}
 
     {% if not config.run_config.volume.disabled %}
         {% if not config.run_config.volume.skip_init %}
@@ -114,19 +146,15 @@ with DAG(
         {% endif %}
     {% endif %}
 
-    {% for node in base_nodes %}
     {% if mlflow_url %}
-    start_mlflow_run >> tasks['{{ node | slugify }}']
+    start_mlflow_run >> kedro_group
     {% endif %}
     {% if not config.run_config.volume.disabled and not config.run_config.volume.skip_init %}
-    data_volume_init >> tasks['{{ node | slugify }}']
+    data_volume_init >> kedro_group
     {% endif %}
-    {% endfor %}
 
     {% if not config.run_config.volume.disabled %}
-    {% for node in bottom_nodes %}
-    tasks['{{ node | slugify }}'] >> delete_pipeline_storage
-    {% endfor %}
+    kedro_group >> delete_pipeline_storage
     {% endif %}
 
 if __name__ == "__main__":

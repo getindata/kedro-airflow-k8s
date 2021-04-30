@@ -176,7 +176,11 @@ def run_once(
     Uploads pipeline to Airflow and runs once
     """
     dag_filename, template_stream = get_dag_filename_and_template_stream(
-        ctx, dag_name=dag_name, image=image, cron_expression=None
+        ctx,
+        dag_name=dag_name,
+        image=image,
+        cron_expression=None,
+        with_external_dependencies=False,
     )
     context_helper = ctx.obj["context_helper"]
     output = output or context_helper.config.output
