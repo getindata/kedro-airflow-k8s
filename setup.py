@@ -7,10 +7,11 @@ with open("README.md") as f:
 
 # Runtime Requirements.
 INSTALL_REQUIRES = [
-    "kedro>=0.16,<=0.18",
+    "kedro>=0.17,<0.18",
     "click<8.0",
     "semver~=2.10",
     "python-slugify>=4.0.1",
+    "requests>=2.23.0",
 ]
 
 # Dev Requirements
@@ -35,7 +36,7 @@ EXTRA_REQUIRE = {
         "gcsfs>=0.6.2, <0.7.0",
     ],
     "aws": ["s3fs>=0.6.0"],
-    "mlflow": ["kedro-mlflow==0.4.1"],
+    "mlflow": ["kedro-mlflow>=0.7.1, <0.8"],
 }
 
 setup(

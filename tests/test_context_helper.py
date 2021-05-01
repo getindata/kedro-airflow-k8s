@@ -4,21 +4,15 @@ from unittest.mock import MagicMock, Mock, patch
 from kedro.framework.session import KedroSession
 
 from kedro_airflow_k8s.config import PluginConfig
-from kedro_airflow_k8s.context_helper import ContextHelper, ContextHelper16
+from kedro_airflow_k8s.context_helper import ContextHelper
 
 
 class TestContextHelper(unittest.TestCase):
-    def test_init_different_kedro_versions(self):
-
-        with patch("kedro_airflow_k8s.context_helper.kedro_version", "0.16.0"):
-            ch = ContextHelper.init(None, None)
-            assert isinstance(ch, ContextHelper16)
-
     def test_project_name(self):
         metadata = Mock()
         metadata.project_name = "test_project"
 
-        helper = ContextHelper.init(metadata, "test")
+        helper = ContextHelper(metadata, "test")
         assert helper.project_name == "test_project"
 
     def test_context(self):
@@ -29,7 +23,7 @@ class TestContextHelper(unittest.TestCase):
 
         with patch.object(KedroSession, "create") as create:
             create().load_context.return_value = "sample_context"
-            helper = ContextHelper.init(metadata, "test")
+            helper = ContextHelper(metadata, "test")
             assert helper.context == "sample_context"
             create.assert_called_with("test_package", env="test")
 
@@ -40,7 +34,7 @@ class TestContextHelper(unittest.TestCase):
         context.config_loader.return_value.get.return_value = ["one", "two"]
         with patch.object(KedroSession, "create", context) as create:
             create().load_context().config_loader.get.return_value = {}
-            helper = ContextHelper.init(metadata, "test")
+            helper = ContextHelper(metadata, "test")
             assert helper.config == PluginConfig({})
 
     def test_pipeline_selection(self):
@@ -50,7 +44,5 @@ class TestContextHelper(unittest.TestCase):
         context.pipelines = {"feature_engineering": "pipeline_mock"}
         with patch.object(KedroSession, "create") as create:
             create().load_context.return_value = context
-            helper = ContextHelper.init(
-                metadata, "test", "feature_engineering"
-            )
+            helper = ContextHelper(metadata, "test", "feature_engineering")
             assert helper.pipeline == "pipeline_mock"

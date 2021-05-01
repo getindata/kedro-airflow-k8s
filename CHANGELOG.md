@@ -7,6 +7,7 @@
 -   External dependencies can be added as optionals in configuration
 -   Support for labels, tolerations and annotations in k8s
 -   Logging added to operators
+-   Remove support for kedro <0.17.3
 
 ## [0.4.0] - 2021-04-20
 

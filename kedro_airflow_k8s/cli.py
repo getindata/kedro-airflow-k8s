@@ -41,7 +41,7 @@ def commands():
 @click.pass_context
 def airflow_group(ctx, metadata, env, pipeline):
     ctx.ensure_object(dict)
-    ctx.obj["context_helper"] = ContextHelper.init(metadata, env, pipeline)
+    ctx.obj["context_helper"] = ContextHelper(metadata, env, pipeline)
 
 
 @airflow_group.command()
