@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Docker image added as a Mlflow run parameter (to support kedro inference pipeline)
+
 ## [0.5.0] - 2021-04-30
 
 -   External dependencies can be added as optionals in configuration
