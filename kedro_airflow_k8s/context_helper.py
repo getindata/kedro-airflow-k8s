@@ -68,7 +68,7 @@ class ContextHelper(object):
 
 
 class ContextHelper16(ContextHelper):
-    """ Variant for compatibility with Kedro 1.6 """
+    """Variant for compatibility with Kedro 1.6"""
 
     @property
     def project_name(self):
