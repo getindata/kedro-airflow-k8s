@@ -41,7 +41,8 @@ with DAG(
     {% if mlflow_url %}
     start_mlflow_run = StartMLflowExperimentOperator(
         experiment_name=EXPERIMENT_NAME,
-        mlflow_url='{{ mlflow_url }}'
+        mlflow_url='{{ mlflow_url }}',
+        image="{{ image }}",
     )
     {% endif %}
 

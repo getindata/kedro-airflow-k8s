@@ -20,6 +20,7 @@ class StartMLflowExperimentOperator(BaseOperator):
         mlflow_url: str,
         experiment_name: str,
         task_id: str = "start_mlflow_run",
+        image: str = None,
         **kwargs,
     ) -> None:
         """
@@ -33,6 +34,7 @@ class StartMLflowExperimentOperator(BaseOperator):
         super().__init__(task_id=task_id, **kwargs)
         self.experiment_name = experiment_name
         self.mlflow_url = mlflow_url
+        self.image = image
 
     def create_mlflow_client(self):
         """
@@ -89,6 +91,9 @@ class StartMLflowExperimentOperator(BaseOperator):
             )
 
         run_id = mlflow_client.create_run(experiment_id).info.run_id
+        if self.image is not None:
+            mlflow_client.log_param(run_id, "image", self.image)
+
         context["ti"].xcom_push("mlflow_run_id", run_id)
 
         return run_id

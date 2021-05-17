@@ -125,3 +125,34 @@ class TestStartMLflowExperimentOperator(unittest.TestCase):
 
                 context = self.create_context(op)
                 op.execute(context=context)
+
+    def test_log_docker_image_within_run(self):
+        with mock.patch.object(
+            start_mlflow_experiment.StartMLflowExperimentOperator,
+            "create_mlflow_client",
+        ) as create_mlflow_client:
+            mlflow_client = MagicMock()
+            mlflow_client.create_experiment.side_effect = Mock(
+                side_effect=MlflowException(
+                    message="Experiment exists",
+                    error_code=databricks_pb2.RESOURCE_ALREADY_EXISTS,
+                )
+            )
+            mlflow_client.create_run.return_value.info.run_id = (
+                "another-run-id"
+            )
+
+            create_mlflow_client.return_value = mlflow_client
+            op = start_mlflow_experiment.StartMLflowExperimentOperator(
+                task_id="test",
+                mlflow_url="http://test.mlflow.com",
+                experiment_name="test-experiment",
+                image="registry.com/someimage:aabbcc",
+            )
+
+            context = self.create_context(op)
+
+            assert op.execute(context=context) == "another-run-id"
+            mlflow_client.log_param.assert_called_with(
+                "another-run-id", "image", "registry.com/someimage:aabbcc"
+            )
