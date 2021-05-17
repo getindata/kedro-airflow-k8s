@@ -31,7 +31,7 @@ jobs:
         pip install .[mlflow,tests]
         pip freeze
         pipdeptree
-        pre-commit run --all-files | true
+        pre-commit run --all-files || true
         git diff 
 
     - name: Test with tox
