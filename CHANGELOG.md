@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.5.1] - 2021-05-17
+
+-   Docker image added as a Mlflow run parameter (to support kedro inference pipeline)
+
 ## [0.5.0] - 2021-04-30
 
 -   External dependencies can be added as optionals in configuration
@@ -65,7 +69,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.1...HEAD
+
+[0.5.1]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.0...0.5.1
 
 [0.5.0]: https://github.com/getindata/kedro-airflow-k8s/compare/0.4.0...0.5.0
 
