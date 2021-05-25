@@ -1,7 +1,7 @@
 import logging
 
 from airflow import DAG
-from airflow.contrib.kubernetes.secret import Secret
+from airflow.kubernetes.secret import Secret
 from airflow.utils.dates import days_ago
 from airflow.utils.task_group import TaskGroup
 from airflow.sensors.external_task import ExternalTaskSensor
