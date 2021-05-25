@@ -58,6 +58,21 @@ run_config:
         # Tells if volume should not be used at all, false by default
         disabled: False
 
+    # List of optional secrets specification
+    secrets:
+            # deploy_type: The type of secret deploy in Kubernetes, either `env` or
+            `volume`
+        -   deploy_type: "env"
+            # deploy_target: (Optional) The environment variable when `deploy_type` `env`
+            # or file path when `deploy_type` `volume` where expose secret. If `key` is
+            # not provided deploy target should be None.
+            deploy_target: "SQL_CONN"
+            # secret: Name of the secrets object in Kubernetes
+            secret: "airflow-secrets"
+            # key: (Optional) Key of the secret within the Kubernetes Secret if not
+            # provided in `deploy_type` `env` it will mount all secrets in object
+            key: "sql_alchemy_conn"
+
     # Optional resources specification
     #resources:
         # Default configuration used by all nodes that do not declare the
@@ -258,6 +273,11 @@ class RunConfig(Config):
         return VolumeConfig(cfg)
 
     @property
+    def secrets(self):
+        cfg = self._get_or_default("secrets", [])
+        return [SecretConfig(secret) for secret in cfg]
+
+    @property
     def resources(self):
         cfg = self._get_or_default("resources", {})
         return ResourcesConfig(cfg)
@@ -298,6 +318,27 @@ class VolumeConfig(Config):
 
     def _get_prefix(self):
         return "run_config.volume."
+
+
+class SecretConfig(Config):
+    @property
+    def deploy_type(self):
+        return self._get_or_default("deploy_type", "env")
+
+    @property
+    def deploy_target(self):
+        return self._get_or_default("deploy_target", None)
+
+    @property
+    def secret(self):
+        return self._get_or_fail("secret")
+
+    @property
+    def key(self):
+        return self._get_or_default("key", None)
+
+    def _get_prefix(self):
+        return "run_config.secrets."
 
 
 class PluginConfig(Config):

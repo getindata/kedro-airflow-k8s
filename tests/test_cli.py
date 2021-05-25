@@ -71,6 +71,14 @@ class TestPluginCLI:
                         "size": "3Gi",
                         "storageclass": "with-encryption",
                     },
+                    "secrets": [
+                        {"secret": "airflow-secrets"},
+                        {
+                            "secret": "database-secrets",
+                            "deploy_target": "DB_PASSWORD",
+                            "key": "password",
+                        },
+                    ],
                     "resources": {
                         "__default__": {
                             "requests": {"cpu": "2", "memory": "1Gi"},
@@ -123,6 +131,14 @@ class TestPluginCLI:
         assert '"target/k8s.io": "mammoth"' in dag_content
         assert "startup_timeout=120" in dag_content
         assert 'pipeline="test_pipeline_name"' in dag_content
+
+        assert (
+            """secrets=[
+                Secret("env", None, "airflow-secrets", None),
+                Secret("env", "DB_PASSWORD", "database-secrets", "password"),
+            ]"""
+            in dag_content
+        )
 
     def test_compile_with_dependencies(self, context_helper):
         context_helper.config._raw["run_config"].update(

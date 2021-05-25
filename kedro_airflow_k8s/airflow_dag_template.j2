@@ -1,6 +1,7 @@
 import logging
 
 from airflow import DAG
+from airflow.contrib.kubernetes.secret import Secret
 from airflow.utils.dates import days_ago
 from airflow.utils.task_group import TaskGroup
 from airflow.sensors.external_task import ExternalTaskSensor
@@ -116,6 +117,11 @@ with DAG(
                 "{{ key }}": "{{ value }}",
             {%- endfor %}
             },
+            secrets=[
+            {%- for secret in secrets %}
+                Secret("{{secret.deploy_type}}", {{  "\"{}\"".format(secret.deploy_target)|safe if secret.deploy_target else None}}, "{{secret.secret}}", {{ "\"{}\"".format(secret.key)|safe if secret.key else None}}),
+            {%- endfor %}
+            ],
         )
     {% endfor %}
 
