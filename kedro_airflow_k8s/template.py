@@ -93,6 +93,7 @@ def _create_template_stream(
         include_node_pod_operator=(
             Path(__file__).parent / "operators/node_pod.py"
         ).read_text(),
+        secrets=context_helper.config.run_config.secrets,
     )
 
 

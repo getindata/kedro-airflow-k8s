@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Support for Secrets in k8s
+
 ## [0.5.1] - 2021-05-17
 
 -   Docker image added as a Mlflow run parameter (to support kedro inference pipeline)
