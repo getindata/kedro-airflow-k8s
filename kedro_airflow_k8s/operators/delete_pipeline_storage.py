@@ -36,6 +36,7 @@ class DeletePipelineStorageOperator(BaseOperator):
         """
         super().__init__(
             task_id=task_id,
+            trigger_rule="all_done",
             **kwargs,
         )
         self._namespace = namespace
