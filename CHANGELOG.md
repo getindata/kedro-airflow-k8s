@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.5.2] - 2021-07-05
+
+-   Support for Secrets in k8s
+-   FIX: DeletePipelineStorageOperator was missing trigger rule 'all_done'
+
 ## [0.5.1] - 2021-05-17
 
 -   Docker image added as a Mlflow run parameter (to support kedro inference pipeline)
@@ -69,7 +74,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.1...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.2...HEAD
+
+[0.5.2]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.1...0.5.2
 
 [0.5.1]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.0...0.5.1
 

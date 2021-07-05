@@ -40,3 +40,4 @@ class TestDeletePipelineStorageOperator(unittest.TestCase):
 
             op.execute(context=context)
             delete.assert_called_once()
+            assert op.trigger_rule == "all_done"

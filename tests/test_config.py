@@ -24,6 +24,16 @@ run_config:
         skip_init: True
         owner: 1000
         disabled: True
+    secrets:
+        -   secret: "foo"
+        -   deploy_type: "env"
+            deploy_target: "SQL_CONN"
+            secret: "airflow-secrets"
+            key: "sql_alchemy_conn"
+        -   deploy_type: "volume"
+            deploy_target: "/etc/sql_conn"
+            secret: "airflow-secrets"
+            key: "sql_alchemy_con"
     resources:
         __default__:
             node_selectors:
@@ -122,6 +132,24 @@ class TestPluginConfig(unittest.TestCase):
         assert dependencies[1].check_existence is False
         assert dependencies[1].timeout == 2
         assert dependencies[1].execution_delta == 10
+
+        assert cfg.run_config.secrets
+        secrets = cfg.run_config.secrets
+        assert len(secrets) == 3
+        first_secret = secrets[0]
+        assert first_secret.secret == "foo"
+        assert first_secret.deploy_type == "env"
+        second_secret = secrets[1]
+        assert second_secret.secret == "airflow-secrets"
+        assert second_secret.deploy_type == "env"
+        assert second_secret.deploy_target == "SQL_CONN"
+        assert second_secret.key == "sql_alchemy_conn"
+
+        third_secret = secrets[2]
+        assert third_secret.secret == "airflow-secrets"
+        assert third_secret.deploy_type == "volume"
+        assert third_secret.deploy_target == "/etc/sql_conn"
+        assert third_secret.key == "sql_alchemy_con"
 
     def test_defaults(self):
         cfg = PluginConfig({"run_config": {}})

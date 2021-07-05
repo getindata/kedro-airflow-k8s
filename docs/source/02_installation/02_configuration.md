@@ -59,6 +59,17 @@ run_config:
         # `volume` are discarded
         disabled: False
 
+    # List of optional secrets specification
+    secrets:
+            # deploy_type: (Optional - default: 'env`) The type of secret deploy in Kubernetes, either `env` or `volume`
+        -   deploy_type: "env"
+            # deploy_target: (Optional) The environment variable when `deploy_type` `env` or file path when `deploy_type` `volume` where expose secret. If `key` is not provided deploy target should be None.
+            deploy_target: "SQL_CONN"
+            # secret: Name of the secrets object in Kubernetes
+            secret: "airflow-secrets"
+            # key: (Optional) Key of the secret within the Kubernetes Secret if not provided in `deploy_type` `env` it will mount all secrets in object
+            key: "sql_alchemy_conn"
+
     # Optional resources specification
     resources:
         # Default configuration used by all nodes that do not declare the

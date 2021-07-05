@@ -7,6 +7,7 @@ import logging
 from typing import Dict, List, Optional
 
 from airflow.kubernetes.pod_generator import PodGenerator
+from airflow.kubernetes.secret import Secret
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
     KubernetesPodOperator,
 )
@@ -41,6 +42,7 @@ class NodePodOperator(KubernetesPodOperator):
         labels: Optional[Dict[str, str]] = None,
         tolerations: Optional[List[Dict[str, str]]] = None,
         annotations: Optional[Dict[str, str]] = None,
+        secrets: Optional[List[Secret]] = None,
         source: str = "/home/kedro/data",
     ):
         """
@@ -107,6 +109,7 @@ class NodePodOperator(KubernetesPodOperator):
             labels=labels,
             tolerations=self.create_tolerations(tolerations),
             annotations=annotations,
+            secrets=secrets,
         )
 
     def execute(self, context):
