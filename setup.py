@@ -29,7 +29,7 @@ EXTRA_REQUIRE = {
     "docs": [
         "sphinx==3.4.2",
         "recommonmark==0.7.1",
-        "sphinx_rtd_theme==0.5.1",
+        "sphinx_rtd_theme==0.5.2",
     ],
     "gcp": [
         "gcsfs>=0.6.2, <0.7.0",
@@ -40,7 +40,7 @@ EXTRA_REQUIRE = {
 
 setup(
     name="kedro-airflow-k8s",
-    version="0.5.1",
+    version="0.5.2",
     description="Kedro plugin with Airflow on Kubernetes support",
     long_description=README,
     long_description_content_type="text/markdown",
