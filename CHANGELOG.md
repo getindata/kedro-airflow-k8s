@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 -   Support for Secrets in k8s
+-   FIX: DeletePipelineStorageOperator was missing trigger rule 'all_done'
 
 ## [0.5.1] - 2021-05-17
 
