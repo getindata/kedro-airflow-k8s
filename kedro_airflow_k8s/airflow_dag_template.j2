@@ -122,6 +122,14 @@ with DAG(
                 Secret("{{secret.deploy_type}}", {{  "\"{}\"".format(secret.deploy_target)|safe if secret.deploy_target else None}}, "{{secret.secret}}", {{ "\"{}\"".format(secret.key)|safe if secret.key else None}}),
             {%- endfor %}
             ],
+            parameters="""
+            {%- for param in macro_params %}
+                {{ param }}:{{'{{'}} {{  param }} {{ '}}' }},
+                {%- endfor %}
+            {%- for param in variables_params %}
+                {{ param }}:{{'{{ var.value.'}}{{  param }} {{ '}}' }},
+                {%- endfor %}
+            """,
         )
     {% endfor %}
 

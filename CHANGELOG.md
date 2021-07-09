@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Support for airflow macro parameters and variables
+
 ## [0.5.2] - 2021-07-05
 
 -   Support for Secrets in k8s
