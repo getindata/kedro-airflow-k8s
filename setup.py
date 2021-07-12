@@ -29,7 +29,7 @@ EXTRA_REQUIRE = {
     "docs": [
         "sphinx==3.4.2",
         "recommonmark==0.7.1",
-        "sphinx_rtd_theme==0.5.3",
+        "sphinx_rtd_theme==0.5.2",
     ],
     "gcp": [
         "gcsfs>=0.6.2, <0.7.0",
