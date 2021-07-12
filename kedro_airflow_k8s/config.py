@@ -73,6 +73,14 @@ run_config:
             # provided in `deploy_type` `env` it will mount all secrets in object
             key: "sql_alchemy_conn"
 
+    # Apache Airflow macros to be exposed for the parameters
+    # List of macros can be found here:
+    # https://airflow.apache.org/docs/apache-airflow/stable/macros-ref.html
+    macro_params: [ds, prev_ds]
+
+    # Apache Airflow variables to be exposed for the parameters
+    variables_params: [env]
+
     # Optional resources specification
     #resources:
         # Default configuration used by all nodes that do not declare the
@@ -276,6 +284,14 @@ class RunConfig(Config):
     def secrets(self):
         cfg = self._get_or_default("secrets", [])
         return [SecretConfig(secret) for secret in cfg]
+
+    @property
+    def macro_params(self):
+        return self._get_or_default("macro_params", [])
+
+    @property
+    def variables_params(self):
+        return self._get_or_default("variables_params", [])
 
     @property
     def resources(self):

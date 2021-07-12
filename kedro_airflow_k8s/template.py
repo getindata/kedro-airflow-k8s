@@ -94,6 +94,8 @@ def _create_template_stream(
             Path(__file__).parent / "operators/node_pod.py"
         ).read_text(),
         secrets=context_helper.config.run_config.secrets,
+        macro_params=context_helper.config.run_config.macro_params,
+        variables_params=context_helper.config.run_config.variables_params,
     )
 
 

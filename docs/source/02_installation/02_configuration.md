@@ -70,6 +70,15 @@ run_config:
             # key: (Optional) Key of the secret within the Kubernetes Secret if not provided in `deploy_type` `env` it will mount all secrets in object
             key: "sql_alchemy_conn"
 
+
+    # Apache Airflow macros to be exposed for the parameters
+    # List of macros can be found here:
+    # https://airflow.apache.org/docs/apache-airflow/stable/macros-ref.html
+    macro_params: [ds, prev_ds]
+
+    # Apache Airflow variables to be exposed for the parameters
+    variables_params: [env]
+  
     # Optional resources specification
     resources:
         # Default configuration used by all nodes that do not declare the

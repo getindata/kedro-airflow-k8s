@@ -34,6 +34,8 @@ run_config:
             deploy_target: "/etc/sql_conn"
             secret: "airflow-secrets"
             key: "sql_alchemy_con"
+    macro_params: [ds,prev_ds]
+    variables_params: [env]
     resources:
         __default__:
             node_selectors:
@@ -150,6 +152,9 @@ class TestPluginConfig(unittest.TestCase):
         assert third_secret.deploy_type == "volume"
         assert third_secret.deploy_target == "/etc/sql_conn"
         assert third_secret.key == "sql_alchemy_con"
+
+        assert cfg.run_config.macro_params == ["ds", "prev_ds"]
+        assert cfg.run_config.variables_params == ["env"]
 
     def test_defaults(self):
         cfg = PluginConfig({"run_config": {}})

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.5.3] - 2021-07-12
+
+-   Support for airflow macro parameters and variables
+
 ## [0.5.2] - 2021-07-05
 
 -   Support for Secrets in k8s
@@ -74,7 +78,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.2...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.3...HEAD
+
+[0.5.3]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.2...0.5.3
 
 [0.5.2]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.1...0.5.2
 
