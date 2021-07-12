@@ -44,6 +44,7 @@ class NodePodOperator(KubernetesPodOperator):
         annotations: Optional[Dict[str, str]] = None,
         secrets: Optional[List[Secret]] = None,
         source: str = "/home/kedro/data",
+        parameters: Optional[str] = "",
     ):
         """
 
@@ -70,6 +71,7 @@ class NodePodOperator(KubernetesPodOperator):
         :param tolerations: dictionary tolerations for nodes
         :param annotations: dictionary of annotations to apply on pod
         :param source: mount point of shared storage
+        :param parameters: additional kedro run parameters
         """
         self._task_id = task_id
         self._volume_disabled = volume_disabled
@@ -93,6 +95,8 @@ class NodePodOperator(KubernetesPodOperator):
                 pipeline,
                 "--node",
                 node_name,
+                "--params",
+                parameters,
             ],
             volume_mounts=[
                 k8s.V1VolumeMount(mount_path=source, name="storage")

@@ -79,6 +79,8 @@ class TestPluginCLI:
                             "key": "password",
                         },
                     ],
+                    "macro_params": ["ds", "pre_ds"],
+                    "variables_params": ["env"],
                     "resources": {
                         "__default__": {
                             "requests": {"cpu": "2", "memory": "1Gi"},
@@ -137,6 +139,15 @@ class TestPluginCLI:
                 Secret("env", None, "airflow-secrets", None),
                 Secret("env", "DB_PASSWORD", "database-secrets", "password"),
             ]"""
+            in dag_content
+        )
+
+        assert (
+            """parameters=\"\"\"
+                ds:{{ ds }},
+                pre_ds:{{ pre_ds }},
+                env:{{ var.value.env }},
+            \"\"\","""
             in dag_content
         )
 

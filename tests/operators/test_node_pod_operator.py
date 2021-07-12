@@ -34,6 +34,7 @@ class TestNodePodOperator(unittest.TestCase):
             ],
             annotations={"iam.amazonaws.com/role": "airflow"},
             pipeline="data_science_pipeline",
+            parameters="ds:{{ ds }}",
         )
 
         pod = task.create_pod_request_obj()
@@ -54,6 +55,8 @@ class TestNodePodOperator(unittest.TestCase):
             "data_science_pipeline",
             "--node",
             "test_node_name",
+            "--params",
+            "ds:{{ ds }}",
         ]
 
         assert len(pod.spec.volumes) == 1
