@@ -134,7 +134,7 @@ class TestPluginCLI:
         assert '"target/k8s.io": "mammoth"' in dag_content
         assert "startup_timeout=120" in dag_content
         assert 'pipeline="test_pipeline_name"' in dag_content
-        assert "start_date=datetime(2021, 07, 21)" in dag_content
+        assert "start_date=datetime(2021, int('07'), int('21'))" in dag_content
 
         assert (
             """secrets=[
