@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.5.4] - 2021-07-21
+
 -   Run config contains optional start_date in format YYYYMMDD, if not specified default is left to `days_ago(2)` 
 
 ## [0.5.3] - 2021-07-12
@@ -80,7 +82,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.3...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.4...HEAD
+
+[0.5.4]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.3...0.5.4
 
 [0.5.3]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.2...0.5.3
 
