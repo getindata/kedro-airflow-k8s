@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Run config contains optional start_date in format YYYYMMDD, if not specified default is left to `days_ago(2)` 
+
 ## [0.5.3] - 2021-07-12
 
 -   Support for airflow macro parameters and variables

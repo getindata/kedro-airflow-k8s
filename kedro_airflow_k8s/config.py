@@ -34,6 +34,9 @@ run_config:
     # Apache Airflow cron expression for scheduled runs
     cron_expression: "@daily"
 
+    # Optional start date in format YYYYMMDD
+    #start_date: "20210721"
+
     # Optional pipeline description
     #description: "Very Important Pipeline"
 
@@ -270,6 +273,13 @@ class RunConfig(Config):
     @property
     def cron_expression(self):
         return self._get_or_default("cron_expression", "@daily")
+
+    @property
+    def start_date(self):
+        start_date = self._get_or_default("start_date", None)
+        if start_date:
+            start_date = str(start_date)
+        return start_date
 
     @property
     def description(self):
