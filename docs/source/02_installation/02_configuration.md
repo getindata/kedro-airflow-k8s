@@ -33,6 +33,9 @@ run_config:
 
     # Apache Airflow cron expression for scheduled runs
     cron_expression: "@daily"
+        
+    # Optional start date in format YYYYMMDD, if not provided `days_ago(2)` is used instead
+    start_date: "20210721"
 
     # Optional pipeline description
     description: "Very Important Pipeline"

@@ -17,6 +17,7 @@ run_config:
     cron_expression: "@hourly"
     description: "test pipeline"
     startup_timeout: 120
+    start_date: 20200102
     volume:
         storageclass: kms
         size: 3Gi
@@ -82,6 +83,7 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.run_name == "test-experiment-branch"
         assert cfg.run_config.cron_expression == "@hourly"
         assert cfg.run_config.description == "test pipeline"
+        assert cfg.run_config.start_date == "20200102"
         assert cfg.run_config.volume
         assert cfg.run_config.volume.storageclass == "kms"
         assert cfg.run_config.volume.size == "3Gi"
@@ -164,6 +166,7 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.startup_timeout == 600
         assert cfg.run_config.cron_expression == "@daily"
         assert cfg.run_config.description is None
+        assert cfg.run_config.start_date is None
 
         assert cfg.run_config.volume
         assert cfg.run_config.volume.disabled is False
