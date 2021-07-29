@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- Added option to specify service_account_name or image_pull_secrets to executed dag. 
+## [0.6.0] - 2021-07-29
+
+-   Added option to specify service_account_name or image_pull_secrets to executed dag. 
 
 ## [0.5.4] - 2021-07-21
 
@@ -84,7 +86,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.4...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.0...HEAD
+
+[0.6.0]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.4...0.6.0
 
 [0.5.4]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.3...0.5.4
 
