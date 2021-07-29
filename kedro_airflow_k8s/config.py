@@ -41,10 +41,10 @@ run_config:
     #description: "Very Important Pipeline"
 
     # Comma separated list of image pull secret names
-    # image_pull_secrets: my-registry-credentials
+    #image_pull_secrets: my-registry-credentials
 
     # Service account name to execute nodes with
-    # service_account_name: default
+    #service_account_name: default
 
     # Optional volume specification
     volume:
