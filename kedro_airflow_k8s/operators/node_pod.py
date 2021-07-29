@@ -157,10 +157,6 @@ class NodePodOperator(KubernetesPodOperator):
             limits["memory"] = limits_memory
         return k8s.V1ResourceRequirements(limits=limits, requests=requests)
 
-    @staticmethod
-    def create_image_pull_secrets(secrets):
-        pass
-
     @property
     def minimal_pod_template(self):
         """
