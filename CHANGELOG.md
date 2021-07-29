@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Added option to specify service_account_name or image_pull_secrets to executed dag. 
+
 ## [0.5.4] - 2021-07-21
 
 -   Run config contains optional start_date in format YYYYMMDD, if not specified default is left to `days_ago(2)` 

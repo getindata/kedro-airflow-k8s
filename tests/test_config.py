@@ -18,6 +18,8 @@ run_config:
     description: "test pipeline"
     startup_timeout: 120
     start_date: 20200102
+    image_pull_secrets: pull1,pull2
+    service_account_name: service_account
     volume:
         storageclass: kms
         size: 3Gi
@@ -84,6 +86,8 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.cron_expression == "@hourly"
         assert cfg.run_config.description == "test pipeline"
         assert cfg.run_config.start_date == "20200102"
+        assert cfg.run_config.service_account_name == "service_account"
+        assert cfg.run_config.image_pull_secrets == "pull1,pull2"
         assert cfg.run_config.volume
         assert cfg.run_config.volume.storageclass == "kms"
         assert cfg.run_config.volume.size == "3Gi"
