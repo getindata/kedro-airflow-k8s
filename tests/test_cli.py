@@ -138,7 +138,7 @@ class TestPluginCLI:
         assert 'pipeline="test_pipeline_name"' in dag_content
         assert "start_date=datetime(2021, int('07'), int('21'))" in dag_content
         assert 'image_pull_secrets="pull_secrets"' in dag_content
-        assert 'service_account_name="sa"' in dag_content
+        assert 'service_account_name="service_account"' in dag_content
 
         assert (
             """secrets=[
