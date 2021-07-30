@@ -40,6 +40,8 @@ class NodePodOperator(KubernetesPodOperator):
         limits_memory: Optional[str] = None,
         node_selector_labels: Optional[Dict[str, str]] = None,
         labels: Optional[Dict[str, str]] = None,
+        image_pull_secrets: Optional[str] = None,
+        service_account_name: Optional[str] = None,
         tolerations: Optional[List[Dict[str, str]]] = None,
         annotations: Optional[Dict[str, str]] = None,
         secrets: Optional[List[Secret]] = None,
@@ -68,6 +70,10 @@ class NodePodOperator(KubernetesPodOperator):
         :param node_selector_labels: dictionary of node selector labels to be put into
                                      pod node selector
         :param labels: dictionary of labels to apply on pod
+        :param image_pull_secrets: Any image pull secrets to be given to the pod.
+                                   If more than one secret is required, provide a
+                                   comma separated list: secret_a,secret_b
+        :param service_account_name: Name of the service account
         :param tolerations: dictionary tolerations for nodes
         :param annotations: dictionary of annotations to apply on pod
         :param source: mount point of shared storage
@@ -86,6 +92,8 @@ class NodePodOperator(KubernetesPodOperator):
             namespace=namespace,
             image=image,
             image_pull_policy=image_pull_policy,
+            image_pull_secrets=image_pull_secrets,
+            service_account_name=service_account_name,
             arguments=[
                 "kedro",
                 "run",

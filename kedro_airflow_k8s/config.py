@@ -40,6 +40,12 @@ run_config:
     # Optional pipeline description
     #description: "Very Important Pipeline"
 
+    # Comma separated list of image pull secret names
+    #image_pull_secrets: my-registry-credentials
+
+    # Service account name to execute nodes with
+    #service_account_name: default
+
     # Optional volume specification
     volume:
         # Storage class - use null (or no value) to use the default storage
@@ -223,7 +229,7 @@ class ResourcesConfig(Config):
         return ResourceConfig(self._get_or_default(item, {}))
 
 
-class ExternalDependenyConfig(Config):
+class ExternalDependencyConfig(Config):
     @property
     def dag_id(self):
         return self._get_or_fail("dag_id")
@@ -311,7 +317,15 @@ class RunConfig(Config):
     @property
     def external_dependencies(self):
         deps = self._get_or_default("external_dependencies", [])
-        return [ExternalDependenyConfig(cfg) for cfg in deps]
+        return [ExternalDependencyConfig(cfg) for cfg in deps]
+
+    @property
+    def image_pull_secrets(self):
+        return self._get_or_default("image_pull_secrets", None)
+
+    @property
+    def service_account_name(self):
+        return self._get_or_default("service_account_name", None)
 
     def _get_prefix(self):
         return "run_config."

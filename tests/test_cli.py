@@ -67,6 +67,8 @@ class TestPluginCLI:
                     "cron_expression": None,
                     "startup_timeout": 120,
                     "start_date": "20210721",
+                    "image_pull_secrets": "pull_secrets",
+                    "service_account_name": "service_account",
                     "volume": {
                         "access_modes": ["ReadWriteMany"],
                         "size": "3Gi",
@@ -135,6 +137,8 @@ class TestPluginCLI:
         assert "startup_timeout=120" in dag_content
         assert 'pipeline="test_pipeline_name"' in dag_content
         assert "start_date=datetime(2021, int('07'), int('21'))" in dag_content
+        assert 'image_pull_secrets="pull_secrets"' in dag_content
+        assert 'service_account_name="service_account"' in dag_content
 
         assert (
             """secrets=[
