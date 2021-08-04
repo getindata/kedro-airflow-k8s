@@ -34,13 +34,13 @@ EXTRA_REQUIRE = {
     "gcp": [
         "gcsfs>=0.6.2, <0.7.0",
     ],
-    "aws": ["s3fs>=0.6.0"],
+    "aws": ["s3fs>=0.6.1"],
     "mlflow": ["kedro-mlflow==0.4.1"],
 }
 
 setup(
     name="kedro-airflow-k8s",
-    version="0.6.0",
+    version="0.6.1",
     description="Kedro plugin with Airflow on Kubernetes support",
     long_description=README,
     long_description_content_type="text/markdown",
