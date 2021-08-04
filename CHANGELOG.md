@@ -4,6 +4,8 @@
 
 ## [0.6.2] - 2021-08-04
 
+-   FIX: Add missing Jinja template for `data-volume-init` to module manifest 
+
 ## [0.6.1] - 2021-08-04
 
 -   FIX: service_account_name or image_pull_secrets should be passed to `data-volume-init` step as well
