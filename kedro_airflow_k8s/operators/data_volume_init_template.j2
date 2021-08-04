@@ -28,5 +28,5 @@ spec:
           args:
             - cp --verbose -r {{ source }}/* {{ target }}
           volumeMounts:
-            mountPath: "{{ target }}"
-            name: storage
+            - mountPath: "{{ target }}"
+              name: storage
