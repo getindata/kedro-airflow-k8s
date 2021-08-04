@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.6.3] - 2021-08-04
+
 ## [0.6.2] - 2021-08-04
 
 -   FIX: Add missing Jinja template for `data-volume-init` to module manifest 
@@ -94,7 +96,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.2...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.3...HEAD
+
+[0.6.3]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.2...0.6.3
 
 [0.6.2]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.1...0.6.2
 
