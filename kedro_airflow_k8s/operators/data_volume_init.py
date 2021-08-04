@@ -3,7 +3,9 @@ Module contains Apache Airflow operator that initialize attached PV with data so
  from image.
 """
 import logging
+from pathlib import Path
 
+import jinja2
 from airflow.kubernetes.pod_generator import PodGenerator
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
     KubernetesPodOperator,
@@ -26,6 +28,8 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         volume_owner: int,
         image_pull_policy: str,
         startup_timeout: int,
+        service_account_name: str = None,
+        image_pull_secrets: str = None,
         source: str = "/home/kedro/data",
         task_id: str = "data_volume_init",
     ):
@@ -46,7 +50,8 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         self._image = image
         self._source = source
         self._target = f"{self._source}volume"
-
+        self._service_account_name = service_account_name
+        self._image_pull_secrets = image_pull_secrets
         super().__init__(
             task_id=task_id,
             is_delete_operator_pod=True,
@@ -59,33 +64,27 @@ class DataVolumeInitOperator(KubernetesPodOperator):
     def definition(self):
         """
         :return: definition of pod which is used here instead of API directly, since
-             since it's fully templated and PVC name has dynamic part
+             it's fully templated and PVC name has dynamic part
         """
-        data_volume_init_definition = f"""
-apiVersion: v1
-kind: Pod
-metadata:
-  name: {self.create_name()}
-  namespace: {self._namespace}
-spec:
-  securityContext:
-    fsGroup: {self._volume_owner}
-  volumes:
-    - name: storage
-      persistentVolumeClaim:
-        claimName: {self._pvc_name}
-  containers:
-    - name: base
-      image: {self._image}
-      command:
-        - "bash"
-        - "-c"
-      args:
-        - cp --verbose -r {self._source}/* {self._target}
-      volumeMounts:
-        - mountPath: "{self._target}"
-          name: storage
-            """
+        loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
+
+        data_volume_init_definition = (
+            jinja2.Environment(
+                autoescape=True, loader=loader, lstrip_blocks=True
+            )
+            .get_template("data_volume_init_template.j2")
+            .render(
+                name=self.create_name(),
+                namespace=self._namespace,
+                volume_owner=self._volume_owner,
+                pvc_name=self._pvc_name,
+                service_account_name=self._service_account_name,
+                image=self._image,
+                image_pull_secrets=self._image_pull_secrets,
+                source=self._source,
+                target=self._target,
+            )
+        )
         return data_volume_init_definition
 
     @staticmethod

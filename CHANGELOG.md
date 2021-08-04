@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- FIX: service_account_name or image_pull_secrets should be passed to `data-volume-init` step as well
+
 ## [0.6.0] - 2021-07-29
 
 -   Added option to specify service_account_name or image_pull_secrets to executed dag. 
