@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- FIX: service_account_name or image_pull_secrets should be passed to `data-volume-init` step as well
+## [0.6.1] - 2021-08-04
+
+-   FIX: service_account_name or image_pull_secrets should be passed to `data-volume-init` step as well
 
 ## [0.6.0] - 2021-07-29
 
@@ -88,7 +90,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.1...HEAD
+
+[0.6.1]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.0...0.6.1
 
 [0.6.0]: https://github.com/getindata/kedro-airflow-k8s/compare/0.5.4...0.6.0
 
