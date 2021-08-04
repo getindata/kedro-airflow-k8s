@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+    name: {{ name }}
+    namespace: {{ namespace }}
+spec:
+    securityContext:
+        fsGroup: {{ volume_owner }}
+    volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: {{ pvc_name }}
+    {%- if service_account_name %}
+    serviceAccountName: {{ service_account_name }}
+    {%- endif %}
+    containers:
+        - name: base
+          image: {{ image }}
+          {%- if image_pull_secrets %}
+          imagePullSecrets:
+          {% for secret in image_pull_secrets.split(",") %}
+              - name: {{ secret }}
+          {%- endfor  %}
+          {%- endif  %}
+          command:
+            - "bash"
+            - "-c"
+          args:
+            - cp --verbose -r {{ source }}/* {{ target }}
+          volumeMounts:
+            - mountPath: "{{ target }}"
+              name: storage
