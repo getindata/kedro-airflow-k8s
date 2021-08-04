@@ -3,13 +3,48 @@ Module contains Apache Airflow operator that initialize attached PV with data so
  from image.
 """
 import logging
-from pathlib import Path
 
 import jinja2
 from airflow.kubernetes.pod_generator import PodGenerator
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
     KubernetesPodOperator,
 )
+from jinja2.loaders import BaseLoader
+
+VOLUME_INIT_TEMPLATE = """
+apiVersion: v1
+kind: Pod
+metadata:
+    name: {{ name }}
+    namespace: {{ namespace }}
+spec:
+    securityContext:
+        fsGroup: {{ volume_owner }}
+    volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: {{ pvc_name }}
+    {%- if service_account_name %}
+    serviceAccountName: {{ service_account_name }}
+    {%- endif %}
+    containers:
+        - name: base
+          image: {{ image }}
+          {%- if image_pull_secrets %}
+          imagePullSecrets:
+          {% for secret in image_pull_secrets.split(",") %}
+              - name: {{ secret }}
+          {%- endfor  %}
+          {%- endif  %}
+          command:
+            - "bash"
+            - "-c"
+          args:
+            - cp --verbose -r {{ source }}/* {{ target }}
+          volumeMounts:
+            - mountPath: "{{ target }}"
+              name: storage
+"""
 
 
 class DataVolumeInitOperator(KubernetesPodOperator):
@@ -66,13 +101,11 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         :return: definition of pod which is used here instead of API directly, since
              it's fully templated and PVC name has dynamic part
         """
-        loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
-
         data_volume_init_definition = (
             jinja2.Environment(
-                autoescape=True, loader=loader, lstrip_blocks=True
+                autoescape=True, loader=BaseLoader(), lstrip_blocks=True
             )
-            .get_template("data_volume_init_template.j2")
+            .from_string(VOLUME_INIT_TEMPLATE)
             .render(
                 name=self.create_name(),
                 namespace=self._namespace,
