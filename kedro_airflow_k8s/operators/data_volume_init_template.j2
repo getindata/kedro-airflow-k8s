@@ -18,7 +18,7 @@ spec:
           image: {{ image }}
           {%- if image_pull_secrets %}
           imagePullSecrets:
-          {% for secret in image_pull_secrets %}
+          {% for secret in image_pull_secrets.split(",") %}
               - name: {{ secret }}
           {%- endfor  %}
           {%- endif  %}
