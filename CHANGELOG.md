@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+-   FIX: Adjusted operators to make them compatible with Airflow >= 2.1.1
 -   FIX: Restore dependency versions that release process bumped unintentionally
 
 ## [0.6.3] - 2021-08-04

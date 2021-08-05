@@ -47,6 +47,7 @@ class NodePodOperator(KubernetesPodOperator):
         secrets: Optional[List[Secret]] = None,
         source: str = "/home/kedro/data",
         parameters: Optional[str] = "",
+        **kwargs,
     ):
         """
 
@@ -122,6 +123,7 @@ class NodePodOperator(KubernetesPodOperator):
             tolerations=self.create_tolerations(tolerations),
             annotations=annotations,
             secrets=secrets,
+            **kwargs,
         )
 
     def execute(self, context):
