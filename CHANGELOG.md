@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.6.5] - 2021-08-05
+
+-   FIX: Adjust service account setup for image based tasks
+
 ## [0.6.4] - 2021-08-05
 
 -   FIX: Adjusted operators to make them compatible with Airflow >= 2.1.1
@@ -103,7 +107,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.4...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.5...HEAD
+
+[0.6.5]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.4...0.6.5
 
 [0.6.4]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.3...0.6.4
 

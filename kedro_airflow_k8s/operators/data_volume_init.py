@@ -30,12 +30,6 @@ spec:
     containers:
         - name: base
           image: {{ image }}
-          {%- if image_pull_secrets %}
-          imagePullSecrets:
-          {% for secret in image_pull_secrets.split(",") %}
-              - name: {{ secret }}
-          {%- endfor  %}
-          {%- endif  %}
           command:
             - "bash"
             - "-c"
@@ -44,6 +38,13 @@ spec:
           volumeMounts:
             - mountPath: "{{ target }}"
               name: storage
+    {%- if image_pull_secrets %}
+    imagePullSecrets:
+    {% for secret in image_pull_secrets.split(",") %}
+      - name: {{ secret }}
+    {%- endfor  %}
+    {%- endif  %}
+
 """
 
 
@@ -63,7 +64,7 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         volume_owner: int,
         image_pull_policy: str,
         startup_timeout: int,
-        service_account_name: str = None,
+        service_account_name: str = "default",
         image_pull_secrets: str = None,
         source: str = "/home/kedro/data",
         task_id: str = "data_volume_init",
@@ -77,6 +78,9 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         :param image_pull_policy: k8s image pull policy
         :param startup_timeout: after the amount provided in seconds the pod start is
                                 timed out
+        :param service_account_name: service account pod will run as
+        :param image_pull_secrets: image pull secrets to be passed to containers, as
+                ',' separated values
         :param source: the location where the data is provided inside the image
         :param task_id: Airflow id to override
         """
@@ -94,6 +98,8 @@ class DataVolumeInitOperator(KubernetesPodOperator):
             startup_timeout_seconds=startup_timeout,
             pod_template_file=self.definition,
             image_pull_policy=image_pull_policy,
+            service_account_name=None,
+            # service_account_name to be overridden by template
             **kwargs,
         )
 

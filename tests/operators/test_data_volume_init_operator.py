@@ -10,6 +10,8 @@ class TestDataVolumeInitOperator(unittest.TestCase):
             pvc_name="shared_storage",
             image="registry.gitlab.com/test_image",
             image_pull_policy="Always",
+            service_account_name="custom_service_account",
+            image_pull_secrets="top,secret",
             volume_owner=100,
             startup_timeout=120,
             source="/home/airflow/test",
@@ -36,3 +38,23 @@ class TestDataVolumeInitOperator(unittest.TestCase):
         volume_mount = container.volume_mounts[0]
         assert volume_mount.mount_path == "/home/airflow/testvolume"
         assert volume_mount.name == "storage"
+        assert pod.spec.service_account_name == "custom_service_account"
+        assert len(pod.spec.image_pull_secrets) == 2
+        assert pod.spec.image_pull_secrets[0].name == "top"
+        assert pod.spec.image_pull_secrets[1].name == "secret"
+
+    def test_task_create_default_sa(self):
+        task = DataVolumeInitOperator(
+            namespace="airflow",
+            pvc_name="shared_storage",
+            image="registry.gitlab.com/test_image",
+            image_pull_policy="Always",
+            volume_owner=100,
+            startup_timeout=120,
+            source="/home/airflow/test",
+        )
+
+        pod = task.create_pod_request_obj()
+
+        assert pod.spec.service_account_name == "default"
+        assert len(pod.spec.image_pull_secrets) == 0
