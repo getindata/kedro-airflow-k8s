@@ -67,6 +67,7 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         image_pull_secrets: str = None,
         source: str = "/home/kedro/data",
         task_id: str = "data_volume_init",
+        **kwargs,
     ):
         """
         :param namespace: pod is started in this k8s namespace
@@ -93,6 +94,7 @@ class DataVolumeInitOperator(KubernetesPodOperator):
             startup_timeout_seconds=startup_timeout,
             pod_template_file=self.definition,
             image_pull_policy=image_pull_policy,
+            **kwargs,
         )
 
     @property

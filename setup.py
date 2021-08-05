@@ -32,15 +32,15 @@ EXTRA_REQUIRE = {
         "sphinx_rtd_theme==0.5.2",
     ],
     "gcp": [
-        "gcsfs>=0.6.3, <0.7.0",
+        "gcsfs>=0.6.2, <0.7.0",
     ],
-    "aws": ["s3fs>=0.6.3"],
+    "aws": ["s3fs>=0.6.1"],
     "mlflow": ["kedro-mlflow==0.4.1"],
 }
 
 setup(
     name="kedro-airflow-k8s",
-    version="0.6.3",
+    version="0.6.4",
     description="Kedro plugin with Airflow on Kubernetes support",
     long_description=README,
     long_description_content_type="text/markdown",
