@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   FIX: Adjust service account setup for image based tasks
+
 ## [0.6.4] - 2021-08-05
 
 -   FIX: Adjusted operators to make them compatible with Airflow >= 2.1.1

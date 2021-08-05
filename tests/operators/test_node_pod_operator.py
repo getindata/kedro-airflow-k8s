@@ -75,6 +75,9 @@ class TestNodePodOperator(unittest.TestCase):
         assert pod.spec.tolerations[0].value == "data-processing"
         assert pod.metadata.annotations["iam.amazonaws.com/role"] == "airflow"
 
+        assert pod.spec.service_account_name == "default"
+        assert len(pod.spec.image_pull_secrets) == 0
+
     def test_task_create_no_limits_and_requests(self):
         task = NodePodOperator(
             node_name="test_node_name",
@@ -95,3 +98,24 @@ class TestNodePodOperator(unittest.TestCase):
         assert container.resources.limits == {}
         assert container.resources.requests == {}
         assert pod.spec.node_selector is None
+
+    def test_task_with_service_account(self):
+        task = NodePodOperator(
+            node_name="test_node_name",
+            namespace="airflow",
+            pvc_name="shared_storage",
+            image="registry.gitlab.com/test_image",
+            image_pull_policy="Always",
+            env="test-pipelines",
+            task_id="test-node-name",
+            service_account_name="custom_service_account",
+            image_pull_secrets="top,secret",
+            mlflow_enabled=False,
+        )
+
+        pod = task.create_pod_request_obj()
+
+        assert pod.spec.service_account_name == "custom_service_account"
+        assert len(pod.spec.image_pull_secrets) == 2
+        assert pod.spec.image_pull_secrets[0].name == "top"
+        assert pod.spec.image_pull_secrets[1].name == "secret"

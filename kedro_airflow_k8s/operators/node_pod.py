@@ -41,7 +41,7 @@ class NodePodOperator(KubernetesPodOperator):
         node_selector_labels: Optional[Dict[str, str]] = None,
         labels: Optional[Dict[str, str]] = None,
         image_pull_secrets: Optional[str] = None,
-        service_account_name: Optional[str] = None,
+        service_account_name: Optional[str] = "default",
         tolerations: Optional[List[Dict[str, str]]] = None,
         annotations: Optional[Dict[str, str]] = None,
         secrets: Optional[List[Secret]] = None,
