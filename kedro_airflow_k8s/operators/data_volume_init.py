@@ -64,7 +64,7 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         volume_owner: int,
         image_pull_policy: str,
         startup_timeout: int,
-        service_account_name: str = None,
+        service_account_name: str = "default",
         image_pull_secrets: str = None,
         source: str = "/home/kedro/data",
         task_id: str = "data_volume_init",
@@ -78,6 +78,9 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         :param image_pull_policy: k8s image pull policy
         :param startup_timeout: after the amount provided in seconds the pod start is
                                 timed out
+        :param service_account_name: service account pod will run as
+        :param image_pull_secrets: image pull secrets to be passed to containers, as
+                ',' separated values
         :param source: the location where the data is provided inside the image
         :param task_id: Airflow id to override
         """
@@ -87,7 +90,7 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         self._image = image
         self._source = source
         self._target = f"{self._source}volume"
-        self._service_account_name = service_account_name or "default"
+        self._service_account_name = service_account_name
         self._image_pull_secrets = image_pull_secrets
         super().__init__(
             task_id=task_id,
