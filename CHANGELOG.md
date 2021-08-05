@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.6.4] - 2021-08-05
+
 -   FIX: Adjusted operators to make them compatible with Airflow >= 2.1.1
 -   FIX: Restore dependency versions that release process bumped unintentionally
 
@@ -101,7 +103,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.3...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.4...HEAD
+
+[0.6.4]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.3...0.6.4
 
 [0.6.3]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.2...0.6.3
 
