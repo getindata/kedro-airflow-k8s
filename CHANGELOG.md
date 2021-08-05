@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   FIX: Restore dependency versions that release process bumped unintentionally
+
 ## [0.6.3] - 2021-08-04
 
 -   FIX: Avoid file based Jinja template for `data-volume-init`
