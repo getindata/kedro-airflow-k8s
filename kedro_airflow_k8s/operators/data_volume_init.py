@@ -30,12 +30,6 @@ spec:
     containers:
         - name: base
           image: {{ image }}
-          {%- if image_pull_secrets %}
-          imagePullSecrets:
-          {% for secret in image_pull_secrets.split(",") %}
-              - name: {{ secret }}
-          {%- endfor  %}
-          {%- endif  %}
           command:
             - "bash"
             - "-c"
@@ -44,6 +38,13 @@ spec:
           volumeMounts:
             - mountPath: "{{ target }}"
               name: storage
+    {%- if image_pull_secrets %}
+    imagePullSecrets:
+    {% for secret in image_pull_secrets.split(",") %}
+      - name: {{ secret }}
+    {%- endfor  %}
+    {%- endif  %}
+
 """
 
 
@@ -86,7 +87,7 @@ class DataVolumeInitOperator(KubernetesPodOperator):
         self._image = image
         self._source = source
         self._target = f"{self._source}volume"
-        self._service_account_name = service_account_name
+        self._service_account_name = service_account_name or "default"
         self._image_pull_secrets = image_pull_secrets
         super().__init__(
             task_id=task_id,
@@ -94,6 +95,8 @@ class DataVolumeInitOperator(KubernetesPodOperator):
             startup_timeout_seconds=startup_timeout,
             pod_template_file=self.definition,
             image_pull_policy=image_pull_policy,
+            service_account_name=None,
+            # service_account_name to be overridden by template
             **kwargs,
         )
 
