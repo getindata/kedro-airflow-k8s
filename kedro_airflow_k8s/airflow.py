@@ -61,6 +61,9 @@ class AirflowClient:
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         session = requests.Session()
+        if "AIRFLOW_API_TOKEN" in os.environ:
+            token = os.environ["AIRFLOW_API_TOKEN"]
+            session.headers.update({"Authorization": "Bearer " + token})
         session.mount("https://", adapter)
         session.mount("http://", adapter)
 
