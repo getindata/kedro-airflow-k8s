@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 -   Support for passing Authorization header for secured Airflow API endpoint (via env variable: `AIRFLOW_API_TOKEN`)
+-   Logging `dag_id` and `execution_date` in mlflow run params
 
 ## [0.6.5] - 2021-08-05
 
