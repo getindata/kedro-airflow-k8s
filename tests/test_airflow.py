@@ -1,4 +1,5 @@
 import os
+
 import pytest
 import responses
 
@@ -12,8 +13,8 @@ class TestAirflow:
             "https://test.airflow.com", max_retries=0, retry_interval=0
         )
 
-        if 'AIRFLOW_API_TOKEN' in os.environ:
-            del os.environ['AIRFLOW_API_TOKEN']
+        if "AIRFLOW_API_TOKEN" in os.environ:
+            del os.environ["AIRFLOW_API_TOKEN"]
 
     @responses.activate
     def test_get_dag(self, client):
@@ -220,7 +221,7 @@ class TestAirflow:
 
     @responses.activate
     def test_use_of_authorization_token(self, client):
-        os.environ['AIRFLOW_API_TOKEN'] = "eyJhbG..."
+        os.environ["AIRFLOW_API_TOKEN"] = "eyJhbG..."
         response_data = {
             "dag_id": "test_id",
             "tags": [{"name": "commit_sha:123456"}],
@@ -231,7 +232,10 @@ class TestAirflow:
             json=response_data,
         )
 
-        dag = client.get_dag("test_id")
+        client.get_dag("test_id")
 
-        assert 'Authorization' in responses.calls[0].request.headers
-        assert responses.calls[0].request.headers['Authorization'] == 'Bearer eyJhbG...'
+        assert "Authorization" in responses.calls[0].request.headers
+        assert (
+            responses.calls[0].request.headers["Authorization"]
+            == "Bearer eyJhbG..."
+        )
