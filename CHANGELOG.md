@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Support for passing Authorization header for secured Airflow API endpoint (via env variable: `AIRFLOW_API_TOKEN`)
+
 ## [0.6.5] - 2021-08-05
 
 -   FIX: Adjust service account setup for image based tasks

@@ -1,3 +1,4 @@
+import os
 import pytest
 import responses
 
@@ -7,9 +8,12 @@ from kedro_airflow_k8s.airflow import AirflowClient, MissingDAGException
 class TestAirflow:
     @pytest.fixture(scope="class")
     def client(self):
-        return AirflowClient(
+        yield AirflowClient(
             "https://test.airflow.com", max_retries=0, retry_interval=0
         )
+
+        if 'AIRFLOW_API_TOKEN' in os.environ:
+            del os.environ['AIRFLOW_API_TOKEN']
 
     @responses.activate
     def test_get_dag(self, client):
@@ -213,3 +217,21 @@ class TestAirflow:
         assert dags[1].tags == [
             {"name": "generated_with_kedro_airflow_k8s:0.1.1"}
         ]
+
+    @responses.activate
+    def test_use_of_authorization_token(self, client):
+        os.environ['AIRFLOW_API_TOKEN'] = "eyJhbG..."
+        response_data = {
+            "dag_id": "test_id",
+            "tags": [{"name": "commit_sha:123456"}],
+        }
+        responses.add(
+            responses.GET,
+            "https://test.airflow.com/api/v1/dags/test_id",
+            json=response_data,
+        )
+
+        dag = client.get_dag("test_id")
+
+        assert 'Authorization' in responses.calls[0].request.headers
+        assert responses.calls[0].request.headers['Authorization'] == 'Bearer eyJhbG...'
