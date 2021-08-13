@@ -94,6 +94,11 @@ class StartMLflowExperimentOperator(BaseOperator):
         if self.image is not None:
             mlflow_client.log_param(run_id, "image", self.image)
 
+        mlflow_client.log_param(run_id, "dag_id", context["dag"].dag_id)
+        mlflow_client.log_param(
+            run_id, "execution_date", str(context.get("execution_date"))
+        )
+
         context["ti"].xcom_push("mlflow_run_id", run_id)
 
         return run_id
