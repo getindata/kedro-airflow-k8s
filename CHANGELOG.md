@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.6.6] - 2021-08-16
+
 -   Support for passing Authorization header for secured Airflow API endpoint (via env variable: `AIRFLOW_API_TOKEN`)
 -   Logging `dag_id` and `execution_date` in mlflow run params
 
@@ -110,7 +112,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.5...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.6...HEAD
+
+[0.6.6]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.5...0.6.6
 
 [0.6.5]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.4...0.6.5
 
