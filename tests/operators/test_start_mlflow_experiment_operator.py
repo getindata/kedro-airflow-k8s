@@ -23,6 +23,7 @@ class TestStartMLflowExperimentOperator(unittest.TestCase):
         task_instance = TaskInstance(task=task, execution_date=execution_date)
         return {
             "dag": dag,
+            "execution_date": execution_date,
             "ts": execution_date.isoformat(),
             "task": task,
             "ti": task_instance,
@@ -126,7 +127,7 @@ class TestStartMLflowExperimentOperator(unittest.TestCase):
                 context = self.create_context(op)
                 op.execute(context=context)
 
-    def test_log_docker_image_within_run(self):
+    def test_logging_run_params(self):
         with mock.patch.object(
             start_mlflow_experiment.StartMLflowExperimentOperator,
             "create_mlflow_client",
@@ -153,6 +154,14 @@ class TestStartMLflowExperimentOperator(unittest.TestCase):
             context = self.create_context(op)
 
             assert op.execute(context=context) == "another-run-id"
-            mlflow_client.log_param.assert_called_with(
+            mlflow_client.log_param.assert_any_call(
                 "another-run-id", "image", "registry.com/someimage:aabbcc"
+            )
+            mlflow_client.log_param.assert_any_call(
+                "another-run-id", "dag_id", "dag"
+            )
+            mlflow_client.log_param.assert_any_call(
+                "another-run-id",
+                "execution_date",
+                str(context["execution_date"]),
             )
