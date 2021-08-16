@@ -22,7 +22,7 @@ EXTRA_REQUIRE = {
         "pre-commit==2.9.3",
         "apache-airflow[kubernetes]==2.0.1",
         "apache-airflow-providers-cncf-kubernetes==1.1.0",
-        "mlflow==1.14.1",
+        "mlflow-skinny==1.19.0",
         "sqlalchemy==1.3.23",
         "responses>=0.13.0",
     ],
@@ -40,7 +40,7 @@ EXTRA_REQUIRE = {
 
 setup(
     name="kedro-airflow-k8s",
-    version="0.6.5",
+    version="0.6.6",
     description="Kedro plugin with Airflow on Kubernetes support",
     long_description=README,
     long_description_content_type="text/markdown",
