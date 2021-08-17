@@ -32,7 +32,7 @@ EXTRA_REQUIRE = {
         "sphinx_rtd_theme==0.5.2",
     ],
     "gcp": [
-        "gcsfs>=0.7.2, <0.8.0",
+        "gcsfs<0.8.0",
     ],
     "aws": ["s3fs>=0.6.1"],
     "mlflow": ["kedro-mlflow==0.4.1"],
