@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Support for generation of authentication header for secured MLflow API endpoint (via GOOGLE_APPLICATION_CREDENTIALS)
+
 ## [0.6.6] - 2021-08-16
 
 -   Support for passing Authorization header for secured Airflow API endpoint (via env variable: `AIRFLOW_API_TOKEN`)

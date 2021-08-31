@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest import mock
 from unittest.mock import MagicMock, Mock
@@ -165,3 +166,30 @@ class TestStartMLflowExperimentOperator(unittest.TestCase):
                 "execution_date",
                 str(context["execution_date"]),
             )
+
+    def test_with_auth_handler(self):
+        with mock.patch.object(
+            start_mlflow_experiment.StartMLflowExperimentOperator,
+            "create_mlflow_client",
+        ) as create_mlflow_client:
+            mlflow_client = MagicMock()
+            mlflow_client.create_experiment.return_value = "new-id"
+            mlflow_client.create_run.return_value.info.run_id = "next-run-id"
+
+            if "MLFLOW_TRACKING_TOKEN" in os.environ:
+                del os.environ["MLFLOW_TRACKING_TOKEN"]
+            auth_handler = MagicMock()
+            auth_handler.obtain_token.return_value = "TEST_JWT_TOKEN"
+
+            create_mlflow_client.return_value = mlflow_client
+            op = start_mlflow_experiment.StartMLflowExperimentOperator(
+                task_id="test",
+                mlflow_url="http://test.mlflow.com",
+                experiment_name="test-experiment",
+                auth_handler=auth_handler,
+            )
+
+            context = self.create_context(op)
+
+            assert op.execute(context=context) == "next-run-id"
+            assert os.environ["MLFLOW_TRACKING_TOKEN"] == "TEST_JWT_TOKEN"
