@@ -28,13 +28,14 @@ And re-push the image to the remote registry.
 
 # Authentication to MLflow API
 
-Given that Airflow has access to `GOOGLE_APPLICATION_CREDENTIALS` variables, it's possible to configure plugin
+Given that Airflow has access to `GOOGLE_APPLICATION_CREDENTIALS` variable, it's possible to configure plugin
 to use Google service account to authenticate to secured MLflow API endpoint, by generating OAuth2 token.
 
-All is required to have `GOOGLE_APPLICATION_CREDENTIALS` setup in Airflow and MLflow to be protected by Google as an
-issuer.
+All is required to have `GOOGLE_APPLICATION_CREDENTIALS` environment variable setup in Airflow installation and MLflow
+to be protected by Google as an issuer. The other thing is to have environment variable `GOOGLE_AUDIENCE` which
+indicates OAuth2 audience the token should be issued for.
 
-Also, configuration requires the following:
+Also, plugin configuration requires the following:
 
 ```yaml
 run_config:

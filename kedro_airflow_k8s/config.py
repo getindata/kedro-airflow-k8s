@@ -160,6 +160,13 @@ run_config:
         # Time difference with the previous execution to look at (minutes),
         # the default is 0 meaning no difference
         #  execution_delta: 10
+    # Optional authentication to MLflow API
+    #authentication:
+      # Strategy that generates the tokens, supported values are:
+      # - Null
+      # - GoogleOAuth2 (generating OAuth2 tokens for service account provided by
+      # GOOGLE_APPLICATION_CREDENTIALS)
+      #type: GoogleOAuth2
 """
 
 
@@ -251,6 +258,12 @@ class ExternalDependencyConfig(Config):
         return self._get_or_default("timeout", 60 * 24)
 
 
+class AuthenticationConfig(Config):
+    @property
+    def type(self):
+        return self._get_or_default("type", "Null")
+
+
 class RunConfig(Config):
     @property
     def image(self):
@@ -326,6 +339,11 @@ class RunConfig(Config):
     @property
     def service_account_name(self):
         return self._get_or_default("service_account_name", None)
+
+    @property
+    def auth_config(self):
+        cfg = self._get_or_default("authentication", {"type": "Null"})
+        return AuthenticationConfig(cfg)
 
     def _get_prefix(self):
         return "run_config."

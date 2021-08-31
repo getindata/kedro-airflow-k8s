@@ -45,6 +45,7 @@ with DAG(
         experiment_name=EXPERIMENT_NAME,
         mlflow_url='{{ mlflow_url }}',
         image="{{ image }}",
+        auth_handler={{ config.run_config.auth_config.type }}AuthHandler()
     )
     {% endif %}
 

@@ -171,6 +171,7 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.cron_expression == "@daily"
         assert cfg.run_config.description is None
         assert cfg.run_config.start_date is None
+        assert cfg.run_config.auth_config.type == "Null"
 
         assert cfg.run_config.volume
         assert cfg.run_config.volume.disabled is False

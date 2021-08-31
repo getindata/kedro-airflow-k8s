@@ -4,7 +4,7 @@ Module contains Apache Airflow operator that starts experiment in mlflow.
 import abc
 import logging
 import os
-from typing import Dict
+from typing import Dict, Optional
 
 from airflow.operators.python import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -28,7 +28,9 @@ class NullAuthHandler(AuthHandler):
 class GoogleOAuth2AuthHandler(AuthHandler):
     log = logging.getLogger("GoogleOAuth2AuthHandler")
 
-    def __init__(self, audience: str):
+    def __init__(self, audience: Optional[str] = None):
+        if not audience:
+            audience = os.environ["GOOGLE_AUDIENCE"]
         self.audience = audience
 
     def obtain_token(self) -> str:
