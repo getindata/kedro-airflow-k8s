@@ -25,3 +25,23 @@ And re-push the image to the remote registry.
 
 > If `kedro-mlflow` is not installed as dependency and configuration is not in place (missing `kedro mlflow init`), the 
 > MLflow experiment will not be initialized and available for pipeline tasks in Apache Airflow DAG.
+
+# Authentication to MLflow API
+
+Given that Airflow has access to `GOOGLE_APPLICATION_CREDENTIALS` variables, it's possible to configure plugin
+to use Google service account to authenticate to secured MLflow API endpoint, by generating OAuth2 token.
+
+All is required to have `GOOGLE_APPLICATION_CREDENTIALS` setup in Airflow and MLflow to be protected by Google as an
+issuer.
+
+Also, configuration requires the following:
+
+```yaml
+run_config:
+  authentication:
+    type: GoogleOAuth2
+```
+
+> NOTE: Authentication is an optional element and is used when starting MLflow experiment, so if MLflow is enabled in
+> project configuration. It does not setup authentication inside Kedro nodes, this has to be handled by the project.
+> Check GoogleOAuth2Handler class for details.
