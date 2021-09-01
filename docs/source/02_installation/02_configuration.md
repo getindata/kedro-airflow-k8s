@@ -151,6 +151,13 @@ run_config:
         # Time difference with the previous execution to look at (minutes),
         # the default is 0 meaning no difference
           execution_delta: 10
+
+    # Optional authentication to MLflow API    
+    authentication:
+      # Strategy that generates the tokens, supported values are: 
+      # - Null
+      # - GoogleOAuth2 (generating OAuth2 tokens for service account provided by GOOGLE_APPLICATION_CREDENTIALS)  
+      type: GoogleOAuth2 
 ```
 
 ## Indicate resources in pipeline nodes

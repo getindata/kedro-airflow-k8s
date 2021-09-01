@@ -38,7 +38,7 @@ spec:
   - when:
     - key: request.auth.audiences
       values:
-      - 32555940559.apps.googleusercontent.com # isued by gcloud sdk
+      - 32555940559.apps.googleusercontent.com # issued by gcloud sdk
     - key: request.auth.presenter
       values:
       - [service-account]@[google-project].iam.gserviceaccount.com

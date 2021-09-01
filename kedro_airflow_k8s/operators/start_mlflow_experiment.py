@@ -1,11 +1,56 @@
 """
 Module contains Apache Airflow operator that starts experiment in mlflow.
 """
+import abc
 import logging
-from typing import Dict
+import os
+from typing import Dict, Optional
 
 from airflow.operators.python import BaseOperator
 from airflow.utils.decorators import apply_defaults
+
+
+class AuthHandler:
+    @abc.abstractmethod
+    def obtain_token(self) -> str:
+        pass
+
+
+class NullAuthHandler(AuthHandler):
+    @staticmethod
+    def instance():
+        return NullAuthHandler()
+
+    def obtain_token(self) -> str:
+        return ""
+
+
+class GoogleOAuth2AuthHandler(AuthHandler):
+    log = logging.getLogger("GoogleOAuth2AuthHandler")
+
+    def __init__(self, audience: Optional[str] = None):
+        if not audience:
+            audience = os.environ["GOOGLE_AUDIENCE"]
+        self.audience = audience
+
+    def obtain_token(self) -> str:
+        from google.auth.transport.requests import Request
+        from google.oauth2 import id_token
+
+        gac = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", None)
+        token = ""
+
+        if gac:
+            try:
+                self.log.debug(
+                    "Attempt to get JWT token for %s." + self.audience
+                )
+                token = id_token.fetch_id_token(Request(), self.audience)
+                self.log.info("Obtained JWT token for authentication.")
+            except Exception as e:
+                self.log.error("Failed to obtain IAP access token. " + str(e))
+            finally:
+                return token
 
 
 class StartMLflowExperimentOperator(BaseOperator):
@@ -21,6 +66,7 @@ class StartMLflowExperimentOperator(BaseOperator):
         experiment_name: str,
         task_id: str = "start_mlflow_run",
         image: str = None,
+        auth_handler: AuthHandler = NullAuthHandler.instance(),
         **kwargs,
     ) -> None:
         """
@@ -35,6 +81,7 @@ class StartMLflowExperimentOperator(BaseOperator):
         self.experiment_name = experiment_name
         self.mlflow_url = mlflow_url
         self.image = image
+        self.auth_handler = auth_handler
 
     def create_mlflow_client(self):
         """
@@ -56,6 +103,10 @@ class StartMLflowExperimentOperator(BaseOperator):
         :param context: Airflow context
         :return: mlflow experiment run_id
         """
+        auth_token = self.auth_handler.obtain_token()
+        if auth_token:
+            os.environ["MLFLOW_TRACKING_TOKEN"] = auth_token
+
         from mlflow.protos.databricks_pb2 import (
             RESOURCE_ALREADY_EXISTS,
             ErrorCode,
