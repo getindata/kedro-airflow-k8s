@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.6.7] - 2021-09-01
+
+-   Support for generation of authentication header for secured MLflow API endpoint (via GOOGLE_APPLICATION_CREDENTIALS)
+
 ## [0.6.6] - 2021-08-16
 
 -   Support for passing Authorization header for secured Airflow API endpoint (via env variable: `AIRFLOW_API_TOKEN`)
@@ -112,7 +116,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.6...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.7...HEAD
+
+[0.6.7]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.6...0.6.7
 
 [0.6.6]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.5...0.6.6
 
