@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.6.8] - 2021-09-09
+
+-   FIX: adding missing dependency package: tabulate
+
 ## [0.6.7] - 2021-09-01
 
 -   Support for generation of authentication header for secured MLflow API endpoint (via GOOGLE_APPLICATION_CREDENTIALS)
