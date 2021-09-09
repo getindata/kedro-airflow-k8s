@@ -70,7 +70,7 @@ run_config:
     # List of optional secrets specification
     secrets:
             # deploy_type: The type of secret deploy in Kubernetes, either `env` or
-            `volume`
+            # `volume`
         -   deploy_type: "env"
             # deploy_target: (Optional) The environment variable when `deploy_type` `env`
             # or file path when `deploy_type` `volume` where expose secret. If `key` is
@@ -162,11 +162,15 @@ run_config:
         #  execution_delta: 10
     # Optional authentication to MLflow API
     #authentication:
-      # Strategy that generates the tokens, supported values are:
+      # Strategy that generates the credentials, supported values are:
       # - Null
       # - GoogleOAuth2 (generating OAuth2 tokens for service account provided by
       # GOOGLE_APPLICATION_CREDENTIALS)
+      # - Vars (credentials fetched from airflow Variable.get - specify variable keys,
+      # matching MLflow authentication env variable names, in `params`,
+      # e.g. ["MLFLOW_TRACKING_USERNAME", "MLFLOW_TRACKING_PASSWORD"])
       #type: GoogleOAuth2
+      #params: []
 """
 
 
@@ -263,6 +267,10 @@ class AuthenticationConfig(Config):
     def type(self):
         return self._get_or_default("type", "Null")
 
+    @property
+    def params(self):
+        return self._get_or_default("params", [])
+
 
 class RunConfig(Config):
     @property
@@ -342,8 +350,14 @@ class RunConfig(Config):
 
     @property
     def auth_config(self):
-        cfg = self._get_or_default("authentication", {"type": "Null"})
+        cfg = self._get_or_default(
+            "authentication", {"type": "Null", "params": []}
+        )
         return AuthenticationConfig(cfg)
+
+    @property
+    def env_vars(self):
+        return self._get_or_default("env_vars", [])
 
     def _get_prefix(self):
         return "run_config."
