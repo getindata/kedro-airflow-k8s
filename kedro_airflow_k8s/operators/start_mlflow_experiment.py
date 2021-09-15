@@ -4,15 +4,16 @@ Module contains Apache Airflow operator that starts experiment in mlflow.
 import abc
 import logging
 import os
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
+from airflow.models import Variable
 from airflow.operators.python import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
 
 class AuthHandler:
     @abc.abstractmethod
-    def obtain_token(self) -> str:
+    def obtain_credentials(self) -> Dict[str, str]:
         pass
 
 
@@ -21,8 +22,8 @@ class NullAuthHandler(AuthHandler):
     def instance():
         return NullAuthHandler()
 
-    def obtain_token(self) -> str:
-        return ""
+    def obtain_credentials(self) -> Dict[str, str]:
+        return {}
 
 
 class GoogleOAuth2AuthHandler(AuthHandler):
@@ -33,7 +34,7 @@ class GoogleOAuth2AuthHandler(AuthHandler):
             audience = os.environ["GOOGLE_AUDIENCE"]
         self.audience = audience
 
-    def obtain_token(self) -> str:
+    def obtain_credentials(self) -> Dict[str, str]:
         from google.auth.transport.requests import Request
         from google.oauth2 import id_token
 
@@ -50,7 +51,15 @@ class GoogleOAuth2AuthHandler(AuthHandler):
             except Exception as e:
                 self.log.error("Failed to obtain IAP access token. " + str(e))
             finally:
-                return token
+                return {"MLFLOW_TRACKING_TOKEN": token}
+
+
+class VarsAuthHandler(AuthHandler):
+    def __init__(self, params: List[str]):
+        self.params = params
+
+    def obtain_credentials(self) -> Dict[str, str]:
+        return {key: Variable.get(key) for key in self.params}
 
 
 class StartMLflowExperimentOperator(BaseOperator):
@@ -103,9 +112,9 @@ class StartMLflowExperimentOperator(BaseOperator):
         :param context: Airflow context
         :return: mlflow experiment run_id
         """
-        auth_token = self.auth_handler.obtain_token()
-        if auth_token:
-            os.environ["MLFLOW_TRACKING_TOKEN"] = auth_token
+        auth_vars = self.auth_handler.obtain_credentials()
+        for k, v in auth_vars.items():
+            os.environ[k] = v
 
         from mlflow.protos.databricks_pb2 import (
             RESOURCE_ALREADY_EXISTS,

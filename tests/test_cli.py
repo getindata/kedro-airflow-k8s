@@ -97,7 +97,8 @@ class TestPluginCLI:
                             "requests": {"cpu": "16", "memory": "128Gi"},
                         },
                     },
-                    "authentication": {"type": "GoogleOAuth2"},
+                    "authentication": {"type": "GoogleOAuth2", "params": []},
+                    "env_vars": ["var1", "var2"],
                 },
             }
         )
@@ -115,6 +116,7 @@ class TestPluginCLI:
         result = runner.invoke(
             compile, ["--image", "image:override"], obj=config
         )
+
         assert result.exit_code == 0
         assert Path("dags/kedro_airflow_k8s.py").exists()
 
@@ -141,7 +143,13 @@ class TestPluginCLI:
         assert 'image_pull_secrets="pull_secrets"' in dag_content
         assert 'service_account_name="service_account"' in dag_content
         assert "auth_handler=GoogleOAuth2AuthHandler()" in dag_content
-
+        assert (
+            """env_vars={
+                "var1": "{{ var.value.var1 }}",
+                "var2": "{{ var.value.var2 }}",
+            }"""
+            in dag_content
+        )
         assert (
             """secrets=[
                 Secret("env", None, "airflow-secrets", None),
@@ -175,6 +183,21 @@ class TestPluginCLI:
         assert "ExternalTaskSensor" in dag_content
         assert "external_dag_id='parent_dag'," in dag_content
         assert "task_id='wait_for_parent_dag_None'," in dag_content
+
+    def test_compile_with_auth_vars(self, context_helper):
+        context_helper.config._raw["run_config"].update(
+            {"authentication": {"type": "Vars", "params": ["var1", "var2"]}}
+        )
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        result = runner.invoke(compile, [], obj=config)
+        assert result.exit_code == 0
+        assert Path("dags/kedro_airflow_k8s.py").exists()
+        dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
+
+        assert 'auth_handler=VarsAuthHandler(["var1","var2",])' in dag_content
 
     def test_upload_pipeline(self, context_helper):
         config = dict(context_helper=context_helper)

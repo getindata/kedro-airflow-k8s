@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+-   FIX: Fix default config template
+-   Support populating k8s node env_vars from Airflow variables
+-   Generalize auth handler
+-   Added `VarsAuthHandler` for MLflow authentication which gets credentials from Airflow variables
+-   Changed logging level for pod creation request to debug
+
 ## [0.6.7] - 2021-09-01
 
 -   Support for generation of authentication header for secured MLflow API endpoint (via GOOGLE_APPLICATION_CREDENTIALS)
