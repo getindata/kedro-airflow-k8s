@@ -132,7 +132,7 @@ class NodePodOperator(KubernetesPodOperator):
         :param context:
         :return:
         """
-        logging.info(self.create_pod_request_obj())
+        logging.debug(self.create_pod_request_obj())
         return super().execute(context)
 
     @staticmethod

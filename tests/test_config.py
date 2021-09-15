@@ -67,6 +67,10 @@ run_config:
           timeout: 2
           check_existence: False
           execution_delta: 10
+    authentication:
+        type: Vars
+        params: ["MLFLOW_TRACKING_USERNAME", "MLFLOW_TRACKING_PASSWORD"]
+    env_vars: ["MLFLOW_TRACKING_USERNAME", "MLFLOW_TRACKING_PASSWORD"]
 """
 
 
@@ -162,6 +166,18 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.macro_params == ["ds", "prev_ds"]
         assert cfg.run_config.variables_params == ["env"]
 
+        assert cfg.run_config.auth_config
+        assert cfg.run_config.auth_config.type == "Vars"
+        assert cfg.run_config.auth_config.params == [
+            "MLFLOW_TRACKING_USERNAME",
+            "MLFLOW_TRACKING_PASSWORD",
+        ]
+
+        assert cfg.run_config.env_vars == [
+            "MLFLOW_TRACKING_USERNAME",
+            "MLFLOW_TRACKING_PASSWORD",
+        ]
+
     def test_defaults(self):
         cfg = PluginConfig({"run_config": {}})
 
@@ -172,6 +188,7 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.description is None
         assert cfg.run_config.start_date is None
         assert cfg.run_config.auth_config.type == "Null"
+        assert cfg.run_config.auth_config.params == []
 
         assert cfg.run_config.volume
         assert cfg.run_config.volume.disabled is False

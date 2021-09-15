@@ -45,7 +45,11 @@ with DAG(
         experiment_name=EXPERIMENT_NAME,
         mlflow_url='{{ mlflow_url }}',
         image="{{ image }}",
-        auth_handler={{ config.run_config.auth_config.type }}AuthHandler()
+        auth_handler={{ config.run_config.auth_config.type }}AuthHandler({%- if config.run_config.auth_config.params -%}[
+        {%- for param in config.run_config.auth_config.params -%}
+            "{{ param }}",
+        {%- endfor -%}]
+        {%- endif -%})
     )
     {% endif %}
 
@@ -145,8 +149,14 @@ with DAG(
                 {{ param }}:{{'{{ var.value.'}}{{  param }} {{ '}}' }},
                 {%- endfor %}
             """,
+            env_vars={
+            {%- for var in config.run_config.env_vars %}
+                "{{ var }}": "{{'{{ var.value.'}}{{ var }} {{ '}}' }}",
+            {%- endfor %}
+            },
         )
     {% endfor %}
+
 
     {% for parent_node, child_nodes in dependencies.items() -%}
     {% for child in child_nodes %}

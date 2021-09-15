@@ -1,5 +1,7 @@
 import unittest
 
+from kubernetes.client.models.v1_env_var import V1EnvVar
+
 from kedro_airflow_k8s.operators.node_pod import NodePodOperator
 
 
@@ -35,6 +37,7 @@ class TestNodePodOperator(unittest.TestCase):
             annotations={"iam.amazonaws.com/role": "airflow"},
             pipeline="data_science_pipeline",
             parameters="ds:{{ ds }}",
+            env_vars={"var1": "var1value"},
         )
 
         pod = task.create_pod_request_obj()
@@ -77,6 +80,7 @@ class TestNodePodOperator(unittest.TestCase):
 
         assert pod.spec.service_account_name == "default"
         assert len(pod.spec.image_pull_secrets) == 0
+        assert container.env[0] == V1EnvVar(name="var1", value="var1value")
 
     def test_task_create_no_limits_and_requests(self):
         task = NodePodOperator(
@@ -97,7 +101,7 @@ class TestNodePodOperator(unittest.TestCase):
         container = pod.spec.containers[0]
         assert container.resources.limits == {}
         assert container.resources.requests == {}
-        assert pod.spec.node_selector is None
+        assert not pod.spec.node_selector
 
     def test_task_with_service_account(self):
         task = NodePodOperator(
