@@ -88,6 +88,9 @@ class TestPluginCLI:
                         "__default__": {
                             "requests": {"cpu": "2", "memory": "1Gi"},
                             "limits": {"cpu": "4", "memory": "4Gi"},
+                            "annotations": {
+                                "vault.hashicorp.com/agent-inject-template-foo": '{{- with secret "database/creds/db-app" -}}\npostgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb?sslmode=disable\n{{- end }}\n'  # noqa: E501
+                            },
                         },
                         "huge": {
                             "node_selectors": {
@@ -121,6 +124,7 @@ class TestPluginCLI:
         assert Path("dags/kedro_airflow_k8s.py").exists()
 
         dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
+
         assert 'EXPERIMENT_NAME = "kedro-airflow-k8s"' in dag_content
         assert "namespace='test_ns'" in dag_content
         assert 'image="image:override"' in dag_content
@@ -164,6 +168,14 @@ class TestPluginCLI:
                 pre_ds:{{ pre_ds }},
                 env:{{ var.value.env }},
             \"\"\","""
+            in dag_content
+        )
+
+        assert (
+            '''"vault.hashicorp.com/agent-inject-template-foo": """{{- with secret "database/creds/db-app" -}}
+postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb?sslmode=disable
+{{- end }}
+"""'''  # noqa: E501
             in dag_content
         )
 

@@ -133,7 +133,7 @@ with DAG(
             ],
             annotations={
             {%- for key, value in resources[node.name].annotations.items() %}
-                "{{ key }}": "{{ value }}",
+                "{{ key }}": """{{ value | safe }}""",
             {%- endfor %}
             },
             secrets=[

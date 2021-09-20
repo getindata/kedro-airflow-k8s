@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+-   Support annotations with quotes
 -   FIX: adding missing dependency package: tabulate
 -   FIX: Fix default config template
 -   Support populating k8s node env_vars from Airflow variables

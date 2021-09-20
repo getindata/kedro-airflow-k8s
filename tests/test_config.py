@@ -51,6 +51,10 @@ run_config:
                   effect: "NoExecute"
             annotations:
                 iam.amazonaws.com/role: airflow
+                vault.hashicorp.com/agent-inject-template-foo: |
+                  {{- with secret "database/creds/db-app" -}}
+                  postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb
+                  {{- end }}
             requests:
                 cpu: "1"
                 memory: "1Gi"
@@ -116,6 +120,15 @@ class TestPluginConfig(unittest.TestCase):
         assert (
             resources.__default__.annotations["iam.amazonaws.com/role"]
             == "airflow"
+        )
+        assert (
+            resources.__default__.annotations[
+                "vault.hashicorp.com/agent-inject-template-foo"
+            ]
+            == """{{- with secret "database/creds/db-app" -}}
+postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb
+{{- end }}
+"""
         )
         assert resources.__default__.requests
         assert resources.__default__.requests.cpu == "1"

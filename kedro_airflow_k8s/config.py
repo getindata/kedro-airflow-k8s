@@ -107,6 +107,10 @@ run_config:
             # Optional annotations to apply on pods
             #annotations:
               #iam.amazonaws.com/role: airflow
+              #vault.hashicorp.com/agent-inject-template-foo: |
+              # {{- with secret "database/creds/db-app" -}}
+              # postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb
+              # {{- end }}
             # Optional list of kubernetes tolerations
             #tolerations:
                 #- key: "group"

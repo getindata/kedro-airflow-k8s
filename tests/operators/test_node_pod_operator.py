@@ -34,7 +34,10 @@ class TestNodePodOperator(unittest.TestCase):
                     "effect": "NoExecute",
                 }
             ],
-            annotations={"iam.amazonaws.com/role": "airflow"},
+            annotations={
+                "iam.amazonaws.com/role": "airflow",
+                "vault.hashicorp.com/agent-inject-template-foo": '{{- with secret "database/creds/db-app" -}}\npostgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb\n{{- end }}\n',  # noqa: E501
+            },
             pipeline="data_science_pipeline",
             parameters="ds:{{ ds }}",
             env_vars={"var1": "var1value"},
@@ -77,6 +80,15 @@ class TestNodePodOperator(unittest.TestCase):
         assert pod.spec.node_selector == {"size/k8s.io": "huge"}
         assert pod.spec.tolerations[0].value == "data-processing"
         assert pod.metadata.annotations["iam.amazonaws.com/role"] == "airflow"
+        assert (
+            pod.metadata.annotations[
+                "vault.hashicorp.com/agent-inject-template-foo"
+            ]
+            == """{{- with secret "database/creds/db-app" -}}
+postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb
+{{- end }}
+"""
+        )
 
         assert pod.spec.service_account_name == "default"
         assert len(pod.spec.image_pull_secrets) == 0
