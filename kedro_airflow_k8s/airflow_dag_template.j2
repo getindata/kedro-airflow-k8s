@@ -18,8 +18,32 @@ from airflow.providers.google.cloud.operators.dataproc import (
 
 EXPERIMENT_NAME = "{{ config.run_config.experiment_name | slugify }}"
 
+{% if config.run_config.failure_handlers is defined and config.run_config.failure_handlers|length > 0 -%}
+def task_fail_handler(context):
+    {%- for handler in config.run_config.failure_handlers %}
+    {%- if handler.type == "slack" %}
+    from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
+    from airflow.hooks.base import BaseHook
+    SlackWebhookOperator(
+        task_id='failure_slack_notification',
+        http_conn_id='{{ handler.webhook_connection_id }}',
+        webhook_token=BaseHook.get_connection('{{ handler.webhook_connection_id }}').password,
+        message="""{{ handler.message_template }}""".format(
+            task=context.get('task_instance').task_id,
+            dag=context.get('task_instance').dag_id,
+            execution_time=context.get('execution_date'),
+            url=context.get('task_instance').log_url),
+        username=BaseHook.get_connection('{{ handler.webhook_connection_id }}').login
+    ).execute(context=context)
+    {% endif %}
+    {% endfor %}
+{% endif %}
+
 args = {
     'owner': 'airflow',
+{%- if config.run_config.failure_handlers is defined and config.run_config.failure_handlers|length > 0 %}
+    'on_failure_callback': task_fail_handler,
+{% endif %}
 }
 
 {% if mlflow_url %}
