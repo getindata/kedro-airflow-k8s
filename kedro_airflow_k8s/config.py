@@ -370,7 +370,7 @@ class RunConfig(Config):
     @property
     def failure_handlers(self):
         cfg = self._get_or_default("failure_handlers", [])
-        return [SlackFailureHandlerConfig(handler) for handler in cfg]
+        return [FailureHandlerConfig(handler) for handler in cfg]
 
     @property
     def experiment_name(self):
@@ -485,18 +485,14 @@ class VolumeConfig(Config):
         return "run_config.volume."
 
 
-class SlackFailureHandlerConfig(Config):
+class FailureHandlerConfig(Config):
     @property
     def type(self):
         return self._get_or_fail("type")
 
     @property
-    def webhook_connection_id(self):
-        return self._get_or_fail("webhook_connection_id")
-
-    @property
-    def username(self):
-        return self._get_or_fail("username")
+    def connection_id(self):
+        return self._get_or_fail("connection_id")
 
     @property
     def message_template(self):

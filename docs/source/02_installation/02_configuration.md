@@ -54,7 +54,7 @@ run_config:
         # host - webhook url
         # password - webhook password
         # login - username
-        webhook_connection_id: slack
+        connection_id: slack
         # message template that will be send. It can contains following parameters that will be replaced:
         # task
         # dag

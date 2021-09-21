@@ -26,14 +26,14 @@ def task_fail_handler(context):
     from airflow.hooks.base import BaseHook
     SlackWebhookOperator(
         task_id='failure_slack_notification',
-        http_conn_id='{{ handler.webhook_connection_id }}',
-        webhook_token=BaseHook.get_connection('{{ handler.webhook_connection_id }}').password,
+        http_conn_id='{{ handler.connection_id }}',
+        webhook_token=BaseHook.get_connection('{{ handler.connection_id }}').password,
         message="""{{ handler.message_template }}""".format(
             task=context.get('task_instance').task_id,
             dag=context.get('task_instance').dag_id,
             execution_time=context.get('execution_date'),
             url=context.get('task_instance').log_url),
-        username=BaseHook.get_connection('{{ handler.webhook_connection_id }}').login
+        username=BaseHook.get_connection('{{ handler.connection_id }}').login
     ).execute(context=context)
     {% endif %}
     {% endfor %}
