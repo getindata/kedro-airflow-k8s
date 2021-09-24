@@ -370,7 +370,8 @@ class RunConfig(Config):
     @property
     def failure_handlers(self):
         cfg = self._get_or_default("failure_handlers", [])
-        return [FailureHandlerConfig(handler) for handler in cfg]
+        supported_types = FailureHandlerConfig.supported_types()
+        return [FailureHandlerConfig(handler) for handler in cfg if handler['type'] in supported_types]
 
     @property
     def experiment_name(self):
@@ -486,6 +487,10 @@ class VolumeConfig(Config):
 
 
 class FailureHandlerConfig(Config):
+    @staticmethod
+    def supported_types():
+        return ['slack']
+
     @property
     def type(self):
         return self._get_or_fail("type")
