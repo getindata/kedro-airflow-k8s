@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+-   Support for custom pod templates
 -   FIX: adding missing dependency package: tabulate
 -   FIX: Fix default config template
 -   Support populating k8s node env_vars from Airflow variables

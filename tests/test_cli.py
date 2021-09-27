@@ -24,13 +24,16 @@ from kedro_airflow_k8s.context_helper import ContextHelper
 
 
 class TestPluginCLI:
-    @pytest.fixture(scope="class")
+    @pytest.fixture
     def pipeline(self):
-        def node(name, resource=None):
+        def node(name, resource=None, k8s_template=None):
             nd = MagicMock()
             nd.name = name
+            nd.tags = set()
             if resource:
-                nd.tags = set({f"resources:{resource}"})
+                nd.tags.add(f"resources:{resource}")
+            if k8s_template:
+                nd.tags.add(f"k8s_template:{k8s_template}")
             return nd
 
         start = node("start")
@@ -50,7 +53,7 @@ class TestPluginCLI:
 
         return pipeline
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture
     def context_helper(self, pipeline):
         context_helper = MagicMock(ContextHelper)
         context_helper.context.package_name = "kedro_airflow_k8s"
@@ -88,6 +91,7 @@ class TestPluginCLI:
                         "__default__": {
                             "requests": {"cpu": "2", "memory": "1Gi"},
                             "limits": {"cpu": "4", "memory": "4Gi"},
+                            "annotations": {"global": "global1"},
                         },
                         "huge": {
                             "node_selectors": {
@@ -95,6 +99,7 @@ class TestPluginCLI:
                                 "custom_label": "test",
                             },
                             "requests": {"cpu": "16", "memory": "128Gi"},
+                            "annotations": {"aglobal": "global12"},
                         },
                     },
                     "authentication": {"type": "GoogleOAuth2", "params": []},
@@ -121,6 +126,7 @@ class TestPluginCLI:
         assert Path("dags/kedro_airflow_k8s.py").exists()
 
         dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
+
         assert 'EXPERIMENT_NAME = "kedro-airflow-k8s"' in dag_content
         assert "namespace='test_ns'" in dag_content
         assert 'image="image:override"' in dag_content
@@ -198,6 +204,72 @@ class TestPluginCLI:
         dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
 
         assert 'auth_handler=VarsAuthHandler(["var1","var2",])' in dag_content
+
+    def test_compile_with_custom_k8s_templates(self, context_helper):
+        context_helper.config._raw["run_config"].update(
+            {
+                "kubernetes_pod_templates": {
+                    "spark": {
+                        "template": """type: Pod\nmetadata:\n    name: test\n    annotations:\n      custom_annotation: cust_ann""",  # noqa: E501
+                        "image": "customImage",
+                    }
+                }
+            }
+        )
+        context_helper.pipeline.nodes[2].tags.add("k8s_template:spark")
+        context_helper.pipeline.nodes[1].tags.add("k8s_template:spark")
+
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        result = runner.invoke(compile, [], obj=config)
+        assert result.exit_code == 0
+        assert Path("dags/kedro_airflow_k8s.py").exists()
+        dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
+
+        assert dag_content.count('image="customImage"') == 2
+        assert (
+            dag_content.count(
+                '''f"""type: Pod
+metadata:
+    name: test
+    annotations:
+      custom_annotation: cust_ann"""'''
+            )
+            == 2
+        )
+
+    def test_compile_with_default_custom_k8s_templates(self, context_helper):
+        context_helper.config._raw["run_config"].update(
+            {
+                "kubernetes_pod_templates": {
+                    "__default__": {
+                        "template": """type: Pod\nmetadata:\n    name: test\n    annotations:\n      custom_annotation: cust_ann"""  # noqa: E501
+                    }
+                }
+            }
+        )
+
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        result = runner.invoke(compile, [], obj=config)
+        assert result.exit_code == 0
+        assert Path("dags/kedro_airflow_k8s.py").exists()
+        dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
+
+        assert (
+            dag_content.count(
+                '''f"""type: Pod
+metadata:
+    name: test
+    annotations:
+      custom_annotation: cust_ann"""'''
+            )
+            == 4
+        )
 
     def test_upload_pipeline(self, context_helper):
         config = dict(context_helper=context_helper)

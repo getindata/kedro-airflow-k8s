@@ -94,7 +94,11 @@ with DAG(
             namespace="{{config.run_config.namespace}}",
             volume_disabled={{config.run_config.volume.disabled}},
             pvc_name=pvc_name,
-            image="{{ image }}",
+            image={%- if k8s_templates[node.name].image -%}
+            "{{ k8s_templates[node.name].image }}",
+            {%- else -%}
+            "{{ image }}",
+            {%- endif %}
             image_pull_policy="{{ config.run_config.image_pull_policy }}",
             {%- if config.run_config.image_pull_secrets %}
             image_pull_secrets="{{ config.run_config.image_pull_secrets }}",
@@ -154,6 +158,9 @@ with DAG(
                 "{{ var }}": "{{'{{ var.value.'}}{{ var }} {{ '}}' }}",
             {%- endfor %}
             },
+            {%- if k8s_templates[node.name].template %}
+            kubernetes_pod_template=f"""{{ k8s_templates[node.name].template | safe }}""",
+            {%- endif %}
         )
     {% endfor %}
 
