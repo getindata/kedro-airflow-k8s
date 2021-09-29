@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.kubernetes.secret import Secret
 from airflow.utils.dates import days_ago
 from airflow.utils.task_group import TaskGroup
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 from datetime import timedelta
 from datetime import datetime
@@ -88,79 +89,85 @@ with DAG(
 
     tasks = {}
     with TaskGroup("kedro", prefix_group_id=False) as kedro_group:
-    {% for node in pipeline.nodes %}
-        tasks["{{ node.name | slugify }}"] = NodePodOperator(
-            node_name="{{node.name}}",
-            namespace="{{config.run_config.namespace}}",
-            volume_disabled={{config.run_config.volume.disabled}},
-            pvc_name=pvc_name,
-            image="{{ image }}",
-            image_pull_policy="{{ config.run_config.image_pull_policy }}",
-            {%- if config.run_config.image_pull_secrets %}
-            image_pull_secrets="{{ config.run_config.image_pull_secrets }}",
-            {%- endif %}
-            {%- if config.run_config.service_account_name %}
-            service_account_name="{{ config.run_config.service_account_name }}",
-            {%- endif %}
-            env="{{env}}",
-            pipeline="{{ pipeline_name }}",
-            task_id="{{ node.name | slugify }}",
-            startup_timeout={{ config.run_config.startup_timeout }},
-            volume_owner={{ config.run_config.volume.owner }},
-            mlflow_enabled={% if mlflow_url %}True{% else %}False{% endif %},
-            requests_cpu="{{resources[node.name].requests.cpu if resources[node.name].requests.cpu}}",
-            requests_memory="{{resources[node.name].requests.memory if resources[node.name].requests.memory}}",
-            limits_cpu="{{resources[node.name].limits.cpu if resources[node.name].limits.cpu}}",
-            limits_memory="{{resources[node.name].limits.memory if resources[node.name].limits.memory}}",
-            node_selector_labels={
-            {%- for key, value in resources[node.name].node_selectors.items() %}
-                "{{ key }}": "{{ value }}",
+    {% for node in pipeline_grouped %}
+        {%- if node.group_type == 'spark' %}
+            tasks["{{ node.name | slugify }}"] = SparkSubmitOperator(
+              application="${SPARK_HOME}/examples/src/main/python/pi.py", task_id="submit_job"
+            )
+        {%- else %}
+            tasks["{{ node.name | slugify }}"] = NodePodOperator(
+                node_name="{{node.name}}",
+                namespace="{{config.run_config.namespace}}",
+                volume_disabled={{config.run_config.volume.disabled}},
+                pvc_name=pvc_name,
+                image="{{ image }}",
+                image_pull_policy="{{ config.run_config.image_pull_policy }}",
+                {%- if config.run_config.image_pull_secrets %}
+                image_pull_secrets="{{ config.run_config.image_pull_secrets }}",
+                {%- endif %}
+                {%- if config.run_config.service_account_name %}
+                service_account_name="{{ config.run_config.service_account_name }}",
+                {%- endif %}
+                env="{{env}}",
+                pipeline="{{ pipeline_name }}",
+                task_id="{{ node.name | slugify }}",
+                startup_timeout={{ config.run_config.startup_timeout }},
+                volume_owner={{ config.run_config.volume.owner }},
+                mlflow_enabled={% if mlflow_url %}True{% else %}False{% endif %},
+                requests_cpu="{{resources[node.name].requests.cpu if resources[node.name].requests.cpu}}",
+                requests_memory="{{resources[node.name].requests.memory if resources[node.name].requests.memory}}",
+                limits_cpu="{{resources[node.name].limits.cpu if resources[node.name].limits.cpu}}",
+                limits_memory="{{resources[node.name].limits.memory if resources[node.name].limits.memory}}",
+                node_selector_labels={
+                {%- for key, value in resources[node.name].node_selectors.items() %}
+                    "{{ key }}": "{{ value }}",
+                    {%- endfor %}
+                },
+                labels={
+                {%- for key, value in resources[node.name].labels.items() %}
+                    "{{ key }}": "{{ value }}",
+                    {%- endfor %}
+                },
+                tolerations=[
+                {%- for tolerations_items in resources[node.name].tolerations %}
+                    {
+                    {%- for key, value in tolerations_items.items() %}
+                       "{{ key }}": "{{ value }}",
+                    {%- endfor %}
+                    },
                 {%- endfor %}
-            },
-            labels={
-            {%- for key, value in resources[node.name].labels.items() %}
-                "{{ key }}": "{{ value }}",
-                {%- endfor %}
-            },
-            tolerations=[
-            {%- for tolerations_items in resources[node.name].tolerations %}
-                {
-                {%- for key, value in tolerations_items.items() %}
-                   "{{ key }}": "{{ value }}",
+                ],
+                annotations={
+                {%- for key, value in resources[node.name].annotations.items() %}
+                    "{{ key }}": "{{ value }}",
                 {%- endfor %}
                 },
-            {%- endfor %}
-            ],
-            annotations={
-            {%- for key, value in resources[node.name].annotations.items() %}
-                "{{ key }}": "{{ value }}",
-            {%- endfor %}
-            },
-            secrets=[
-            {%- for secret in secrets %}
-                Secret("{{secret.deploy_type}}", {{  "\"{}\"".format(secret.deploy_target)|safe if secret.deploy_target else None}}, "{{secret.secret}}", {{ "\"{}\"".format(secret.key)|safe if secret.key else None}}),
-            {%- endfor %}
-            ],
-            parameters="""
-            {%- for param in macro_params %}
-                {{ param }}:{{'{{'}} {{  param }} {{ '}}' }},
+                secrets=[
+                {%- for secret in secrets %}
+                    Secret("{{secret.deploy_type}}", {{  "\"{}\"".format(secret.deploy_target)|safe if secret.deploy_target else None}}, "{{secret.secret}}", {{ "\"{}\"".format(secret.key)|safe if secret.key else None}}),
                 {%- endfor %}
-            {%- for param in variables_params %}
-                {{ param }}:{{'{{ var.value.'}}{{  param }} {{ '}}' }},
+                ],
+                parameters="""
+                {%- for param in macro_params %}
+                    {{ param }}:{{'{{'}} {{  param }} {{ '}}' }},
+                    {%- endfor %}
+                {%- for param in variables_params %}
+                    {{ param }}:{{'{{ var.value.'}}{{  param }} {{ '}}' }},
+                    {%- endfor %}
+                """,
+                env_vars={
+                {%- for var in config.run_config.env_vars %}
+                    "{{ var }}": "{{'{{ var.value.'}}{{ var }} {{ '}}' }}",
                 {%- endfor %}
-            """,
-            env_vars={
-            {%- for var in config.run_config.env_vars %}
-                "{{ var }}": "{{'{{ var.value.'}}{{ var }} {{ '}}' }}",
-            {%- endfor %}
-            },
-        )
+                },
+            )
+        {%- endif %}
     {% endfor %}
 
 
-    {% for parent_node, child_nodes in dependencies.items() -%}
+    {% for parent_node, child_nodes in dependencies_grouped.items() -%}
     {% for child in child_nodes %}
-        tasks["{{ parent_node.name | slugify }}"] >> tasks["{{ child.name | slugify }}"]
+        tasks["{{ parent_node | slugify }}"] >> tasks["{{ child | slugify }}"]
     {% endfor %}
     {%- endfor %}
 

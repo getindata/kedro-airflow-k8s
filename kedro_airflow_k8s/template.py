@@ -36,7 +36,7 @@ def _node_resources(nodes, config) -> Dict[str, ResourceConfig]:
     default_config = config.__default__
     for node in nodes:
         resources = [
-            tag[len("resources:") :]  # noqa: E203
+            tag[len("resources:"):]  # noqa: E203
             for tag in node.tags
             if "resources:" in tag
         ]
@@ -47,11 +47,11 @@ def _node_resources(nodes, config) -> Dict[str, ResourceConfig]:
 
 
 def _create_template_stream(
-    context_helper,
-    dag_name: str,
-    schedule_interval: str,
-    image: str,
-    with_external_dependencies: bool,
+        context_helper,
+        dag_name: str,
+        schedule_interval: str,
+        image: str,
+        with_external_dependencies: bool,
 ) -> TemplateStream:
     template = _get_jinja_template()
 
@@ -61,9 +61,29 @@ def _create_template_stream(
         for parent in parent_nodes:
             dependencies[parent].append(node)
 
+    dependencies_grouped = defaultdict(list)
+    spark_task_groups = [tg for tg in context_helper.pipeline_grouped if
+                         tg.group_type == "spark"]
+
+    spark_tasks = dict()
+    for tg in spark_task_groups:
+        task_group_name = tg.name
+        for node in tg.task_group:
+            node_name = node.name
+            spark_tasks[node_name] = task_group_name
+
+    for node, parent_nodes in pipeline.node_dependencies.items():
+        for parent in parent_nodes:
+            if node.name not in spark_tasks.keys():
+                dependencies_grouped[
+                    parent.name if parent.name not in spark_tasks.keys() else
+                    spark_tasks[parent.name]].append(node.name)
+
     return template.stream(
         pipeline=pipeline,
+        pipeline_grouped=context_helper.pipeline_grouped,
         dependencies=dependencies,
+        dependencies_grouped=dependencies_grouped,
         with_external_dependencies=with_external_dependencies,
         config=context_helper.config,
         resources=_node_resources(
@@ -79,19 +99,19 @@ def _create_template_stream(
         git_info=context_helper.session.store["git"],
         kedro_airflow_k8s_version=version,
         include_start_mlflow_experiment_operator=(
-            Path(__file__).parent / "operators/start_mlflow_experiment.py"
+                Path(__file__).parent / "operators/start_mlflow_experiment.py"
         ).read_text(),
         include_create_pipeline_storage_operator=(
-            Path(__file__).parent / "operators/create_pipeline_storage.py"
+                Path(__file__).parent / "operators/create_pipeline_storage.py"
         ).read_text(),
         include_delete_pipeline_storage_operator=(
-            Path(__file__).parent / "operators/delete_pipeline_storage.py"
+                Path(__file__).parent / "operators/delete_pipeline_storage.py"
         ).read_text(),
         include_data_volume_init_operator=(
-            Path(__file__).parent / "operators/data_volume_init.py"
+                Path(__file__).parent / "operators/data_volume_init.py"
         ).read_text(),
         include_node_pod_operator=(
-            Path(__file__).parent / "operators/node_pod.py"
+                Path(__file__).parent / "operators/node_pod.py"
         ).read_text(),
         secrets=context_helper.config.run_config.secrets,
         macro_params=context_helper.config.run_config.macro_params,
@@ -100,18 +120,18 @@ def _create_template_stream(
 
 
 def get_cron_expression(
-    ctx, cron_expression: Optional[str] = None
+        ctx, cron_expression: Optional[str] = None
 ) -> Optional[str]:
     config = ctx.obj["context_helper"].config
     return cron_expression or config.run_config.cron_expression
 
 
 def get_dag_filename_and_template_stream(
-    ctx,
-    cron_expression: Optional[str] = None,
-    dag_name: Optional[str] = None,
-    image: Optional[str] = None,
-    with_external_dependencies: bool = True,
+        ctx,
+        cron_expression: Optional[str] = None,
+        dag_name: Optional[str] = None,
+        image: Optional[str] = None,
+        with_external_dependencies: bool = True,
 ):
     config = ctx.obj["context_helper"].config
     dag_name = dag_name or config.run_config.run_name

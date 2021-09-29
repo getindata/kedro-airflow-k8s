@@ -5,6 +5,7 @@ from kedro import __version__ as kedro_version
 from semver import VersionInfo
 
 from .config import PluginConfig
+from .task_group import TaskGroupFactory
 
 CONFIG_FILE_PATTERN = "airflow-k8s*"
 
@@ -31,6 +32,14 @@ class ContextHelper(object):
     @property
     def pipeline(self):
         return self.context.pipelines.get(self._pipeline_name)
+
+    @property
+    def catalog(self):
+        return self.context.catalog
+
+    @property
+    def pipeline_grouped(self):
+        return TaskGroupFactory.create(self.pipeline, self.context.catalog)
 
     @property
     def pipeline_name(self):
