@@ -171,6 +171,39 @@ run_config:
       # e.g. ["MLFLOW_TRACKING_USERNAME", "MLFLOW_TRACKING_PASSWORD"])
       #type: GoogleOAuth2
       #params: []
+
+    # Optional custom kubermentes pod templates applied on nodes basis
+    #kubernetes_pod_templates:
+    # Name of the node you want to apply the custom template to.
+    # if you specify __default__, this template will be applied to all nodes.
+    # Otherwise it will be only applied to nodes tagged with `k8s_template:<node_name>`
+    #  node_name:
+
+    # Kubernetes pod template.
+    # It's the full content of the pod-template file (as a string)
+    # `run_config.volume` and `MLFLOW_RUN_ID` env are disabled when this is set.
+    # Note: python F-string formatting is applied to this string, so
+    # you can also use some dynamic values, e.g. to calculate pod name.
+    #    template:
+
+    # Optionally, you can also override the image
+    #    image:
+    # ____ EXAMPLE _______________
+    #
+    #kubernetes_pod_templates:
+    #  spark:
+    #    template: |-
+    #      apiVersion: v1
+    #      kind: Pod
+    #      metadata:
+    #        name: newname
+    #       spec:
+    #         containers:
+    #           - name: base
+    #         env:
+    #           - name: CUSTOM_ENV
+    #             value: env1
+    #
 """
 
 
@@ -359,6 +392,11 @@ class RunConfig(Config):
     def env_vars(self):
         return self._get_or_default("env_vars", [])
 
+    @property
+    def kubernetes_pod_templates(self):
+        cfg = self._get_or_default("kubernetes_pod_templates", {})
+        return KubernetesPodTemplates(cfg)
+
     def _get_prefix(self):
         return "run_config."
 
@@ -439,3 +477,27 @@ class PluginConfig(Config):
             template_file = templates_dir / f"github-{template}"
             with open(template_file, "r") as tfile, open(file_path, "w") as f:
                 f.write(tfile.read().format(project_name=project_name))
+
+
+class KubernetesPodTemplate(Config):
+    @property
+    def template(self):
+        return self._get_or_default("template", None)
+
+    @property
+    def image(self):
+        return self._get_or_default("image", None)
+
+    def __len__(self):
+        return len(self._raw)
+
+
+class KubernetesPodTemplates(Config):
+    def __getattr__(self, item):
+        return self[item]
+
+    def __getitem__(self, item):
+        return KubernetesPodTemplate(self._get_or_default(item, {}))
+
+    def __len__(self):
+        return len(self._raw)
