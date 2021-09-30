@@ -92,7 +92,7 @@ with DAG(
     {% for node in pipeline_grouped %}
         {%- if node.group_type == 'spark' %}
             tasks["{{ node.name | slugify }}"] = SparkSubmitOperator(
-              application="${SPARK_HOME}/examples/src/main/python/pi.py", task_id="submit_job"
+              application="{{ dag_name }}_{{ node.name }}.py", task_id="{{ node.name }}"
             )
         {%- else %}
             tasks["{{ node.name | slugify }}"] = NodePodOperator(

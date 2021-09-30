@@ -56,14 +56,20 @@ def airflow_group(ctx, metadata, env, pipeline):
 @click.pass_context
 def compile(ctx, image, target_path="dags/"):
     """Create an Airflow DAG for a project"""
-    dag_filename, template_stream = get_dag_filename_and_template_stream(
+    dag_name, template_stream, spark_template_streams = get_dag_filename_and_template_stream(
         ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
-
-    target_path = Path(target_path) / dag_filename
-
-    with fsspec.open(str(target_path), "wt") as f:
+    dag_filename = f"{dag_name}.py"
+    dag_target_path = Path(target_path) / dag_filename
+    with fsspec.open(str(dag_target_path), "wt") as f:
         template_stream.dump(f)
+
+    spark_id = 0
+    for spark_template in spark_template_streams:
+        spark_task_target_path = Path(target_path) / f"{dag_name}_spark_{spark_id}.py"
+        with fsspec.open(str(spark_task_target_path), "wt") as f:
+            spark_template.dump(f)
+        spark_id = spark_id + 1
 
 
 @airflow_group.command()

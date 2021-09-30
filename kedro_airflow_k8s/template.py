@@ -1,6 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import jinja2
 import kedro
@@ -21,13 +21,13 @@ def _get_mlflow_url(context_helper):
         return None
 
 
-def _get_jinja_template():
+def _get_jinja_template(name: str):
     loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
     jinja_env = jinja2.Environment(
         autoescape=True, loader=loader, lstrip_blocks=True
     )
     jinja_env.filters["slugify"] = slugify
-    template = jinja_env.get_template("airflow_dag_template.j2")
+    template = jinja_env.get_template(name)
     return template
 
 
@@ -53,7 +53,7 @@ def _create_template_stream(
         image: str,
         with_external_dependencies: bool,
 ) -> TemplateStream:
-    template = _get_jinja_template()
+    template = _get_jinja_template("airflow_dag_template.j2")
 
     pipeline = context_helper.pipeline
     dependencies = defaultdict(list)
@@ -119,6 +119,26 @@ def _create_template_stream(
     )
 
 
+def _create_spark_tasks_template_stream(
+        context_helper,
+        dag_name: str
+) -> List[TemplateStream]:
+    spark_task_templates = []
+    spark_task_groups = [tg for tg in context_helper.pipeline_grouped if
+                         tg.group_type == "spark"]
+    for tg in spark_task_groups:
+        from_node = tg.task_group[0].name
+        to_node = tg.task_group[-1].name
+        template = _get_jinja_template("airflow_spark_task_template.j2")
+        spark_task_templates.append(
+            template.stream(
+                from_node=from_node,
+                to_node=to_node
+            )
+        )
+    return spark_task_templates
+
+
 def get_cron_expression(
         ctx, cron_expression: Optional[str] = None
 ) -> Optional[str]:
@@ -136,8 +156,6 @@ def get_dag_filename_and_template_stream(
     config = ctx.obj["context_helper"].config
     dag_name = dag_name or config.run_config.run_name
 
-    dag_filename = f"{dag_name}.py"
-
     template_stream = _create_template_stream(
         ctx.obj["context_helper"],
         dag_name=dag_name,
@@ -145,4 +163,8 @@ def get_dag_filename_and_template_stream(
         image=image or config.run_config.image,
         with_external_dependencies=with_external_dependencies,
     )
-    return dag_filename, template_stream
+    spark_template_streams = _create_spark_tasks_template_stream(
+        ctx.obj["context_helper"],
+        dag_name=dag_name,
+    )
+    return dag_name, template_stream, spark_template_streams
