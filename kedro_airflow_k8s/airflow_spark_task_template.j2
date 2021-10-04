@@ -1,13 +1,15 @@
 import logging.config
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict
 from inspect import signature
 from kedro.framework.startup import _get_project_metadata
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 
 startup_error = None
-project_path = Path(__file__).parents[0].resolve()
-
+project_path = "/home/airflow/airflow/dags/projects/{{ project_name }}"
+os.environ['PYTHONPATH'] = f"{project_path}/src/"
 
 def init_kedro(path, line=None, env: str = None, extra_params: Dict[str, Any] = None):
     """Line magic which reloads all Kedro default variables."""

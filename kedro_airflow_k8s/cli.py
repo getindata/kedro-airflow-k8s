@@ -1,3 +1,4 @@
+import logging
 import webbrowser
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -7,6 +8,7 @@ import fsspec
 from tabulate import tabulate
 
 from kedro_airflow_k8s.airflow import AirflowClient
+from kedro_airflow_k8s.cli_helper import CliHelper
 from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.context_helper import ContextHelper
 from kedro_airflow_k8s.template import (
@@ -59,17 +61,7 @@ def compile(ctx, image, target_path="dags/"):
     dag_name, template_stream, spark_template_streams = get_dag_filename_and_template_stream(
         ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
-    dag_filename = f"{dag_name}.py"
-    dag_target_path = Path(target_path) / dag_filename
-    with fsspec.open(str(dag_target_path), "wt") as f:
-        template_stream.dump(f)
-
-    spark_id = 0
-    for spark_template in spark_template_streams:
-        spark_task_target_path = Path(target_path) / f"{dag_name}_spark_{spark_id}.py"
-        with fsspec.open(str(spark_task_target_path), "wt") as f:
-            spark_template.dump(f)
-        spark_id = spark_id + 1
+    CliHelper.dump_templates(dag_name, target_path, template_stream, spark_template_streams)
 
 
 @airflow_group.command()
@@ -80,7 +72,7 @@ def compile(ctx, image, target_path="dags/"):
     type=str,
     required=False,
     help="Location where DAG file should be uploaded, for GCS use gs:// or "
-    "gcs:// prefix, other notations indicate locally mounted filesystem",
+         "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
 @click.option(
     "-i",
@@ -95,13 +87,13 @@ def upload_pipeline(ctx, output: str, image: str):
     """
     Uploads pipeline to Airflow DAG location
     """
-    dag_filename, template_stream = get_dag_filename_and_template_stream(
+    dag_name, template_stream, spark_template_streams= get_dag_filename_and_template_stream(
         ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
 
     output = output or ctx.obj["context_helper"].config.output
-    with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
-        template_stream.dump(f)
+    logging.info(f"Deploying to {output}")
+    CliHelper.dump_templates(dag_name, output, template_stream, spark_template_streams)
 
 
 @airflow_group.command()
@@ -112,7 +104,7 @@ def upload_pipeline(ctx, output: str, image: str):
     type=str,
     required=False,
     help="Location where DAG file should be uploaded, for GCS use gs:// or "
-    "gcs:// prefix, other notations indicate locally mounted filesystem",
+         "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
 @click.option(
     "-c",
@@ -143,7 +135,7 @@ def schedule(ctx, output: str, cron_expression: str):
     type=str,
     required=False,
     help="Location where DAG file should be uploaded, for GCS use gs:// or "
-    "gcs:// prefix, other notations indicate locally mounted filesystem",
+         "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
 @click.option(
     "-d",
@@ -152,7 +144,7 @@ def schedule(ctx, output: str, cron_expression: str):
     type=str,
     required=False,
     help="Allows overriding dag id and dag file name for a purpose of multiple variants"
-    " of experiments",
+         " of experiments",
 )
 @click.option(
     "-w",
@@ -172,11 +164,11 @@ def schedule(ctx, output: str, cron_expression: str):
 )
 @click.pass_context
 def run_once(
-    ctx,
-    output: Optional[str],
-    dag_name: Optional[str],
-    wait_for_completion: Optional[int],
-    image: Optional[str],
+        ctx,
+        output: Optional[str],
+        dag_name: Optional[str],
+        wait_for_completion: Optional[int],
+        image: Optional[str],
 ):  # pylint: disable=too-many-arguments
     """
     Uploads pipeline to Airflow and runs once
@@ -203,10 +195,10 @@ def run_once(
 
     if (wait_for_completion or 0) > 0:
         assert (
-            airflow_client.wait_for_dag_run_completion(
-                dag.dag_id, dag_run_id, wait_for_completion
-            )
-            == "success"
+                airflow_client.wait_for_dag_run_completion(
+                    dag.dag_id, dag_run_id, wait_for_completion
+                )
+                == "success"
         )
 
 
@@ -226,7 +218,7 @@ def list_pipelines(ctx):
         experiment_tag = [
             t["name"] for t in tags if t["name"].startswith("experiment_name")
         ][0]
-        return experiment_tag[len("experiment_name") + 1 :]  # noqa: E203
+        return experiment_tag[len("experiment_name") + 1:]  # noqa: E203
 
     pipelines = [[name(d.tags), d.dag_id] for d in dags]
     pipelines.sort()

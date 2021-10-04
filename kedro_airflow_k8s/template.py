@@ -62,7 +62,8 @@ def _create_template_stream(
             dependencies[parent].append(node)
 
     dependencies_grouped = defaultdict(list)
-    spark_task_groups = [tg for tg in context_helper.pipeline_grouped if
+    task_groups = context_helper.pipeline_grouped
+    spark_task_groups = [tg for tg in task_groups if
                          tg.group_type == "spark"]
 
     spark_tasks = dict()
@@ -81,7 +82,7 @@ def _create_template_stream(
 
     return template.stream(
         pipeline=pipeline,
-        pipeline_grouped=context_helper.pipeline_grouped,
+        pipeline_grouped=task_groups,
         dependencies=dependencies,
         dependencies_grouped=dependencies_grouped,
         with_external_dependencies=with_external_dependencies,
@@ -121,7 +122,7 @@ def _create_template_stream(
 
 def _create_spark_tasks_template_stream(
         context_helper,
-        dag_name: str
+        dag_name: str,
 ) -> List[TemplateStream]:
     spark_task_templates = []
     spark_task_groups = [tg for tg in context_helper.pipeline_grouped if
@@ -133,7 +134,8 @@ def _create_spark_tasks_template_stream(
         spark_task_templates.append(
             template.stream(
                 from_node=from_node,
-                to_node=to_node
+                to_node=to_node,
+                project_name=context_helper.project_name
             )
         )
     return spark_task_templates

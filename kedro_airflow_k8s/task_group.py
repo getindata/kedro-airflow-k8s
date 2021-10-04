@@ -52,12 +52,14 @@ class TaskGroupFactory:
                     '.'.join([p.annotation.__module__, p.annotation.__name__]) for p in
                     signature(node.func).parameters.values() if
                     p.annotation.__class__.__name__ == 'type']:
-                    task_groups[task_group_id].append_task(node)
+                    if node not in task_groups[task_group_id].task_group:
+                        logging.info(
+                            f"Adding task {node.name} to task grou spark_{task_group_id}")
+                        task_groups[task_group_id].append_task(node)
                 else:
                     task_group_id = task_group_id + 1
                     tg = TaskGroup(node.name, [node], "default")
                     task_groups.append(tg)
-
 
         logging.info(f"Detected {pyspark_task_group_id} PySpark task groups")
         logging.info(f"Detected total number of {task_group_id + 1} task groups")
