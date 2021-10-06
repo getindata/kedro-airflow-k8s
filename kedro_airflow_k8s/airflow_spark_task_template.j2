@@ -1,11 +1,8 @@
 import logging.config
 import os
 import sys
-from pathlib import Path
 from typing import Any, Dict
-from inspect import signature
 from kedro.framework.startup import _get_project_metadata
-from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 
 startup_error = None
 project_path = "/home/airflow/airflow/dags/projects/{{ project_name }}"
