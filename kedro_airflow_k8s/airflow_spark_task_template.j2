@@ -5,8 +5,7 @@ from typing import Any, Dict
 from kedro.framework.startup import _get_project_metadata
 
 startup_error = None
-project_path = "/home/airflow/airflow/dags/projects/{{ project_name }}"
-os.environ['PYTHONPATH'] = f"{project_path}/src/"
+project_path = "/opt/{{ project_name }}"
 
 def init_kedro(path, line=None, env: str = None, extra_params: Dict[str, Any] = None):
     """Line magic which reloads all Kedro default variables."""

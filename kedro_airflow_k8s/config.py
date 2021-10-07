@@ -171,6 +171,14 @@ run_config:
       # e.g. ["MLFLOW_TRACKING_USERNAME", "MLFLOW_TRACKING_PASSWORD"])
       #type: GoogleOAuth2
       #params: []
+    #spark:
+    #  submit_job_operator:
+    # Airflow operator to use for submitting Spark job: SparkSubmitOperator, 
+    # DataprocSubmitJobOperator or KubernetesSparkOperator 
+    #  region: None
+    #  project_id: None
+    #  cluster_name: None
+    #  create_cluster: False
 """
 
 
@@ -272,6 +280,24 @@ class AuthenticationConfig(Config):
         return self._get_or_default("params", [])
 
 
+class SparkConfig(Config):
+    @property
+    def submit_job_operator(self):
+        return self._get_or_default("submit_job_operator", "SparkSubmitOperator")
+
+    @property
+    def region(self):
+        return self._get_or_default("region", "None")
+
+    @property
+    def cluster_name(self):
+        return self._get_or_default("cluster_name", "None")
+
+    @property
+    def project_id(self):
+        return self._get_or_default("project_id", "None")
+
+
 class RunConfig(Config):
     @property
     def image(self):
@@ -354,6 +380,10 @@ class RunConfig(Config):
             "authentication", {"type": "Null", "params": []}
         )
         return AuthenticationConfig(cfg)
+
+    @property
+    def spark(self):
+        return self._get_or_default("spark", {})
 
     @property
     def env_vars(self):
