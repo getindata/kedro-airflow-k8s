@@ -33,6 +33,10 @@ class TaskGroup:
     def group_type(self):
         return self._group_type
 
+    @property
+    def children(self):
+        return self._children
+
     def __contains__(self, item):
         return item in self._task_group
 
@@ -198,9 +202,12 @@ class TaskGroupFactory:
 
             task_group_deps = set()
             for group in default_groups.union(pyspark_groups):
-                if groups_deps.intersection(group.task_group):
+                if group is not d and groups_deps.intersection(
+                    group.task_group
+                ):
                     task_group_deps.add(group)
 
             d.set_children(task_group_deps)
 
+        logging.info(f"Found pyspark groups: {pyspark_groups}")
         return list(default_groups.union(pyspark_groups))

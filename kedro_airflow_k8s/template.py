@@ -63,7 +63,9 @@ def _create_template_stream(
 
     dependencies_grouped = defaultdict(list)
     task_groups = context_helper.pipeline_grouped
-    spark_task_groups = [tg for tg in task_groups if tg.group_type == "spark"]
+    spark_task_groups = [
+        tg for tg in task_groups if tg.group_type == "pyspark"
+    ]
 
     spark_tasks = dict()
     for tg in spark_task_groups:

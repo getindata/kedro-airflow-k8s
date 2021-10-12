@@ -51,6 +51,7 @@ class TestTaskGroupFactory(unittest.TestCase):
         assert task_groups[0].group_type == "pyspark"
         assert len(task_groups[0].task_group) == 2
         assert task_groups[0].name.startswith("pyspark_")
+        assert len(task_groups[0].children) == 0
 
     def test_create_dag_only_default(self):
         pipeline = Pipeline(
@@ -85,9 +86,12 @@ class TestTaskGroupFactory(unittest.TestCase):
         assert task_groups[0].group_type == "default"
         assert len(task_groups[0].task_group) == 1
         assert task_groups[0].name.startswith("node1")
+        assert len(task_groups[0].children) == 1
+        assert task_groups[1] in task_groups[0].children
         assert task_groups[1].group_type == "default"
         assert len(task_groups[1].task_group) == 1
         assert task_groups[1].name.startswith("node2")
+        assert len(task_groups[1].children) == 0
 
     def test_create_dag_intermediate_spark_frames(self):
         def node2(
@@ -171,10 +175,12 @@ class TestTaskGroupFactory(unittest.TestCase):
         assert len(task_groups) == 2
         assert task_groups[0].group_type == "pyspark"
         assert len(task_groups[0].task_group) == 2
+        assert len(task_groups[0].children) == 0
         assert task_groups[0].name.startswith("pyspark_")
         assert task_groups[1].group_type == "default"
         assert len(task_groups[1].task_group) == 1
         assert task_groups[1].name == "node3"
+        assert len(task_groups[1].children) == 0
 
     def test_create_dag_interleaved_datasets(self):
         pipeline = Pipeline(
@@ -216,6 +222,7 @@ class TestTaskGroupFactory(unittest.TestCase):
         assert len(task_groups) == 2
         assert task_groups[0].group_type == "pyspark"
         assert len(task_groups[0].task_group) == 2
+        assert task_groups[0] in task_groups[1].children
         assert task_groups[0].name.startswith("pyspark_")
         assert task_groups[1].group_type == "default"
         assert len(task_groups[1].task_group) == 1
@@ -276,6 +283,7 @@ class TestTaskGroupFactory(unittest.TestCase):
         assert task_groups[0].group_type == "default"
         assert len(task_groups[0].task_group) == 1
         assert task_groups[0].name == "node3"
+        assert len(task_groups[0].children) == 1
 
         assert task_groups[1].group_type == "pyspark"
         assert len(task_groups[1].task_group) == 2
@@ -318,6 +326,7 @@ class TestTaskGroupFactory(unittest.TestCase):
         assert len(task_groups) == 2
         assert task_groups[0].group_type == "pyspark"
         assert len(task_groups[0].task_group) == 1
+        assert task_groups[1] in task_groups[0].children
         assert task_groups[0].name.startswith("pyspark_")
         assert task_groups[1].group_type == "default"
         assert len(task_groups[1].task_group) == 1
