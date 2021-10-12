@@ -37,6 +37,7 @@ EXTRA_REQUIRE = {
     ],
     "aws": ["s3fs>=0.6.1"],
     "mlflow": ["kedro-mlflow==0.4.1"],
+    "spark": ["kedro[spark.SparkDataSet]>=0.16,<=0.18"],
 }
 
 setup(
