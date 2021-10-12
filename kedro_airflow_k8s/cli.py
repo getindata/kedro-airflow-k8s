@@ -58,10 +58,16 @@ def airflow_group(ctx, metadata, env, pipeline):
 @click.pass_context
 def compile(ctx, image, target_path="dags/"):
     """Create an Airflow DAG for a project"""
-    dag_name, template_stream, spark_template_streams = get_dag_filename_and_template_stream(
+    (
+        dag_name,
+        template_stream,
+        spark_template_streams,
+    ) = get_dag_filename_and_template_stream(
         ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
-    CliHelper.dump_templates(dag_name, target_path, template_stream, spark_template_streams)
+    CliHelper.dump_templates(
+        dag_name, target_path, template_stream, spark_template_streams
+    )
 
 
 @airflow_group.command()
@@ -72,7 +78,7 @@ def compile(ctx, image, target_path="dags/"):
     type=str,
     required=False,
     help="Location where DAG file should be uploaded, for GCS use gs:// or "
-         "gcs:// prefix, other notations indicate locally mounted filesystem",
+    "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
 @click.option(
     "-i",
@@ -87,13 +93,19 @@ def upload_pipeline(ctx, output: str, image: str):
     """
     Uploads pipeline to Airflow DAG location
     """
-    dag_name, template_stream, spark_template_streams= get_dag_filename_and_template_stream(
+    (
+        dag_name,
+        template_stream,
+        spark_template_streams,
+    ) = get_dag_filename_and_template_stream(
         ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
 
     output = output or ctx.obj["context_helper"].config.output
     logging.info(f"Deploying to {output}")
-    CliHelper.dump_templates(dag_name, output, template_stream, spark_template_streams)
+    CliHelper.dump_templates(
+        dag_name, output, template_stream, spark_template_streams
+    )
 
 
 @airflow_group.command()
@@ -104,7 +116,7 @@ def upload_pipeline(ctx, output: str, image: str):
     type=str,
     required=False,
     help="Location where DAG file should be uploaded, for GCS use gs:// or "
-         "gcs:// prefix, other notations indicate locally mounted filesystem",
+    "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
 @click.option(
     "-c",
@@ -135,7 +147,7 @@ def schedule(ctx, output: str, cron_expression: str):
     type=str,
     required=False,
     help="Location where DAG file should be uploaded, for GCS use gs:// or "
-         "gcs:// prefix, other notations indicate locally mounted filesystem",
+    "gcs:// prefix, other notations indicate locally mounted filesystem",
 )
 @click.option(
     "-d",
@@ -144,7 +156,7 @@ def schedule(ctx, output: str, cron_expression: str):
     type=str,
     required=False,
     help="Allows overriding dag id and dag file name for a purpose of multiple variants"
-         " of experiments",
+    " of experiments",
 )
 @click.option(
     "-w",
@@ -164,11 +176,11 @@ def schedule(ctx, output: str, cron_expression: str):
 )
 @click.pass_context
 def run_once(
-        ctx,
-        output: Optional[str],
-        dag_name: Optional[str],
-        wait_for_completion: Optional[int],
-        image: Optional[str],
+    ctx,
+    output: Optional[str],
+    dag_name: Optional[str],
+    wait_for_completion: Optional[int],
+    image: Optional[str],
 ):  # pylint: disable=too-many-arguments
     """
     Uploads pipeline to Airflow and runs once
@@ -195,10 +207,10 @@ def run_once(
 
     if (wait_for_completion or 0) > 0:
         assert (
-                airflow_client.wait_for_dag_run_completion(
-                    dag.dag_id, dag_run_id, wait_for_completion
-                )
-                == "success"
+            airflow_client.wait_for_dag_run_completion(
+                dag.dag_id, dag_run_id, wait_for_completion
+            )
+            == "success"
         )
 
 
@@ -218,7 +230,7 @@ def list_pipelines(ctx):
         experiment_tag = [
             t["name"] for t in tags if t["name"].startswith("experiment_name")
         ][0]
-        return experiment_tag[len("experiment_name") + 1:]  # noqa: E203
+        return experiment_tag[len("experiment_name") + 1 :]  # noqa: E203
 
     pipelines = [[name(d.tags), d.dag_id] for d in dags]
     pipelines.sort()

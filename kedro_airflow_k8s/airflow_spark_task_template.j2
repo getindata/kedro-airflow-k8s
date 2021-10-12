@@ -67,7 +67,7 @@ def init_kedro(path, line=None, env: str = None, extra_params: Dict[str, Any] = 
 
 
 if __name__ == "__main__":
-    init_kedro(project_path)
+    init_kedro(project_path) #use pipelines env if mlflow fixed
     logging.info(
                 f"Kedro node_from: {{ from_node }} ,node_to: {{ to_node }}")
     session.run(from_nodes=['{{ from_node }}'], to_nodes=['{{ to_node }}'])
