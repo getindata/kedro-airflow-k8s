@@ -4,7 +4,6 @@ from airflow import DAG
 from airflow.kubernetes.secret import Secret
 from airflow.utils.dates import days_ago
 from airflow.utils.task_group import TaskGroup
-from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 from datetime import timedelta
 from datetime import datetime
@@ -109,7 +108,7 @@ with DAG(
                             "pyspark_job": {"main_python_file_uri": '{{ config.output }}/{{ project_name | safe | slugify }}_{{ node.name | slugify }}.py'},
                         }
             tasks["{{ node.name | slugify }}"] = {{ config.run_config.spark.submit_job_operator }}(
-                task_id="kedro-pyspark_task", job=PYSPARK_JOB, region='{{ config.run_config.spark.region }}', project_id='{{ config.run_config.spark.project_id }}'
+                task_id="kedro-{{ node.name | slugify }}", job=PYSPARK_JOB, location='{{ config.run_config.spark.region }}', project_id='{{ config.run_config.spark.project_id }}'
             )
             {%- endif %}
             tasks["{{ node.name | slugify }}"].doc_md = """
@@ -125,7 +124,11 @@ with DAG(
                 namespace="{{config.run_config.namespace}}",
                 volume_disabled={{config.run_config.volume.disabled}},
                 pvc_name=pvc_name,
-                image="{{ image }}",
+                image={%- if k8s_templates[node.name].image -%}
+                "{{ k8s_templates[node.name].image }}",
+                {%- else -%}
+                "{{ image }}",
+                {%- endif %}
                 image_pull_policy="{{ config.run_config.image_pull_policy }}",
                 {%- if config.run_config.image_pull_secrets %}
                 image_pull_secrets="{{ config.run_config.image_pull_secrets }}",
@@ -185,6 +188,9 @@ with DAG(
                     "{{ var }}": "{{'{{ var.value.'}}{{ var }} {{ '}}' }}",
                 {%- endfor %}
                 },
+                {%- if k8s_templates[node.name].template %}
+                kubernetes_pod_template=f"""{{ k8s_templates[node.name].template | safe }}""",
+                {%- endif %}
             )
         {%- endif %}
     {% endfor %}

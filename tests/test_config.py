@@ -20,6 +20,15 @@ run_config:
     start_date: 20200102
     image_pull_secrets: pull1,pull2
     service_account_name: service_account
+    kubernetes_pod_templates:
+        custom_template:
+            template: |-
+                type: Pod
+                metadata:
+                    name: {PodGenerator.make_unique_pod_id('test')}
+                spec:
+                    name: 1
+            image: custom
     volume:
         storageclass: kms
         size: 3Gi
@@ -76,8 +85,8 @@ run_config:
 
 class TestPluginConfig(unittest.TestCase):
     def test_plugin_config(self):
-        cfg = PluginConfig(yaml.safe_load(CONFIG_YAML))
 
+        cfg = PluginConfig(yaml.safe_load(CONFIG_YAML))
         assert cfg.host == "test.host.com"
         assert cfg.output == "/data/ariflow/dags"
         assert cfg.run_config
@@ -112,6 +121,7 @@ class TestPluginConfig(unittest.TestCase):
             "value": "data-processing",
             "effect": "NoExecute",
         }
+
         assert resources.__default__.annotations
         assert (
             resources.__default__.annotations["iam.amazonaws.com/role"]
@@ -178,6 +188,18 @@ class TestPluginConfig(unittest.TestCase):
             "MLFLOW_TRACKING_PASSWORD",
         ]
 
+        kubernetes_pod_templates = cfg.run_config.kubernetes_pod_templates
+
+        assert kubernetes_pod_templates.custom_template.image == "custom"
+        assert (
+            kubernetes_pod_templates.custom_template.template
+            == """type: Pod
+metadata:
+    name: {PodGenerator.make_unique_pod_id('test')}
+spec:
+    name: 1"""
+        )
+
     def test_defaults(self):
         cfg = PluginConfig({"run_config": {}})
 
@@ -200,6 +222,8 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.resources
 
         assert not cfg.run_config.external_dependencies
+
+        assert len(cfg.run_config.kubernetes_pod_templates) == 0
 
     def test_run_name_is_experiment_name_by_default(self):
         cfg = PluginConfig(

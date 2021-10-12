@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -7,7 +8,7 @@ from jinja2.environment import TemplateStream
 from slugify import slugify
 
 from kedro_airflow_k8s import version
-from kedro_airflow_k8s.config import ResourceConfig
+from kedro_airflow_k8s.config import KubernetesPodTemplate, ResourceConfig
 
 
 def _get_mlflow_url(context_helper):
@@ -41,6 +42,22 @@ def _node_resources(nodes, config) -> Dict[str, ResourceConfig]:
         ]
         result[node.name] = (
             config[resources[0]] if resources else default_config
+        )
+    return result
+
+
+def _pod_templates(nodes, config) -> Dict[str, KubernetesPodTemplate]:
+    result = defaultdict(lambda: None)
+
+    default_config = config.__default__
+    for node in nodes:
+        templates = [
+            tag[len("k8s_template:") :]  # noqa: E203
+            for tag in node.tags
+            if "k8s_template:" in tag
+        ]
+        result[node.name] = (
+            config[templates[0]] if templates else default_config
         )
     return result
 
@@ -90,6 +107,10 @@ def _create_template_stream(
         secrets=context_helper.config.run_config.secrets,
         macro_params=context_helper.config.run_config.macro_params,
         variables_params=context_helper.config.run_config.variables_params,
+        k8s_templates=_pod_templates(
+            context_helper.pipeline.nodes,
+            context_helper.config.run_config.kubernetes_pod_templates,
+        ),
     )
 
 

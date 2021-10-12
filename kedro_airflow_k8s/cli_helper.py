@@ -25,9 +25,9 @@ class CliHelper:
         spark_id = 0
         for spark_template in spark_template_streams:
             spark_task_target_path = (
-                str(Path(target_path) / f"{dag_name}_spark-{spark_id}.py")
+                str(Path(target_path) / f"{dag_name}_pyspark-{spark_id}.py")
                 if "://" not in target_path
-                else f"{target_path}/{dag_name}_spark-{spark_id}.py"
+                else f"{target_path}/{dag_name}_pyspark-{spark_id}.py"
             )
             with fsspec.open(str(spark_task_target_path), "wt") as f:
                 spark_template.dump(f)

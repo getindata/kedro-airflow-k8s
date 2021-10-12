@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import click
-import fsspec
 from tabulate import tabulate
 
 from kedro_airflow_k8s.airflow import AirflowClient
@@ -130,13 +129,19 @@ def schedule(ctx, output: str, cron_expression: str):
     """
     Uploads pipeline to Airflow with given schedule
     """
-    dag_filename, template_stream = get_dag_filename_and_template_stream(
+    (
+        dag_filename,
+        template_stream,
+        spark_template_streams,
+    ) = get_dag_filename_and_template_stream(
         ctx, cron_expression=get_cron_expression(ctx, cron_expression)
     )
 
     output = output or ctx.obj["context_helper"].config.output
-    with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
-        template_stream.dump(f)
+
+    CliHelper.dump_templates(
+        dag_filename, output, template_stream, spark_template_streams
+    )
 
 
 @airflow_group.command()
@@ -185,7 +190,11 @@ def run_once(
     """
     Uploads pipeline to Airflow and runs once
     """
-    dag_filename, template_stream = get_dag_filename_and_template_stream(
+    (
+        dag_filename,
+        template_stream,
+        spark_template_streams,
+    ) = get_dag_filename_and_template_stream(
         ctx,
         dag_name=dag_name,
         image=image,
@@ -195,8 +204,9 @@ def run_once(
     context_helper = ctx.obj["context_helper"]
     output = output or context_helper.config.output
 
-    with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
-        template_stream.dump(f)
+    CliHelper.dump_templates(
+        dag_filename, output, template_stream, spark_template_streams
+    )
 
     airflow_client = AirflowClient(context_helper.config.host)
     dag = airflow_client.wait_for_dag(
