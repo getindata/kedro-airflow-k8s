@@ -173,8 +173,8 @@ run_config:
       #params: []
     #spark:
     #  submit_job_operator:
-    # Airflow operator to use for submitting Spark job: SparkSubmitOperator, 
-    # DataprocSubmitJobOperator or KubernetesSparkOperator 
+    # Airflow operator to use for submitting Spark job: SparkSubmitOperator,
+    # DataprocSubmitJobOperator or KubernetesSparkOperator
     #  region: None
     #  project_id: None
     #  cluster_name: None
@@ -283,7 +283,9 @@ class AuthenticationConfig(Config):
 class SparkConfig(Config):
     @property
     def submit_job_operator(self):
-        return self._get_or_default("submit_job_operator", "SparkSubmitOperator")
+        return self._get_or_default(
+            "submit_job_operator", "SparkSubmitOperator"
+        )
 
     @property
     def region(self):
