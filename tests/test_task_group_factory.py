@@ -52,6 +52,43 @@ class TestTaskGroupFactory(unittest.TestCase):
         assert len(task_groups[0].task_group) == 2
         assert task_groups[0].name.startswith("pyspark_")
 
+    def test_create_dag_only_default(self):
+        pipeline = Pipeline(
+            nodes=[
+                node(
+                    self,
+                    inputs=["pandasframe1"],
+                    outputs=["pandasframe2"],
+                    name="node1",
+                ),
+                node(
+                    self,
+                    inputs=["pandasframe2"],
+                    outputs=["pandasframe3"],
+                    name="node2",
+                ),
+            ]
+        )
+
+        data_catalog = DataCatalog(
+            data_sets={
+                "pandasframe1": CSVDataSet("/tmp/dummy1"),
+                "pandasframe2": CSVDataSet("/tmp/dummy2"),
+                "pandasframe3": CSVDataSet("/tmp/dummy3"),
+            }
+        )
+
+        task_groups = TaskGroupFactory.create(pipeline, data_catalog)
+        task_groups.sort(key=lambda x: x.name)
+
+        assert len(task_groups) == 2
+        assert task_groups[0].group_type == "default"
+        assert len(task_groups[0].task_group) == 1
+        assert task_groups[0].name.startswith("node1")
+        assert task_groups[1].group_type == "default"
+        assert len(task_groups[1].task_group) == 1
+        assert task_groups[1].name.startswith("node2")
+
     def test_create_dag_intermediate_spark_frames(self):
         def node2(
             input_param: pyspark.sql.dataframe.DataFrame,
