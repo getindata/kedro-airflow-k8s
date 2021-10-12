@@ -1,4 +1,3 @@
-from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -55,43 +54,14 @@ def _create_template_stream(
 ) -> TemplateStream:
     template = _get_jinja_template("airflow_dag_template.j2")
 
-    pipeline = context_helper.pipeline
-    dependencies = defaultdict(list)
-    for node, parent_nodes in pipeline.node_dependencies.items():
-        for parent in parent_nodes:
-            dependencies[parent].append(node)
-
-    dependencies_grouped = defaultdict(list)
-    task_groups = context_helper.pipeline_grouped
-    spark_task_groups = [
-        tg for tg in task_groups if tg.group_type == "pyspark"
-    ]
-
-    spark_tasks = dict()
-    for tg in spark_task_groups:
-        task_group_name = tg.name
-        for node in tg.task_group:
-            node_name = node.name
-            spark_tasks[node_name] = task_group_name
-
-    for node, parent_nodes in pipeline.node_dependencies.items():
-        for parent in parent_nodes:
-            if node.name not in spark_tasks.keys():
-                dependencies_grouped[
-                    parent.name
-                    if parent.name not in spark_tasks.keys()
-                    else spark_tasks[parent.name]
-                ].append(node.name)
-
     return template.stream(
-        pipeline=pipeline,
-        pipeline_grouped=task_groups,
-        dependencies=dependencies,
-        dependencies_grouped=dependencies_grouped,
+        pipeline=context_helper.pipeline,
+        pipeline_grouped=context_helper.pipeline_grouped,
         with_external_dependencies=with_external_dependencies,
         config=context_helper.config,
         resources=_node_resources(
-            pipeline.nodes, context_helper.config.run_config.resources
+            context_helper.pipeline.nodes,
+            context_helper.config.run_config.resources,
         ),
         mlflow_url=_get_mlflow_url(context_helper),
         env=context_helper.env,
@@ -125,22 +95,19 @@ def _create_template_stream(
 
 def _create_spark_tasks_template_stream(
     context_helper,
-    dag_name: str,
 ) -> List[TemplateStream]:
     spark_task_templates = []
     spark_task_groups = [
         tg
         for tg in context_helper.pipeline_grouped
-        if tg.group_type == "spark"
+        if tg.group_type == "pyspark"
     ]
     for tg in spark_task_groups:
-        from_node = tg.task_group[0].name
-        to_node = tg.task_group[-1].name
+        node_names = [node.name for node in tg.task_group]
         template = _get_jinja_template("airflow_spark_task_template.j2")
         spark_task_templates.append(
             template.stream(
-                from_node=from_node,
-                to_node=to_node,
+                node_names=node_names,
                 project_name=context_helper.project_name,
             )
         )
@@ -173,6 +140,5 @@ def get_dag_filename_and_template_stream(
     )
     spark_template_streams = _create_spark_tasks_template_stream(
         ctx.obj["context_helper"],
-        dag_name=dag_name,
     )
     return dag_name, template_stream, spark_template_streams

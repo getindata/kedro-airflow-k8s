@@ -56,6 +56,9 @@ class TaskGroup:
     def __hash__(self):
         return hash(self._name)
 
+    def __repr__(self):
+        return f"{self.name}/{self.group_type}"
+
 
 class TaskGroupFactory:
     group_counter: int = 0
@@ -71,11 +74,12 @@ class TaskGroupFactory:
             return True
 
         return_annotation = signature(node.func).return_annotation
-        return_type = ".".join(
-            [return_annotation.__module__, return_annotation.__name__]
-        )
-        if "pyspark.sql.dataframe.DataFrame" == return_type:
-            return True
+        if return_annotation:
+            return_type = ".".join(
+                [return_annotation.__module__, return_annotation.__name__]
+            )
+            if "pyspark.sql.dataframe.DataFrame" == return_type:
+                return True
 
         for node_input in node.inputs:
             spark_input_in_catalog = (
@@ -146,7 +150,7 @@ class TaskGroupFactory:
     @staticmethod
     def create(pipeline: Pipeline, catalog: DataCatalog) -> List[TaskGroup]:
         all_groups = TaskGroupFactory._extract_groups(pipeline, catalog)
-        logging.info(f"Found groups: [{all_groups}]")
+        logging.info(f"Found user groups: [{all_groups.keys()}]")
 
         nodes_parent_deps = pipeline.node_dependencies
         nodes_child_deps = defaultdict(set)

@@ -101,7 +101,7 @@ with DAG(
     tasks = {}
     with TaskGroup("kedro", prefix_group_id=False) as kedro_group:
     {% for node in pipeline_grouped %}
-        {%- if node.group_type == 'spark' %}
+        {%- if node.group_type == 'pyspark' %}
             {%- if config.run_config.spark.submit_job_operator in ('DataprocSubmitJobOperator') %}
             PYSPARK_JOB = {
                             "reference": {"project_id": '{{ config.run_config.spark.project_id }}' },
@@ -190,9 +190,9 @@ with DAG(
     {% endfor %}
 
 
-    {% for parent_node, child_nodes in dependencies_grouped.items() -%}
-    {% for child in child_nodes %}
-            tasks["{{ parent_node | slugify }}"] >> tasks["{{ child | slugify }}"]
+    {% for task_group in pipeline_grouped -%}
+    {% for child in task_group.children %}
+            tasks["{{ task_group.name | slugify }}"] >> tasks["{{ child.name | slugify }}"]
     {% endfor %}
     {%- endfor %}
 
