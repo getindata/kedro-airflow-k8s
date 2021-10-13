@@ -20,6 +20,12 @@ run_config:
     start_date: 20200102
     image_pull_secrets: pull1,pull2
     service_account_name: service_account
+    spark:
+      submit_job_operator: DataprocSubmitJobOperator
+      region: europe-west2
+      project_id: sandbox
+      cluster_name: cluster-8084
+      create_cluster: False
     kubernetes_pod_templates:
         custom_template:
             template: |-
@@ -200,6 +206,14 @@ spec:
     name: 1"""
         )
 
+        spark = cfg.run_config.spark
+        assert spark
+        assert spark.submit_job_operator == "DataprocSubmitJobOperator"
+        assert spark.region == "europe-west2"
+        assert spark.project_id == "sandbox"
+        assert spark.cluster_name == "cluster-8084"
+        assert not spark.create_cluster
+
     def test_defaults(self):
         cfg = PluginConfig({"run_config": {}})
 
@@ -211,6 +225,7 @@ spec:
         assert cfg.run_config.start_date is None
         assert cfg.run_config.auth_config.type == "Null"
         assert cfg.run_config.auth_config.params == []
+        assert cfg.run_config.spark
 
         assert cfg.run_config.volume
         assert cfg.run_config.volume.disabled is False

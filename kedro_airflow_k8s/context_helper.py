@@ -39,7 +39,7 @@ class ContextHelper(object):
 
     @property
     def pipeline_grouped(self):
-        return TaskGroupFactory.create(self.pipeline, self.context.catalog)
+        return TaskGroupFactory().create(self.pipeline, self.context.catalog)
 
     @property
     def pipeline_name(self):

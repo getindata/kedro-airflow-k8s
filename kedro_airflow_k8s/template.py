@@ -71,7 +71,16 @@ def _create_template_stream(
 ) -> TemplateStream:
     template = _get_jinja_template("airflow_dag_template.j2")
 
+    custom_spark_factory = None
+    if context_helper.config.run_config.spark.operator_factory:
+        factory = context_helper.config.run_config.spark.operator_factory
+        pkg = factory[: factory.rindex(".")]
+        clazz = factory[factory.rindex(".") + 1 :]  # noqa: E203
+        mod = __import__(pkg, fromlist=[clazz])
+        custom_spark_factory = getattr(mod, clazz)()
+
     return template.stream(
+        custom_spark_factory=custom_spark_factory,
         pipeline=context_helper.pipeline,
         pipeline_grouped=context_helper.pipeline_grouped,
         with_external_dependencies=with_external_dependencies,

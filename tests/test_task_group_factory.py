@@ -15,7 +15,7 @@ class TestTaskGroupFactory(unittest.TestCase):
 
         data_catalog = DataCatalog(data_sets={})
 
-        task_groups = TaskGroupFactory.create(pipeline, data_catalog)
+        task_groups = TaskGroupFactory().create(pipeline, data_catalog)
 
         assert len(task_groups) == 0
 
@@ -45,7 +45,7 @@ class TestTaskGroupFactory(unittest.TestCase):
             }
         )
 
-        task_groups = TaskGroupFactory.create(pipeline, data_catalog)
+        task_groups = TaskGroupFactory().create(pipeline, data_catalog)
 
         assert len(task_groups) == 1
         assert task_groups[0].group_type == "pyspark"
@@ -79,7 +79,7 @@ class TestTaskGroupFactory(unittest.TestCase):
             }
         )
 
-        task_groups = TaskGroupFactory.create(pipeline, data_catalog)
+        task_groups = TaskGroupFactory().create(pipeline, data_catalog)
         task_groups.sort(key=lambda x: x.name)
 
         assert len(task_groups) == 2
@@ -129,7 +129,7 @@ class TestTaskGroupFactory(unittest.TestCase):
             }
         )
 
-        task_groups = TaskGroupFactory.create(pipeline, data_catalog)
+        task_groups = TaskGroupFactory().create(pipeline, data_catalog)
 
         assert len(task_groups) == 1
         assert task_groups[0].group_type == "pyspark"
@@ -169,7 +169,7 @@ class TestTaskGroupFactory(unittest.TestCase):
             }
         )
 
-        task_groups = TaskGroupFactory.create(pipeline, data_catalog)
+        task_groups = TaskGroupFactory().create(pipeline, data_catalog)
         task_groups.sort(reverse=True, key=lambda x: x.name)
 
         assert len(task_groups) == 2
@@ -216,7 +216,7 @@ class TestTaskGroupFactory(unittest.TestCase):
             }
         )
 
-        task_groups = TaskGroupFactory.create(pipeline, data_catalog)
+        task_groups = TaskGroupFactory().create(pipeline, data_catalog)
         task_groups.sort(reverse=True, key=lambda x: x.name)
 
         assert len(task_groups) == 2
@@ -276,7 +276,7 @@ class TestTaskGroupFactory(unittest.TestCase):
             }
         )
 
-        task_groups = TaskGroupFactory.create(pipeline, data_catalog)
+        task_groups = TaskGroupFactory().create(pipeline, data_catalog)
         task_groups.sort(key=lambda x: x.name)
 
         assert len(task_groups) == 3
@@ -320,7 +320,7 @@ class TestTaskGroupFactory(unittest.TestCase):
             }
         )
 
-        task_groups = TaskGroupFactory.create(pipeline, data_catalog)
+        task_groups = TaskGroupFactory().create(pipeline, data_catalog)
         task_groups.sort(reverse=True, key=lambda x: x.name)
 
         assert len(task_groups) == 2
@@ -366,7 +366,7 @@ class TestTaskGroupFactory(unittest.TestCase):
             }
         )
 
-        task_groups = TaskGroupFactory.create(pipeline, data_catalog)
+        task_groups = TaskGroupFactory().create(pipeline, data_catalog)
 
         assert len(task_groups) == 1
         assert task_groups[0].group_type == "pyspark"

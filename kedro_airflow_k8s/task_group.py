@@ -61,7 +61,8 @@ class TaskGroup:
 
 
 class TaskGroupFactory:
-    group_counter: int = 0
+    def __init__(self, group_counter: int = 0):
+        self.group_counter = group_counter
 
     @staticmethod
     def _is_pyspark(node: Node, catalog: DataCatalog) -> bool:
@@ -132,8 +133,7 @@ class TaskGroupFactory:
                 return group
         return None
 
-    @staticmethod
-    def _merge_groups(groups: Set[TaskGroup]) -> TaskGroup:
+    def _merge_groups(self, groups: Set[TaskGroup]) -> TaskGroup:
         final_group = None
         for g in groups:
             if not final_group:
@@ -142,13 +142,14 @@ class TaskGroupFactory:
                 final_group.merge(g)
         if not final_group:
             final_group = TaskGroup(
-                f"pyspark_{TaskGroupFactory.group_counter}", [], "pyspark"
+                f"pyspark_{self.group_counter}", [], "pyspark"
             )
-            TaskGroupFactory.group_counter += 1
+            self.group_counter += 1
         return final_group
 
-    @staticmethod
-    def create(pipeline: Pipeline, catalog: DataCatalog) -> List[TaskGroup]:
+    def create(
+        self, pipeline: Pipeline, catalog: DataCatalog
+    ) -> List[TaskGroup]:
         all_groups = TaskGroupFactory._extract_groups(pipeline, catalog)
         logging.info(f"Found user groups: [{all_groups.keys()}]")
 
@@ -174,7 +175,7 @@ class TaskGroupFactory:
                 if task_group:
                     task_groups.add(task_group)
 
-            final_group = TaskGroupFactory._merge_groups(task_groups)
+            final_group = self._merge_groups(task_groups)
             final_group.append_task(pyspark_node)
             pyspark_groups = pyspark_groups.difference(task_groups)
             pyspark_groups.add(final_group)

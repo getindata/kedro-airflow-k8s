@@ -332,6 +332,14 @@ class SparkConfig(Config):
     def project_id(self):
         return self._get_or_default("project_id", "None")
 
+    @property
+    def create_cluster(self):
+        return self._get_or_default("create_cluster", False)
+
+    @property
+    def operator_factory(self):
+        return self._get_or_default("operator_factory", None)
+
 
 class RunConfig(Config):
     @property
@@ -418,7 +426,8 @@ class RunConfig(Config):
 
     @property
     def spark(self):
-        return self._get_or_default("spark", {})
+        cfg = self._get_or_default("spark", {})
+        return SparkConfig(cfg)
 
     @property
     def env_vars(self):
