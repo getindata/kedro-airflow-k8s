@@ -2,13 +2,14 @@
 
 ## [Unreleased]
 
--   Support for custom pod templates
--   FIX: adding missing dependency package: tabulate
--   FIX: Fix default config template
--   Support populating k8s node env_vars from Airflow variables
--   Generalize auth handler
--   Added `VarsAuthHandler` for MLflow authentication which gets credentials from Airflow variables
--   Changed logging level for pod creation request to debug
+- Support for custom pod templates
+- FIX: adding missing dependency package: tabulate
+- FIX: Fix default config template
+- Support populating k8s node env_vars from Airflow variables
+- Generalize auth handler
+- Added `VarsAuthHandler` for MLflow authentication which gets credentials from Airflow variables
+- Changed logging level for pod creation request to debug
+- Plugin works when no git initialized, uses env variable `KEDRO_CONFIG_COMMIT_ID` or resolves to `UNKNOWN` when tagging DAG
 
 ## [0.6.7] - 2021-09-01
 

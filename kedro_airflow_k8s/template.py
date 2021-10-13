@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, Optional
@@ -29,6 +30,16 @@ def _get_jinja_template():
     jinja_env.filters["slugify"] = slugify
     template = jinja_env.get_template("airflow_dag_template.j2")
     return template
+
+
+def get_commit_sha(context_helper):
+    if "KEDRO_CONFIG_COMMIT_ID" in os.environ.keys():
+        return os.getenv("KEDRO_CONFIG_COMMIT_ID")
+    else:
+        try:
+            return context_helper.session.store["git"]["commit_sha"]
+        except KeyError:
+            return "UNKNOWN"
 
 
 def _node_resources(nodes, config) -> Dict[str, ResourceConfig]:
@@ -93,7 +104,7 @@ def _create_template_stream(
         image=image,
         pipeline_name=context_helper.pipeline_name,
         schedule_interval=schedule_interval,
-        git_info=context_helper.session.store["git"],
+        commit_sha=get_commit_sha(context_helper),
         kedro_airflow_k8s_version=version,
         include_start_mlflow_experiment_operator=(
             Path(__file__).parent / "operators/start_mlflow_experiment.py"
