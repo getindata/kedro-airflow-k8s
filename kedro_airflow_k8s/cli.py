@@ -67,6 +67,8 @@ def compile(ctx, image, target_path="dags/"):
     CliHelper.dump_templates(
         dag_name, target_path, template_stream, spark_template_streams
     )
+    # if spark_template_streams:
+    #     CliHelper.dump_spark_artifacts(ctx, target_path)
 
 
 @airflow_group.command()

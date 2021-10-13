@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -11,7 +12,17 @@ from kedro_airflow_k8s import version
 from kedro_airflow_k8s.config import KubernetesPodTemplate, ResourceConfig
 
 
-def _get_mlflow_url(context_helper):
+def get_commit_sha(context_helper):
+    if "KEDRO_CONFIG_COMMIT_ID" in os.environ.keys():
+        return os.getenv("KEDRO_CONFIG_COMMIT_ID")
+    else:
+        try:
+            return context_helper.session.store["git"]["commit_sha"]
+        except KeyError:
+            return "UNKNOWN"
+
+
+def get_mlflow_url(context_helper):
     try:
         import importlib
 
@@ -89,7 +100,7 @@ def _create_template_stream(
             context_helper.pipeline.nodes,
             context_helper.config.run_config.resources,
         ),
-        mlflow_url=_get_mlflow_url(context_helper),
+        mlflow_url=get_mlflow_url(context_helper),
         env=context_helper.env,
         project_name=context_helper.project_name,
         dag_name=dag_name,
