@@ -67,8 +67,8 @@ def compile(ctx, image, target_path="dags/"):
     CliHelper.dump_templates(
         dag_name, target_path, template_stream, spark_template_streams
     )
-    # if spark_template_streams:
-    #     CliHelper.dump_spark_artifacts(ctx, target_path)
+    if spark_template_streams:
+        CliHelper.dump_spark_artifacts(ctx, target_path)
 
 
 @airflow_group.command()
@@ -107,6 +107,12 @@ def upload_pipeline(ctx, output: str, image: str):
     CliHelper.dump_templates(
         dag_name, output, template_stream, spark_template_streams
     )
+
+    if spark_template_streams:
+        target_path = ctx.obj[
+            "context_helper"
+        ].config.run_config.spark.artifacts_path
+        CliHelper.dump_spark_artifacts(ctx, target_path)
 
 
 @airflow_group.command()

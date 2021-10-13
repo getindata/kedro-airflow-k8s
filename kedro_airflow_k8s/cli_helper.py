@@ -48,9 +48,9 @@ class CliHelper:
         spark_config = ctx.obj["context_helper"].config.run_config.spark
         is_mlflow_enabled = bool(get_mlflow_url(ctx.obj["context_helper"]))
 
-        if spark_config.user_init:
+        if spark_config.user_init_path:
             user_init = (
-                Path(metadata.source_dir) / spark_config.user_init
+                Path(metadata.source_dir) / spark_config.user_init_path
             ).read_text()
         else:
             user_init = ""
@@ -64,7 +64,7 @@ class CliHelper:
         CliHelper.dump_init_script(
             target_path,
             project_name,
-            spark_config.output,
+            spark_config.artifacts_path,
             is_mlflow_enabled,
             user_init,
             commit_sha,

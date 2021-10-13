@@ -340,6 +340,14 @@ class SparkConfig(Config):
     def operator_factory(self):
         return self._get_or_default("operator_factory", None)
 
+    @property
+    def artifacts_path(self):
+        return self._get_or_default("artifacts_path", None)
+
+    @property
+    def user_init_path(self):
+        return self._get_or_default("user_init_path", None)
+
 
 class RunConfig(Config):
     @property
