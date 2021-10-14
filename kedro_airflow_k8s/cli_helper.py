@@ -2,7 +2,7 @@ import sys
 import tarfile
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import List
+from typing import Dict
 
 import fsspec
 import jinja2
@@ -15,10 +15,7 @@ from kedro_airflow_k8s.template import get_commit_sha, get_mlflow_url
 class CliHelper:
     @staticmethod
     def dump_templates(
-        dag_name: str,
-        target_path: str,
-        template_stream: TemplateStream,
-        spark_template_streams: List[TemplateStream],
+        dag_name: str, target_path: str, template_stream: TemplateStream
     ):
         dag_filename = f"{dag_name}.py"
         dag_target_path = (
@@ -29,37 +26,47 @@ class CliHelper:
         with fsspec.open(dag_target_path, "wt") as f:
             template_stream.dump(f)
 
-        spark_id = 0
-        for spark_template in spark_template_streams:
+    @staticmethod
+    def dump_spark_templates(
+        target_path: str,
+        project_name: str,
+        commit_sha: str,
+        template_steams: Dict[str, TemplateStream],
+    ):
+        for name, spark_template in template_steams.items():
             spark_task_target_path = (
-                str(Path(target_path) / f"{dag_name}_pyspark-{spark_id}.py")
-                if "://" not in target_path
-                else f"{target_path}/{dag_name}_pyspark-{spark_id}.py"
+                target_path + f"/{project_name}-{commit_sha}-{name}.py"
             )
             with fsspec.open(str(spark_task_target_path), "wt") as f:
                 spark_template.dump(f)
-            spark_id = spark_id + 1
 
     @staticmethod
-    def dump_spark_artifacts(ctx, target_path: str):
+    def dump_spark_artifacts(
+        ctx,
+        target_path: str,
+        spark_template_streams: Dict[str, TemplateStream],
+    ):
         commit_sha = get_commit_sha(ctx.obj["context_helper"])
-        metadata = ctx.parent.parent.obj
-        project_name = metadata.project_name
+        source_dir = ctx.obj["context_helper"].source_dir
+        project_name = ctx.obj["context_helper"].project_name
         spark_config = ctx.obj["context_helper"].config.run_config.spark
         is_mlflow_enabled = bool(get_mlflow_url(ctx.obj["context_helper"]))
 
         if spark_config.user_init_path:
             user_init = (
-                Path(metadata.source_dir) / spark_config.user_init_path
+                Path(source_dir) / spark_config.user_init_path
             ).read_text()
         else:
             user_init = ""
 
+        CliHelper.dump_spark_templates(
+            target_path, project_name, commit_sha, spark_template_streams
+        )
         CliHelper.dump_project_as_package(
-            metadata.source_dir, target_path, project_name, commit_sha
+            source_dir, target_path, project_name, commit_sha
         )
         CliHelper.dump_project_as_archive(
-            metadata.source_dir, target_path, project_name, commit_sha
+            source_dir, target_path, project_name, commit_sha
         )
         CliHelper.dump_init_script(
             target_path,

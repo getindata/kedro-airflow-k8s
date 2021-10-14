@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import jinja2
 import kedro
@@ -136,8 +136,8 @@ def _create_template_stream(
 
 def _create_spark_tasks_template_stream(
     context_helper,
-) -> List[TemplateStream]:
-    spark_task_templates = []
+) -> Dict[str, TemplateStream]:
+    spark_task_templates = {}
     spark_task_groups = [
         tg
         for tg in context_helper.pipeline_grouped
@@ -146,11 +146,9 @@ def _create_spark_tasks_template_stream(
     for tg in spark_task_groups:
         node_names = [node.name for node in tg.task_group]
         template = _get_jinja_template("airflow_spark_task_template.j2")
-        spark_task_templates.append(
-            template.stream(
-                node_names=node_names,
-                project_name=context_helper.project_name,
-            )
+        spark_task_templates[tg.name] = template.stream(
+            node_names=node_names,
+            project_name=context_helper.project_name,
         )
     return spark_task_templates
 

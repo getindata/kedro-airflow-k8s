@@ -285,6 +285,7 @@ metadata:
                     "region": "europe-west2",
                     "project_id": "sandbox",
                     "cluster_name": "test_cluster",
+                    "artifacts_path": "gs://test/spark",
                 }
             }
         )
@@ -302,7 +303,15 @@ metadata:
 
         runner = CliRunner()
 
-        result = runner.invoke(compile, [], obj=config)
+        with patch(
+            "kedro_airflow_k8s.cli_helper.CliHelper.dump_project_as_package"
+        ), patch(
+            "kedro_airflow_k8s.cli_helper.CliHelper.dump_project_as_archive"
+        ), patch(
+            "kedro_airflow_k8s.cli_helper.CliHelper.dump_init_script"
+        ):
+            result = runner.invoke(compile, [], obj=config)
+
         assert result.exit_code == 0
         assert Path("dags/kedro_airflow_k8s.py").exists()
         dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
@@ -312,7 +321,7 @@ metadata:
             """"placement": {"cluster_name": 'test_cluster'},""" in dag_content
         )
         assert (
-            """"main_python_file_uri": '/tmp/output/kedro-airflow-k8s_pyspark-0.py'"""
+            """"main_python_file_uri": 'gs://test/spark/kedro_airflow_k8s-abcdef-pyspark"""  # noqa: E501
             in dag_content
         )
         assert (
@@ -329,6 +338,7 @@ metadata:
             {
                 "spark": {
                     "operator_factory": "tests.operator_factory.TestOperatorFactory",
+                    "artifacts_path": "gs://test/spark",
                 }
             }
         )
@@ -346,7 +356,15 @@ metadata:
 
         runner = CliRunner()
 
-        result = runner.invoke(compile, [], obj=config)
+        with patch(
+            "kedro_airflow_k8s.cli_helper.CliHelper.dump_project_as_package"
+        ), patch(
+            "kedro_airflow_k8s.cli_helper.CliHelper.dump_project_as_archive"
+        ), patch(
+            "kedro_airflow_k8s.cli_helper.CliHelper.dump_init_script"
+        ):
+            result = runner.invoke(compile, [], obj=config)
+
         assert result.exit_code == 0
         assert Path("dags/kedro_airflow_k8s.py").exists()
         dag_content = Path("dags/kedro_airflow_k8s.py").read_text()

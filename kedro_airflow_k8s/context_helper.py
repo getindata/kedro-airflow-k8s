@@ -26,6 +26,10 @@ class ContextHelper(object):
         return self._metadata.project_name
 
     @property
+    def source_dir(self):
+        return self._metadata.source_dir
+
+    @property
     def context(self):
         return self.session.load_context()
 
