@@ -157,25 +157,25 @@ class TestPluginCLI:
         assert "auth_handler=GoogleOAuth2AuthHandler()" in dag_content
         assert (
             """env_vars={
-                    "var1": "{{ var.value.var1 }}",
-                    "var2": "{{ var.value.var2 }}",
-                }"""
+                "var1": "{{ var.value.var1 }}",
+                "var2": "{{ var.value.var2 }}",
+            }"""
             in dag_content
         )
         assert (
             """secrets=[
-                    Secret("env", None, "airflow-secrets", None),
-                    Secret("env", "DB_PASSWORD", "database-secrets", "password"),
-                ]"""
+                Secret("env", None, "airflow-secrets", None),
+                Secret("env", "DB_PASSWORD", "database-secrets", "password"),
+            ]"""
             in dag_content
         )
 
         assert (
             """parameters=\"\"\"
-                    ds:{{ ds }},
-                    pre_ds:{{ pre_ds }},
-                    env:{{ var.value.env }},
-                \"\"\","""
+                ds:{{ ds }},
+                pre_ds:{{ pre_ds }},
+                env:{{ var.value.env }},
+            \"\"\","""
             in dag_content
         )
 
@@ -281,7 +281,7 @@ metadata:
         context_helper.config._raw["run_config"].update(
             {
                 "spark": {
-                    "submit_job_operator": "DataprocSubmitJobOperator",
+                    "type": "dataproc",
                     "region": "europe-west2",
                     "project_id": "sandbox",
                     "cluster_name": "test_cluster",
@@ -304,12 +304,8 @@ metadata:
         runner = CliRunner()
 
         with patch(
-            "kedro_airflow_k8s.cli_helper.CliHelper.dump_project_as_package"
-        ), patch(
             "kedro_airflow_k8s.cli_helper.CliHelper.dump_project_as_archive"
-        ), patch(
-            "kedro_airflow_k8s.cli_helper.CliHelper.dump_init_script"
-        ):
+        ), patch("kedro_airflow_k8s.cli_helper.CliHelper.dump_init_script"):
             result = runner.invoke(compile, [], obj=config)
 
         assert result.exit_code == 0
@@ -337,6 +333,7 @@ metadata:
         context_helper.config._raw["run_config"].update(
             {
                 "spark": {
+                    "type": "custom",
                     "operator_factory": "tests.operator_factory.TestOperatorFactory",
                     "artifacts_path": "gs://test/spark",
                 }
@@ -357,12 +354,8 @@ metadata:
         runner = CliRunner()
 
         with patch(
-            "kedro_airflow_k8s.cli_helper.CliHelper.dump_project_as_package"
-        ), patch(
             "kedro_airflow_k8s.cli_helper.CliHelper.dump_project_as_archive"
-        ), patch(
-            "kedro_airflow_k8s.cli_helper.CliHelper.dump_init_script"
-        ):
+        ), patch("kedro_airflow_k8s.cli_helper.CliHelper.dump_init_script"):
             result = runner.invoke(compile, [], obj=config)
 
         assert result.exit_code == 0
@@ -373,8 +366,10 @@ metadata:
             """tasks["pyspark-0"] = SubmitOperator("kedro_airflow_k8s", "pyspark_0")"""
             in dag_content
         )
-        assert """from test import SubmitOperator""" in dag_content
-        assert """from test import CreateClusterOperator""" in dag_content
+        assert (
+            "from test import CreateClusterOperator, DeleteClusterOperator, "
+            "SubmitOperator" in dag_content
+        )
 
     def test_upload_pipeline(self, context_helper):
         config = dict(context_helper=context_helper)

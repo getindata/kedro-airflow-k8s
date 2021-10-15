@@ -21,11 +21,13 @@ run_config:
     image_pull_secrets: pull1,pull2
     service_account_name: service_account
     spark:
-      submit_job_operator: DataprocSubmitJobOperator
+      type: dataproc
       region: europe-west2
       project_id: sandbox
       cluster_name: cluster-8084
-      create_cluster: False
+      artifacts_path: gs://test/dataproc
+      cluster_config:
+        configBucket: test
     kubernetes_pod_templates:
         custom_template:
             template: |-
@@ -208,11 +210,12 @@ spec:
 
         spark = cfg.run_config.spark
         assert spark
-        assert spark.submit_job_operator == "DataprocSubmitJobOperator"
+        assert spark.type == "dataproc"
         assert spark.region == "europe-west2"
         assert spark.project_id == "sandbox"
         assert spark.cluster_name == "cluster-8084"
-        assert not spark.create_cluster
+        assert spark.artifacts_path == "gs://test/dataproc"
+        assert spark.cluster_config["configBucket"] == "test"
 
     def test_defaults(self):
         cfg = PluginConfig({"run_config": {}})

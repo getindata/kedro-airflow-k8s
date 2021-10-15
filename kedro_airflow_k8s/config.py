@@ -315,10 +315,8 @@ class AuthenticationConfig(Config):
 
 class SparkConfig(Config):
     @property
-    def submit_job_operator(self):
-        return self._get_or_default(
-            "submit_job_operator", "SparkSubmitOperator"
-        )
+    def type(self):
+        return self._get_or_default("type", "none")
 
     @property
     def region(self):
@@ -333,10 +331,6 @@ class SparkConfig(Config):
         return self._get_or_default("project_id", "None")
 
     @property
-    def create_cluster(self):
-        return self._get_or_default("create_cluster", False)
-
-    @property
     def operator_factory(self):
         return self._get_or_default("operator_factory", None)
 
@@ -347,6 +341,10 @@ class SparkConfig(Config):
     @property
     def user_init_path(self):
         return self._get_or_default("user_init_path", None)
+
+    @property
+    def cluster_config(self):
+        return self._get_or_default("cluster_config", {})
 
 
 class RunConfig(Config):

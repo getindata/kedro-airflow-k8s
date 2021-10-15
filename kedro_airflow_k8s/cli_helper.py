@@ -1,4 +1,4 @@
-import sys
+import logging
 import tarfile
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -7,7 +7,6 @@ from typing import Dict
 import fsspec
 import jinja2
 from jinja2.environment import TemplateStream
-from kedro.framework.cli.utils import call
 
 from kedro_airflow_k8s.template import get_commit_sha, get_mlflow_url
 
@@ -62,9 +61,6 @@ class CliHelper:
         CliHelper.dump_spark_templates(
             target_path, project_name, commit_sha, spark_template_streams
         )
-        CliHelper.dump_project_as_package(
-            source_dir, target_path, project_name, commit_sha
-        )
         CliHelper.dump_project_as_archive(
             source_dir, target_path, project_name, commit_sha
         )
@@ -78,41 +74,22 @@ class CliHelper:
         )
 
     @staticmethod
-    def spawn_package(source_path: str):
-        call(
-            [sys.executable, "setup.py", "clean", "--all", "bdist_wheel"],
-            cwd=str(source_path),
-        )
-
-    @staticmethod
-    def dump_project_as_package(
-        source_path: str, target_path: str, project_name: str, commit_sha: str
-    ):
-        CliHelper.spawn_package(source_path)
-
-        wheel_location = Path(source_path) / "dist"
-        wheels = [
-            whl
-            for whl in wheel_location.iterdir()
-            if whl.name.endswith(".whl")
-        ]
-        wheels.sort(key=lambda wh: wh.stat().st_mtime, reverse=True)
-
-        target_name = (
-            target_path + f"/{project_name}-{commit_sha}-py3-none-any.whl"
-        )
-        with fsspec.open(target_name, "wb") as f:
-            f.write(wheels[0].read_bytes())
-
-    @staticmethod
     def dump_project_as_archive(
         source_path: str, target_path: str, project_name: str, commit_sha: str
     ):
         with NamedTemporaryFile(
             prefix="kedro-airflow-k8s-project", suffix=".tar.gz"
         ) as t:
+            logging.info("Packing " + str(Path(source_path).parent))
+            logging.info("Compressing to " + t.name)
             with tarfile.open(t.name, mode="w:gz") as tf:
-                tf.add(source_path, arcname=project_name)
+                tf.add(
+                    str(Path(source_path).parent),
+                    arcname=project_name,
+                    filter=lambda t: t
+                    if not t.name.startswith(project_name + "/venv/")
+                    else None,
+                )
 
             target_name = target_path + f"/{project_name}-{commit_sha}.tar.gz"
             with fsspec.open(target_name, "wb") as f:

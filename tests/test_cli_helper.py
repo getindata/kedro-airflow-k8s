@@ -2,8 +2,6 @@ import tarfile
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from time import sleep
-from unittest.mock import patch
 
 from kedro_airflow_k8s.cli_helper import CliHelper
 
@@ -11,44 +9,6 @@ from kedro_airflow_k8s.cli_helper import CliHelper
 class TestCliHelper(unittest.TestCase):
 
     COMMIT_SHA = "abcdab"
-
-    def test_dump_project_as_package(self):
-        with patch("kedro_airflow_k8s.cli_helper.CliHelper.spawn_package"):
-            with TemporaryDirectory(
-                prefix="kedro-airflow-k8s-tests"
-            ) as dir_name:
-                (Path(dir_name) / "src/dist").mkdir(
-                    parents=True, exist_ok=True
-                )
-                (
-                    Path(dir_name)
-                    / "src/dist/test-kedro-project-0.1-py3-none-any.whl"
-                ).write_text("12345")
-                sleep(0.01)
-                (
-                    Path(dir_name)
-                    / "src/dist/test-kedro-project-0.2-py3-none-any.whl"
-                ).write_text("123456789")
-
-                CliHelper.dump_project_as_package(
-                    dir_name + "/src",
-                    dir_name,
-                    "test-kedro-project",
-                    self.COMMIT_SHA,
-                )
-
-                assert (
-                    Path(dir_name)
-                    / "test-kedro-project-abcdab-py3-none-any.whl"
-                ).exists()
-                assert (
-                    Path(dir_name)
-                    / "test-kedro-project-abcdab-py3-none-any.whl"
-                ).stat().st_size == 9
-                assert (
-                    Path(dir_name)
-                    / "test-kedro-project-abcdab-py3-none-any.whl"
-                ).read_text() == "123456789"
 
     def test_dump_project_as_archive(self):
         with TemporaryDirectory(prefix="kedro-airflow-k8s-tests") as dir_name:
@@ -78,9 +38,11 @@ class TestCliHelper(unittest.TestCase):
                 str(Path(dir_name) / "test-kedro-project-abcdab.tar.gz"),
                 mode="r:gz",
             ) as tf:
-                assert "test-kedro-project/file_1" in tf.getnames()
-                assert "test-kedro-project/file_2" in tf.getnames()
-                assert "test-kedro-project/some_dir/file_3" in tf.getnames()
+                assert "test-kedro-project/src/file_1" in tf.getnames()
+                assert "test-kedro-project/src/file_2" in tf.getnames()
+                assert (
+                    "test-kedro-project/src/some_dir/file_3" in tf.getnames()
+                )
 
     def test_dump_init_script(self):
         init_script = """echo "User injected init script"

@@ -1,4 +1,3 @@
-import os
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, Optional
@@ -13,13 +12,10 @@ from kedro_airflow_k8s.config import KubernetesPodTemplate, ResourceConfig
 
 
 def get_commit_sha(context_helper):
-    if "KEDRO_CONFIG_COMMIT_ID" in os.environ.keys():
-        return os.getenv("KEDRO_CONFIG_COMMIT_ID")
-    else:
-        try:
-            return context_helper.session.store["git"]["commit_sha"]
-        except KeyError:
-            return "UNKNOWN"
+    try:
+        return context_helper.session.store["git"]["commit_sha"]
+    except KeyError:
+        return "UNKNOWN"
 
 
 def get_mlflow_url(context_helper):
