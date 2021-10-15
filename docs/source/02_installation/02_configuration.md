@@ -183,6 +183,29 @@ run_config:
 
     # Optionally, you can also override the image
     #   image:
+    
+    # Optional spark configuration
+    spark:
+      # Type of spark clusters to use, supported values: dataproc and custom
+      type: dataproc
+      # Optional factory of spark operators class
+      operator_factory: pyspark_iris_in_airflow.tmp.MyFactory
+      # Region indicates location of cluster for public cloud configurations, for example region in GCP
+      region: europe-west1
+      # Project indicates logical placement inside public cloud configuration, for example project in GCP
+      project_id: gid-ml-ops-sandbox
+      # Name of the cluster to be created 
+      cluster_name: ephemeral
+      # Location where the spark artifacts are uploaded
+      artifacts_path: gs://dataproc-staging-europe-west2-29350373243-jcztqfp4
+      # Optional configuration of the cluster, used during cluster creation, depends on type of the cluster
+      cluster_config: # example dataproc configuration
+        master_config:
+          disk_config:
+            boot_disk_size_gb: 35
+        worker_config:
+          disk_config:
+            boot_disk_size_gb: 35
 ```
 
 ## Indicate resources in pipeline nodes
