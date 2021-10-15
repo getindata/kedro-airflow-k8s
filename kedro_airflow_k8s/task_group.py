@@ -50,6 +50,11 @@ class TaskGroup:
     def set_children(self, children):
         self._children = children
 
+    def renamed(self, new_name):
+        tg = TaskGroup(new_name, set(self._task_group), self._group_type)
+        tg._children = set(self._children)
+        return tg
+
     def __eq__(self, other):
         return self._name == other._name
 
@@ -179,6 +184,13 @@ class TaskGroupFactory:
             final_group.append_task(pyspark_node)
             pyspark_groups = pyspark_groups.difference(task_groups)
             pyspark_groups.add(final_group)
+
+        tmp_pyspark_groups = set()
+        rest_counter = 0
+        for g in pyspark_groups:
+            tmp_pyspark_groups.add(g.renamed(f"pyspark_{str(rest_counter)}"))
+            rest_counter += 1
+        pyspark_groups = tmp_pyspark_groups
 
         default_nodes = all_groups["default"]
         default_groups = set()
