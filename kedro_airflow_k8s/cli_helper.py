@@ -99,7 +99,7 @@ class CliHelper:
     def dump_init_script(
         target_path: str,
         project_name: str,
-        gcs_path: str,
+        artifacts_path: str,
         is_mlflow_enabled: bool,
         user_init: str,
         commit_sha: str,
@@ -111,10 +111,9 @@ class CliHelper:
         template = jinja_env.get_template("dataproc_init_script_template.j2")
 
         template_stream = template.stream(
-            gcs_path=gcs_path,
+            gcs_path=artifacts_path,
             archive_name=f"{project_name}-{commit_sha}.tar.gz",
             project_name=project_name,
-            package_name=f"{project_name}-{commit_sha}-py3-none-any.whl",
             is_mlflow_enabled=is_mlflow_enabled,
             user_init=user_init,
         )

@@ -51,7 +51,7 @@ touch "/home/kedro/hello_world\""""
             CliHelper.dump_init_script(
                 dir_name,
                 "test-kedro-project",
-                gcs_path="gs://test-bucket/packages",
+                artifacts_path="gs://test-bucket/packages",
                 is_mlflow_enabled=False,
                 user_init=init_script,
                 commit_sha=self.COMMIT_SHA,
@@ -69,11 +69,9 @@ touch "/home/kedro/hello_world\""""
                 " /tmp/" in full_script
             )
             assert (
-                "gsutil cp "
-                "gs://test-bucket/packages/test-kedro-project-abcdab-py3-none-any.whl "
-                "/tmp/" in full_script
+                """cd /opt/test-kedro-project/src && pip install -U ."""
+                in full_script
             )
-            assert """pip install -U /tmp/test-kedro-project""" in full_script
             assert (
                 """tar zxvf /tmp/test-kedro-project-abcdab.tar.gz -C /opt"""
                 in full_script
