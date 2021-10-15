@@ -26,5 +26,7 @@ class TestOperatorFactory(SparkOperatorFactoryBase):
             " SubmitOperator"
         )
 
-    def submit_operator(self, project_name, node_name, config):
+    def submit_operator(
+        self, project_name, node_name, config, main_python_file_path: str
+    ):
         return f"""SubmitOperator("{project_name}", "{node_name}")"""
