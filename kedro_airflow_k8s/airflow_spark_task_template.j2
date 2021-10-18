@@ -3,11 +3,12 @@ import os
 import sys
 from typing import Any, Dict
 from kedro.framework.startup import _get_project_metadata
+from kedro.runner import ThreadRunner
 
 startup_error = None
 project_path = "/opt/{{ project_name }}"
 
-def init_kedro(path, line=None, env: str = None, extra_params: Dict[str, Any] = None):
+def init_kedro(path, env: str = None, extra_params: Dict[str, Any] = None):
     """Line magic which reloads all Kedro default variables."""
     global startup_error
     global context
@@ -67,8 +68,8 @@ def init_kedro(path, line=None, env: str = None, extra_params: Dict[str, Any] = 
 
 
 if __name__ == "__main__":
-    init_kedro(project_path) #use pipelines env if mlflow fixed
-    session.run(node_names=[
+    init_kedro(project_path{% if kedro_env %}, env='{{ kedro_env }}'{% endif %})
+    session.run(runner=ThreadRunner(), node_names=[
             {%- for node_name in node_names -%}
             "{{ node_name }}",
         {%- endfor -%}

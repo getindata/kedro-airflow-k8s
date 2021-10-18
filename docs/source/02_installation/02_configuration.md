@@ -189,15 +189,17 @@ run_config:
       # Type of spark clusters to use, supported values: dataproc and custom
       type: dataproc
       # Optional factory of spark operators class
-      operator_factory: pyspark_iris_in_airflow.tmp.MyFactory
+      operator_factory: my_project.factories.OperatorFactory
       # Region indicates location of cluster for public cloud configurations, for example region in GCP
       region: europe-west1
       # Project indicates logical placement inside public cloud configuration, for example project in GCP
-      project_id: gid-ml-ops-sandbox
+      project_id: target-project
       # Name of the cluster to be created 
       cluster_name: ephemeral
       # Location where the spark artifacts are uploaded
-      artifacts_path: gs://dataproc-staging-europe-west2-29350373243-jcztqfp4
+      artifacts_path: gs://dataproc-staging-europe-west2-546213781-jabcdefp4/packages
+      # Optional path in the project to the script portion preprended to generated init script
+      user_init_path: relative_location/init_script.sh
       # Optional configuration of the cluster, used during cluster creation, depends on type of the cluster
       cluster_config: # example dataproc configuration
         master_config:

@@ -70,59 +70,76 @@ class TaskGroupFactory:
         self.group_counter = group_counter
 
     @staticmethod
-    def _is_pyspark(node: Node, catalog: DataCatalog) -> bool:
+    def _is_any_parameter_pyspark_frame(node: Node) -> bool:
         parameter_types = [
             ".".join([p.annotation.__module__, p.annotation.__name__])
             for p in signature(node.func).parameters.values()
             if p.annotation.__class__.__name__ == "type"
         ]
-        if "pyspark.sql.dataframe.DataFrame" in parameter_types:
-            return True
+        return "pyspark.sql.dataframe.DataFrame" in parameter_types
 
+    @staticmethod
+    def _is_return_value_pyspark_frame(node: Node) -> bool:
         return_annotation = signature(node.func).return_annotation
-        if return_annotation:
-            return_type = ".".join(
+        return (
+            return_annotation
+            and "pyspark.sql.dataframe.DataFrame"
+            == ".".join(
                 [return_annotation.__module__, return_annotation.__name__]
             )
-            if "pyspark.sql.dataframe.DataFrame" == return_type:
+        )
+
+    @staticmethod
+    def _is_any_parameter_pyspark_dataset(
+        datasets: List[str], catalog: DataCatalog
+    ) -> bool:
+        for dataset in datasets:
+            if (
+                dataset in catalog._data_sets.keys()
+                and type(catalog._data_sets[dataset]).__name__
+                in KEDRO_SPARK_DATASET_TYPES
+            ):
                 return True
 
-        for node_input in node.inputs:
-            spark_input_in_catalog = (
-                node_input in catalog._data_sets.keys()
-                and type(catalog._data_sets[node_input]).__name__
-                in KEDRO_SPARK_DATASET_TYPES
-            )
-            if spark_input_in_catalog:
-                return True
-
-        for node_output in node.outputs:
-            spark_output_in_catalog = (
-                node_output in catalog._data_sets.keys()
-                and type(catalog._data_sets[node_output]).__name__
-                in KEDRO_SPARK_DATASET_TYPES
-            )
-            if spark_output_in_catalog:
-                return True
         return False
+
+    @staticmethod
+    def _is_tagged_as_pyspark(node: Node):
+        tagged_as_pyspark = set(
+            [
+                tag
+                for tag in node.tags
+                if tag == "kedro-airflow-k8s:group:pyspark"
+            ]
+        )
+        return tagged_as_pyspark
+
+    @staticmethod
+    def _is_pyspark(node: Node, catalog: DataCatalog) -> bool:
+        node_is_pyspark = (
+            TaskGroupFactory._is_any_parameter_pyspark_frame(node)
+            or TaskGroupFactory._is_return_value_pyspark_frame(node)
+            or TaskGroupFactory._is_any_parameter_pyspark_dataset(
+                node.inputs, catalog
+            )
+            or TaskGroupFactory._is_any_parameter_pyspark_dataset(
+                node.outputs, catalog
+            )
+            or TaskGroupFactory._is_tagged_as_pyspark(node)
+        )
+
+        return node_is_pyspark
 
     @staticmethod
     def _extract_groups(
         pipeline: Pipeline, catalog: DataCatalog
     ) -> Dict[str, Set[Node]]:
         def extract_group(node: Node) -> str:
-            tagged_as_pyspark = set(
-                [
-                    tag
-                    for tag in node.tags
-                    if tag == "kedro-airflow-k8s:group:pyspark"
-                ]
+            return (
+                "pyspark"
+                if TaskGroupFactory._is_pyspark(node, catalog)
+                else "default"
             )
-            if tagged_as_pyspark or TaskGroupFactory._is_pyspark(
-                node, catalog
-            ):
-                return "pyspark"
-            return "default"
 
         groups = defaultdict(set)
         for node in pipeline.nodes:

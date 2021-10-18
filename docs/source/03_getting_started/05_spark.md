@@ -41,6 +41,13 @@ The following methods have to be provided:
 * submit_operator - returns string with the submit job operator
 * imports_statement - returns string with the full import statement of all required items from the previous methods
 
+### Custom initialization script
+
+`run_config.spark.user_init_path` allows configuring the way the cluster is initialized. Plugin delivers
+initialization script that's aligned with the project artifacts. The script can be prepended with custom
+logic, to support the cases like custom package repository setup.
+It's required the path to be relative to the project `src` path.
+
 ## Detection of spark nodes
 
 As the part of the plugin's process is to detect spark based nodes, the following rules apply:

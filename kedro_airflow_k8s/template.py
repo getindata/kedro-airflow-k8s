@@ -145,6 +145,7 @@ def _create_spark_tasks_template_stream(
         spark_task_templates[tg.name] = template.stream(
             node_names=node_names,
             project_name=context_helper.project_name,
+            kedro_env=context_helper.env,
         )
     return spark_task_templates
 
