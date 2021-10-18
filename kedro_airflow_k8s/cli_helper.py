@@ -103,7 +103,7 @@ class CliHelper:
         is_mlflow_enabled: bool,
         user_init: str,
         commit_sha: str,
-    ):
+    ):  # pylint: disable=too-many-arguments
         loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
         jinja_env = jinja2.Environment(
             autoescape=True, loader=loader, lstrip_blocks=True

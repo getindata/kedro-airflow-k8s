@@ -64,11 +64,12 @@ def compile(ctx, image, target_path="dags/"):
     ) = get_dag_filename_and_template_stream(
         ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
-    CliHelper.dump_templates(dag_name, target_path, template_stream)
     if spark_template_streams:
         CliHelper.dump_spark_artifacts(
             ctx, target_path, spark_template_streams
         )
+
+    CliHelper.dump_templates(dag_name, target_path, template_stream)
 
 
 @airflow_group.command()
