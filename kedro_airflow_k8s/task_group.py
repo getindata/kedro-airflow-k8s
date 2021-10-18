@@ -253,23 +253,31 @@ class TaskGroupFactory:
         return input_in_pyspark_group and output_in_pyspark_group
 
     @staticmethod
+    def _is_default_node_part_of_pyspark_groups(
+        default_node: Node, pyspark_groups: Set[TaskGroup]
+    ):
+        for pyspark_group in pyspark_groups:
+            if TaskGroupFactory._is_default_node_part_of_pyspark_group(
+                default_node, pyspark_group
+            ):
+                return True, pyspark_group
+        return False, None
+
+    @staticmethod
     def _create_default_groups(
         default_nodes: Set[Node], pyspark_groups: Set[TaskGroup]
     ) -> Set[TaskGroup]:
         default_groups = set()
         for default_node in default_nodes:
-            match_to_pyspark_group = False
-            for pyspark_group in pyspark_groups:
-                match_to_pyspark_group = (
-                    TaskGroupFactory._is_default_node_part_of_pyspark_group(
-                        default_node, pyspark_group
-                    )
-                )
-                if match_to_pyspark_group:
-                    pyspark_group.append_task(default_node)
-                    break
-
-            if not match_to_pyspark_group:
+            (
+                match_to_pyspark_group,
+                pyspark_group,
+            ) = TaskGroupFactory._is_default_node_part_of_pyspark_groups(
+                default_node, pyspark_groups
+            )
+            if match_to_pyspark_group:
+                pyspark_group.append_task(default_node)
+            else:
                 default_groups.add(
                     TaskGroup(default_node.name, [default_node], "default")
                 )
