@@ -26,7 +26,7 @@ EXTRA_REQUIRE = {
         "mlflow-skinny==1.19.0",
         "sqlalchemy==1.3.23",
         "responses>=0.13.0",
-        "pyspark>=3.0.0",
+        "kedro[spark.SparkDataSet]>=0.16,<=0.18",
     ],
     "docs": [
         "sphinx==3.4.2",
