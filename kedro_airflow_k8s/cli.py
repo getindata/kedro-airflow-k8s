@@ -126,8 +126,17 @@ def upload_pipeline(ctx, output: str, image: str):
     help="Cron expression for recurring run",
     required=False,
 )
+@click.option(
+    "-d",
+    "--dag-name",
+    "dag_name",
+    type=str,
+    required=False,
+    help="Allows overriding dag id and dag file name for a purpose of multiple variants"
+    " of experiments",
+)
 @click.pass_context
-def schedule(ctx, output: str, cron_expression: str):
+def schedule(ctx, output: str, cron_expression: str, dag_name: str = None):
     """
     Uploads pipeline to Airflow with given schedule
     """
@@ -136,7 +145,9 @@ def schedule(ctx, output: str, cron_expression: str):
         template_stream,
         spark_template_streams,
     ) = get_dag_filename_and_template_stream(
-        ctx, cron_expression=get_cron_expression(ctx, cron_expression)
+        ctx,
+        cron_expression=get_cron_expression(ctx, cron_expression),
+        dag_name=dag_name,
     )
 
     output = output or ctx.obj["context_helper"].config.output

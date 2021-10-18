@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+-   Schedule supports `dag-name` parameter
 -   Support for kedro with pyspark, using Google Dataproc
 -   Support for custom pod templates
 -   FIX: adding missing dependency package: tabulate
