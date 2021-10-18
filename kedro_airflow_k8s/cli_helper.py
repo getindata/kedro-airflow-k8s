@@ -121,3 +121,15 @@ class CliHelper:
         target_name = target_path + f"/{project_name}-{commit_sha}.sh"
         with fsspec.open(target_name, "wt") as f:
             template_stream.dump(f)
+
+    @staticmethod
+    def conditionally_handle_spark_artifacts(
+        spark_template_streams: Dict[str, TemplateStream], ctx
+    ):
+        if spark_template_streams:
+            target_path = ctx.obj[
+                "context_helper"
+            ].config.run_config.spark.artifacts_path
+            CliHelper.dump_spark_artifacts(
+                ctx, target_path, spark_template_streams
+            )

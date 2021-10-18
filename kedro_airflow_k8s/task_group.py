@@ -231,20 +231,10 @@ class TaskGroupFactory:
 
         any_group.set_children(task_group_deps)
 
-    def create(
-        self, pipeline: Pipeline, catalog: DataCatalog
-    ) -> List[TaskGroup]:
-        all_groups = TaskGroupFactory._extract_groups(pipeline, catalog)
-        logging.info(f"Found user groups: [{all_groups.keys()}]")
-
-        nodes_child_deps = TaskGroupFactory._get_nodes_child_deps(pipeline)
-        nodes_parent_deps = pipeline.node_dependencies
-
-        pyspark_groups = self._create_pyspark_groups(
-            all_groups["pyspark"], nodes_parent_deps, nodes_child_deps
-        )
-
-        default_nodes = all_groups["default"]
+    @staticmethod
+    def _create_default_groups(
+        default_nodes: Set[Node], pyspark_groups: Set[TaskGroup]
+    ) -> Set[TaskGroup]:
         default_groups = set()
         for dn in default_nodes:
             match_to_pyspark_group = False
@@ -263,6 +253,24 @@ class TaskGroupFactory:
 
             if not match_to_pyspark_group:
                 default_groups.add(TaskGroup(dn.name, [dn], "default"))
+        return default_groups
+
+    def create(
+        self, pipeline: Pipeline, catalog: DataCatalog
+    ) -> List[TaskGroup]:
+        all_groups = TaskGroupFactory._extract_groups(pipeline, catalog)
+        logging.info(f"Found user groups: [{all_groups.keys()}]")
+
+        nodes_child_deps = TaskGroupFactory._get_nodes_child_deps(pipeline)
+        nodes_parent_deps = pipeline.node_dependencies
+
+        pyspark_groups = self._create_pyspark_groups(
+            all_groups["pyspark"], nodes_parent_deps, nodes_child_deps
+        )
+
+        default_groups = TaskGroupFactory._create_default_groups(
+            all_groups["default"], pyspark_groups
+        )
 
         every_group = default_groups.union(pyspark_groups)
         for any_group in default_groups.union(pyspark_groups):

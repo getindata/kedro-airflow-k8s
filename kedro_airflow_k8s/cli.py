@@ -103,14 +103,7 @@ def upload_pipeline(ctx, output: str, image: str):
         ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
 
-    if spark_template_streams:
-        target_path = ctx.obj[
-            "context_helper"
-        ].config.run_config.spark.artifacts_path
-        CliHelper.dump_spark_artifacts(
-            ctx, target_path, spark_template_streams
-        )
-
+    CliHelper.conditionally_handle_spark_artifacts(spark_template_streams, ctx)
     output = output or ctx.obj["context_helper"].config.output
     logging.info(f"Deploying to {output}")
     CliHelper.dump_templates(dag_name, output, template_stream)
@@ -148,14 +141,7 @@ def schedule(ctx, output: str, cron_expression: str):
 
     output = output or ctx.obj["context_helper"].config.output
 
-    if spark_template_streams:
-        target_path = ctx.obj[
-            "context_helper"
-        ].config.run_config.spark.artifacts_path
-        CliHelper.dump_spark_artifacts(
-            ctx, target_path, spark_template_streams
-        )
-
+    CliHelper.conditionally_handle_spark_artifacts(spark_template_streams, ctx)
     CliHelper.dump_templates(dag_filename, output, template_stream)
 
 
@@ -219,14 +205,7 @@ def run_once(
     context_helper = ctx.obj["context_helper"]
     output = output or context_helper.config.output
 
-    if spark_template_streams:
-        target_path = ctx.obj[
-            "context_helper"
-        ].config.run_config.spark.artifacts_path
-        CliHelper.dump_spark_artifacts(
-            ctx, target_path, spark_template_streams
-        )
-
+    CliHelper.conditionally_handle_spark_artifacts(spark_template_streams, ctx)
     CliHelper.dump_templates(dag_filename, output, template_stream)
 
     airflow_client = AirflowClient(context_helper.config.host)
