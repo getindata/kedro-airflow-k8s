@@ -171,6 +171,14 @@ run_config:
       # e.g. ["MLFLOW_TRACKING_USERNAME", "MLFLOW_TRACKING_PASSWORD"])
       #type: GoogleOAuth2
       #params: []
+    #spark:
+    #  submit_job_operator:
+    # Airflow operator to use for submitting Spark job: SparkSubmitOperator,
+    # DataprocSubmitJobOperator or KubernetesSparkOperator
+    #  region: None
+    #  project_id: None
+    #  cluster_name: None
+    #  create_cluster: False
 
     # Optional custom kubermentes pod templates applied on nodes basis
     #kubernetes_pod_templates:
@@ -305,6 +313,40 @@ class AuthenticationConfig(Config):
         return self._get_or_default("params", [])
 
 
+class SparkConfig(Config):
+    @property
+    def type(self):
+        return self._get_or_default("type", "none")
+
+    @property
+    def region(self):
+        return self._get_or_default("region", "None")
+
+    @property
+    def cluster_name(self):
+        return self._get_or_default("cluster_name", "None")
+
+    @property
+    def project_id(self):
+        return self._get_or_default("project_id", "None")
+
+    @property
+    def operator_factory(self):
+        return self._get_or_default("operator_factory", None)
+
+    @property
+    def artifacts_path(self):
+        return self._get_or_default("artifacts_path", None)
+
+    @property
+    def user_init_path(self):
+        return self._get_or_default("user_init_path", None)
+
+    @property
+    def cluster_config(self):
+        return self._get_or_default("cluster_config", {})
+
+
 class RunConfig(Config):
     @property
     def image(self):
@@ -387,6 +429,11 @@ class RunConfig(Config):
             "authentication", {"type": "Null", "params": []}
         )
         return AuthenticationConfig(cfg)
+
+    @property
+    def spark(self):
+        cfg = self._get_or_default("spark", {})
+        return SparkConfig(cfg)
 
     @property
     def env_vars(self):

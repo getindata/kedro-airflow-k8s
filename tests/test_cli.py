@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, Mock, patch
 import click
 import pytest
 from click.testing import CliRunner
+from kedro.io import DataCatalog
 
 from kedro_airflow_k8s import airflow
 from kedro_airflow_k8s.airflow import DAGModel
@@ -21,6 +22,7 @@ from kedro_airflow_k8s.cli import (
 )
 from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.context_helper import ContextHelper
+from kedro_airflow_k8s.task_group import TaskGroupFactory
 
 
 class TestPluginCLI:
@@ -58,11 +60,15 @@ class TestPluginCLI:
         context_helper = MagicMock(ContextHelper)
         context_helper.context.package_name = "kedro_airflow_k8s"
         context_helper.pipeline = pipeline
+        context_helper.pipeline_grouped = TaskGroupFactory().create(
+            pipeline, DataCatalog()
+        )
         context_helper.pipeline_name = "test_pipeline_name"
         context_helper.project_name = "kedro_airflow_k8s"
         context_helper.config = PluginConfig(
             {
                 "host": "airflow.url.com",
+                "output": "/tmp/output",
                 "run_config": {
                     "image": "test/image:latest",
                     "namespace": "test_ns",
@@ -269,6 +275,100 @@ metadata:
       custom_annotation: cust_ann"""'''
             )
             == 4
+        )
+
+    def test_compile_with_spark(self, context_helper):
+        context_helper.config._raw["run_config"].update(
+            {
+                "spark": {
+                    "type": "dataproc",
+                    "region": "europe-west2",
+                    "project_id": "sandbox",
+                    "cluster_name": "test_cluster",
+                    "artifacts_path": "gs://test/spark",
+                }
+            }
+        )
+
+        spark_node = MagicMock()
+        spark_node.name = "spark_node"
+        spark_node.tags = ["kedro-airflow-k8s:group:pyspark"]
+        context_helper.pipeline.node_dependencies.update({spark_node: set()})
+        context_helper.pipeline.nodes.append(spark_node)
+        context_helper.pipeline_grouped = TaskGroupFactory().create(
+            context_helper.pipeline, DataCatalog()
+        )
+
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        with patch(
+            "kedro_airflow_k8s.cli_helper.CliHelper.dump_project_as_archive"
+        ), patch("kedro_airflow_k8s.cli_helper.CliHelper.dump_init_script"):
+            result = runner.invoke(compile, [], obj=config)
+
+        assert result.exit_code == 0
+        assert Path("dags/kedro_airflow_k8s.py").exists()
+        dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
+
+        assert """"reference": {"project_id": 'sandbox'},""" in dag_content
+        assert (
+            """"placement": {"cluster_name": 'test_cluster'},""" in dag_content
+        )
+        assert (
+            """"main_python_file_uri": 'gs://test/spark/kedro_airflow_k8s-abcdef-pyspark"""  # noqa: E501
+            in dag_content
+        )
+        assert (
+            """tasks["pyspark-0"] = DataprocSubmitJobOperator("""
+            in dag_content
+        )
+        assert (
+            """task_id="kedro-pyspark-0", job=PYSPARK_JOB, location='europe-west2', """
+            in dag_content
+        )
+
+    def test_compile_with_spark_custom_factory(self, context_helper):
+        context_helper.config._raw["run_config"].update(
+            {
+                "spark": {
+                    "type": "custom",
+                    "operator_factory": "tests.operator_factory.TestOperatorFactory",
+                    "artifacts_path": "gs://test/spark",
+                }
+            }
+        )
+
+        spark_node = MagicMock()
+        spark_node.name = "spark_node"
+        spark_node.tags = ["kedro-airflow-k8s:group:pyspark"]
+        context_helper.pipeline.node_dependencies.update({spark_node: set()})
+        context_helper.pipeline.nodes.append(spark_node)
+        context_helper.pipeline_grouped = TaskGroupFactory().create(
+            context_helper.pipeline, DataCatalog()
+        )
+
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+
+        with patch(
+            "kedro_airflow_k8s.cli_helper.CliHelper.dump_project_as_archive"
+        ), patch("kedro_airflow_k8s.cli_helper.CliHelper.dump_init_script"):
+            result = runner.invoke(compile, [], obj=config)
+
+        assert result.exit_code == 0
+        assert Path("dags/kedro_airflow_k8s.py").exists()
+        dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
+
+        assert (
+            """tasks["pyspark-0"] = SubmitOperator("kedro_airflow_k8s", "pyspark_0")"""
+            in dag_content
+        )
+        assert (
+            "from test import CreateClusterOperator, DeleteClusterOperator, "
+            "SubmitOperator" in dag_content
         )
 
     def test_upload_pipeline(self, context_helper):

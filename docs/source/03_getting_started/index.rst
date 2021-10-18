@@ -8,3 +8,4 @@ Getting started
    Google Cloud Platform support <02_gcp.md>
    Kedro-Mlflow integration <03_mlflow.md>
    Authentication to Airflow API <04_authentication.md>
+   Spark integration <05_spark.md>

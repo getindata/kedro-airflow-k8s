@@ -11,7 +11,14 @@ from kedro_airflow_k8s import version
 from kedro_airflow_k8s.config import KubernetesPodTemplate, ResourceConfig
 
 
-def _get_mlflow_url(context_helper):
+def get_commit_sha(context_helper):
+    try:
+        return context_helper.session.store["git"]["commit_sha"]
+    except KeyError:
+        return "UNKNOWN"
+
+
+def get_mlflow_url(context_helper):
     try:
         import importlib
 
@@ -21,13 +28,13 @@ def _get_mlflow_url(context_helper):
         return None
 
 
-def _get_jinja_template():
+def _get_jinja_template(name: str):
     loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
     jinja_env = jinja2.Environment(
         autoescape=True, loader=loader, lstrip_blocks=True
     )
     jinja_env.filters["slugify"] = slugify
-    template = jinja_env.get_template("airflow_dag_template.j2")
+    template = jinja_env.get_template(name)
     return template
 
 
@@ -47,7 +54,6 @@ def _node_resources(nodes, config) -> Dict[str, ResourceConfig]:
 
 
 def _pod_templates(nodes, config) -> Dict[str, KubernetesPodTemplate]:
-
     result = defaultdict(lambda: None)
 
     default_config = config.__default__
@@ -70,23 +76,27 @@ def _create_template_stream(
     image: str,
     with_external_dependencies: bool,
 ) -> TemplateStream:
-    template = _get_jinja_template()
+    template = _get_jinja_template("airflow_dag_template.j2")
 
-    pipeline = context_helper.pipeline
-    dependencies = defaultdict(list)
-    for node, parent_nodes in pipeline.node_dependencies.items():
-        for parent in parent_nodes:
-            dependencies[parent].append(node)
+    custom_spark_factory = None
+    if context_helper.config.run_config.spark.operator_factory:
+        factory = context_helper.config.run_config.spark.operator_factory
+        pkg = factory[: factory.rindex(".")]
+        clazz = factory[factory.rindex(".") + 1 :]  # noqa: E203
+        mod = __import__(pkg, fromlist=[clazz])
+        custom_spark_factory = getattr(mod, clazz)()
 
     return template.stream(
-        pipeline=pipeline,
-        dependencies=dependencies,
+        custom_spark_factory=custom_spark_factory,
+        pipeline=context_helper.pipeline,
+        pipeline_grouped=context_helper.pipeline_grouped,
         with_external_dependencies=with_external_dependencies,
         config=context_helper.config,
         resources=_node_resources(
-            pipeline.nodes, context_helper.config.run_config.resources
+            context_helper.pipeline.nodes,
+            context_helper.config.run_config.resources,
         ),
-        mlflow_url=_get_mlflow_url(context_helper),
+        mlflow_url=get_mlflow_url(context_helper),
         env=context_helper.env,
         project_name=context_helper.project_name,
         dag_name=dag_name,
@@ -114,10 +124,30 @@ def _create_template_stream(
         macro_params=context_helper.config.run_config.macro_params,
         variables_params=context_helper.config.run_config.variables_params,
         k8s_templates=_pod_templates(
-            pipeline.nodes,
+            context_helper.pipeline.nodes,
             context_helper.config.run_config.kubernetes_pod_templates,
         ),
     )
+
+
+def _create_spark_tasks_template_stream(
+    context_helper,
+) -> Dict[str, TemplateStream]:
+    spark_task_templates = {}
+    spark_task_groups = [
+        tg
+        for tg in context_helper.pipeline_grouped
+        if tg.group_type == "pyspark"
+    ]
+    for tg in spark_task_groups:
+        node_names = [node.name for node in tg.task_group]
+        template = _get_jinja_template("airflow_spark_task_template.j2")
+        spark_task_templates[tg.name] = template.stream(
+            node_names=node_names,
+            project_name=context_helper.project_name,
+            kedro_env=context_helper.env,
+        )
+    return spark_task_templates
 
 
 def get_cron_expression(
@@ -137,8 +167,6 @@ def get_dag_filename_and_template_stream(
     config = ctx.obj["context_helper"].config
     dag_name = dag_name or config.run_config.run_name
 
-    dag_filename = f"{dag_name}.py"
-
     template_stream = _create_template_stream(
         ctx.obj["context_helper"],
         dag_name=dag_name,
@@ -146,4 +174,7 @@ def get_dag_filename_and_template_stream(
         image=image or config.run_config.image,
         with_external_dependencies=with_external_dependencies,
     )
-    return dag_filename, template_stream
+    spark_template_streams = _create_spark_tasks_template_stream(
+        ctx.obj["context_helper"],
+    )
+    return dag_name, template_stream, spark_template_streams

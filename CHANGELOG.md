@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+-   Support for kedro with pyspark, using Google Dataproc
 -   Support for custom pod templates
 -   FIX: adding missing dependency package: tabulate
 -   FIX: Fix default config template
