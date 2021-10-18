@@ -177,6 +177,19 @@ class TaskGroupFactory:
                 nodes_child_deps[parent].add(node)
         return nodes_child_deps
 
+    @staticmethod
+    def _get_deps_task_groups(
+        pyspark_deps: Set[Node], pyspark_groups: Set[TaskGroup]
+    ) -> Set[TaskGroup]:
+        task_groups = set()
+        for pyspark_dep in pyspark_deps:
+            task_group = TaskGroupFactory._get_group(
+                pyspark_dep, pyspark_groups
+            )
+            if task_group:
+                task_groups.add(task_group)
+        return task_groups
+
     def _create_pyspark_groups(
         self,
         marked_as_pyspark: Set[Node],
@@ -189,14 +202,9 @@ class TaskGroupFactory:
                 nodes_child_deps[pyspark_node]
             )
             pyspark_deps = marked_as_pyspark.intersection(deps)
-
-            task_groups = set()
-            for pyspark_dep in pyspark_deps:
-                task_group = TaskGroupFactory._get_group(
-                    pyspark_dep, pyspark_groups
-                )
-                if task_group:
-                    task_groups.add(task_group)
+            task_groups = TaskGroupFactory._get_deps_task_groups(
+                pyspark_deps, pyspark_groups
+            )
 
             final_group = self._merge_groups(task_groups)
             final_group.append_task(pyspark_node)
@@ -232,27 +240,39 @@ class TaskGroupFactory:
         any_group.set_children(task_group_deps)
 
     @staticmethod
+    def _is_default_node_part_of_pyspark_group(
+        default_node: Node, pyspark_group: TaskGroup
+    ) -> bool:
+        input_in_pyspark_group = False
+        output_in_pyspark_group = False
+        for task_group in pyspark_group.task_group:
+            if set(default_node.inputs).intersection(set(task_group.outputs)):
+                input_in_pyspark_group = True
+            if set(default_node.outputs).intersection(set(task_group.inputs)):
+                output_in_pyspark_group = True
+        return input_in_pyspark_group and output_in_pyspark_group
+
+    @staticmethod
     def _create_default_groups(
         default_nodes: Set[Node], pyspark_groups: Set[TaskGroup]
     ) -> Set[TaskGroup]:
         default_groups = set()
-        for dn in default_nodes:
+        for default_node in default_nodes:
             match_to_pyspark_group = False
-            for psg in pyspark_groups:
-                input_in_pyspark_group = False
-                output_in_pyspark_group = False
-                for tg in psg.task_group:
-                    if set(dn.inputs).intersection(set(tg.outputs)):
-                        input_in_pyspark_group = True
-                    if set(dn.outputs).intersection(set(tg.inputs)):
-                        output_in_pyspark_group = True
-                if input_in_pyspark_group and output_in_pyspark_group:
-                    psg.append_task(dn)
-                    match_to_pyspark_group = True
+            for pyspark_group in pyspark_groups:
+                match_to_pyspark_group = (
+                    TaskGroupFactory._is_default_node_part_of_pyspark_group(
+                        default_node, pyspark_group
+                    )
+                )
+                if match_to_pyspark_group:
+                    pyspark_group.append_task(default_node)
                     break
 
             if not match_to_pyspark_group:
-                default_groups.add(TaskGroup(dn.name, [dn], "default"))
+                default_groups.add(
+                    TaskGroup(default_node.name, [default_node], "default")
+                )
         return default_groups
 
     def create(
