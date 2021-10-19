@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2021-10-19
+
 -   Schedule supports `dag-name` parameter
 -   Support for kedro with pyspark, using Google Dataproc
 -   Support for custom pod templates
@@ -126,7 +128,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.7...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.7.0...HEAD
+
+[0.7.0]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.7...0.7.0
 
 [0.6.7]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.6...0.6.7
 
