@@ -45,8 +45,8 @@ run_config:
 
     # Service account name to execute nodes with
     #service_account_name: default
-    
-    # List of handlers executed after task failure 
+
+    # List of handlers executed after task failure
     failure_handlers: []
 
     # Optional volume specification
@@ -371,7 +371,11 @@ class RunConfig(Config):
     def failure_handlers(self):
         cfg = self._get_or_default("failure_handlers", [])
         supported_types = FailureHandlerConfig.supported_types()
-        return [FailureHandlerConfig(handler) for handler in cfg if handler['type'] in supported_types]
+        return [
+            FailureHandlerConfig(handler)
+            for handler in cfg
+            if handler["type"] in supported_types
+        ]
 
     @property
     def experiment_name(self):
@@ -489,7 +493,7 @@ class VolumeConfig(Config):
 class FailureHandlerConfig(Config):
     @staticmethod
     def supported_types():
-        return ['slack']
+        return ["slack"]
 
     @property
     def type(self):
