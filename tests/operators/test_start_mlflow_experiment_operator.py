@@ -179,7 +179,9 @@ class TestStartMLflowExperimentOperator(unittest.TestCase):
             if "MLFLOW_TRACKING_TOKEN" in os.environ:
                 del os.environ["MLFLOW_TRACKING_TOKEN"]
             auth_handler = MagicMock()
-            auth_handler.obtain_token.return_value = "TEST_JWT_TOKEN"
+            auth_handler.obtain_credentials.return_value = {
+                "MLFLOW_TRACKING_TOKEN": "TEST_JWT_TOKEN"
+            }
 
             create_mlflow_client.return_value = mlflow_client
             op = start_mlflow_experiment.StartMLflowExperimentOperator(

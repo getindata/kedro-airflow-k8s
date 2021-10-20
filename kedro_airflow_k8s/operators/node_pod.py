@@ -47,6 +47,7 @@ class NodePodOperator(KubernetesPodOperator):
         secrets: Optional[List[Secret]] = None,
         source: str = "/home/kedro/data",
         parameters: Optional[str] = "",
+        kubernetes_pod_template: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -84,6 +85,7 @@ class NodePodOperator(KubernetesPodOperator):
         self._volume_disabled = volume_disabled
         self._pvc_name = pvc_name
         self._mlflow_enabled = mlflow_enabled
+        self._kubernetes_pod_template = kubernetes_pod_template
 
         super().__init__(
             task_id=task_id,
@@ -132,7 +134,7 @@ class NodePodOperator(KubernetesPodOperator):
         :param context:
         :return:
         """
-        logging.info(self.create_pod_request_obj())
+        logging.debug(self.create_pod_request_obj())
         return super().execute(context)
 
     @staticmethod
@@ -167,6 +169,8 @@ class NodePodOperator(KubernetesPodOperator):
         :return: partial pod definition that should be complemented by other operator
                 parameters
         """
+        if self._kubernetes_pod_template:
+            return self._kubernetes_pod_template
         minimal_pod_template = f"""
 apiVersion: v1
 kind: Pod

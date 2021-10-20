@@ -28,6 +28,8 @@ And re-push the image to the remote registry.
 
 # Authentication to MLflow API
 
+## GoogleOAuth2
+
 Given that Airflow has access to `GOOGLE_APPLICATION_CREDENTIALS` variable, it's possible to configure plugin
 to use Google service account to authenticate to secured MLflow API endpoint, by generating OAuth2 token.
 
@@ -42,6 +44,22 @@ run_config:
   authentication:
     type: GoogleOAuth2
 ```
+
+## Vars
+
+If you store your credentials in Airflow secrets backend, e.g. HashiCorp vault, it's possible to configure the plugin
+to use Airflow Variables as MLFlow API credentials.
+
+Names of the variables need to match expected MLflow environment variable names, e.g. `MLFLOW_TRACKING_TOKEN`.
+You specify them in the authentiation config. For instance, setting up Basic Authentication requires the following:
+
+```yaml
+run_config:
+  authentication:
+    type: Vars
+    params: ["MLFLOW_TRACKING_USERNAME", "MLFLOW_TRACKING_PASSWORD"]
+```
+
 
 > NOTE: Authentication is an optional element and is used when starting MLflow experiment, so if MLflow is enabled in
 > project configuration. It does not setup authentication inside Kedro nodes, this has to be handled by the project.

@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2021-10-19
+
+-   Schedule supports `dag-name` parameter
+-   Support for kedro with pyspark, using Google Dataproc
+-   Support for custom pod templates
+-   FIX: adding missing dependency package: tabulate
+-   FIX: Fix default config template
+-   Support populating k8s node env_vars from Airflow variables
+-   Generalize auth handler
+-   Added `VarsAuthHandler` for MLflow authentication which gets credentials from Airflow variables
+-   Changed logging level for pod creation request to debug
+
 ## [0.6.7] - 2021-09-01
 
 -   Support for generation of authentication header for secured MLflow API endpoint (via GOOGLE_APPLICATION_CREDENTIALS)
@@ -116,7 +128,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.7...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.7.0...HEAD
+
+[0.7.0]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.7...0.7.0
 
 [0.6.7]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.6...0.6.7
 

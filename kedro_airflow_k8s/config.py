@@ -70,7 +70,7 @@ run_config:
     # List of optional secrets specification
     secrets:
             # deploy_type: The type of secret deploy in Kubernetes, either `env` or
-            `volume`
+            # `volume`
         -   deploy_type: "env"
             # deploy_target: (Optional) The environment variable when `deploy_type` `env`
             # or file path when `deploy_type` `volume` where expose secret. If `key` is
@@ -162,11 +162,56 @@ run_config:
         #  execution_delta: 10
     # Optional authentication to MLflow API
     #authentication:
-      # Strategy that generates the tokens, supported values are:
+      # Strategy that generates the credentials, supported values are:
       # - Null
       # - GoogleOAuth2 (generating OAuth2 tokens for service account provided by
       # GOOGLE_APPLICATION_CREDENTIALS)
+      # - Vars (credentials fetched from airflow Variable.get - specify variable keys,
+      # matching MLflow authentication env variable names, in `params`,
+      # e.g. ["MLFLOW_TRACKING_USERNAME", "MLFLOW_TRACKING_PASSWORD"])
       #type: GoogleOAuth2
+      #params: []
+    #spark:
+    #  submit_job_operator:
+    # Airflow operator to use for submitting Spark job: SparkSubmitOperator,
+    # DataprocSubmitJobOperator or KubernetesSparkOperator
+    #  region: None
+    #  project_id: None
+    #  cluster_name: None
+    #  create_cluster: False
+
+    # Optional custom kubermentes pod templates applied on nodes basis
+    #kubernetes_pod_templates:
+    # Name of the node you want to apply the custom template to.
+    # if you specify __default__, this template will be applied to all nodes.
+    # Otherwise it will be only applied to nodes tagged with `k8s_template:<node_name>`
+    #  node_name:
+
+    # Kubernetes pod template.
+    # It's the full content of the pod-template file (as a string)
+    # `run_config.volume` and `MLFLOW_RUN_ID` env are disabled when this is set.
+    # Note: python F-string formatting is applied to this string, so
+    # you can also use some dynamic values, e.g. to calculate pod name.
+    #    template:
+
+    # Optionally, you can also override the image
+    #    image:
+    # ____ EXAMPLE _______________
+    #
+    #kubernetes_pod_templates:
+    #  spark:
+    #    template: |-
+    #      apiVersion: v1
+    #      kind: Pod
+    #      metadata:
+    #        name: newname
+    #       spec:
+    #         containers:
+    #           - name: base
+    #         env:
+    #           - name: CUSTOM_ENV
+    #             value: env1
+    #
 """
 
 
@@ -263,6 +308,44 @@ class AuthenticationConfig(Config):
     def type(self):
         return self._get_or_default("type", "Null")
 
+    @property
+    def params(self):
+        return self._get_or_default("params", [])
+
+
+class SparkConfig(Config):
+    @property
+    def type(self):
+        return self._get_or_default("type", "none")
+
+    @property
+    def region(self):
+        return self._get_or_default("region", "None")
+
+    @property
+    def cluster_name(self):
+        return self._get_or_default("cluster_name", "None")
+
+    @property
+    def project_id(self):
+        return self._get_or_default("project_id", "None")
+
+    @property
+    def operator_factory(self):
+        return self._get_or_default("operator_factory", None)
+
+    @property
+    def artifacts_path(self):
+        return self._get_or_default("artifacts_path", None)
+
+    @property
+    def user_init_path(self):
+        return self._get_or_default("user_init_path", None)
+
+    @property
+    def cluster_config(self):
+        return self._get_or_default("cluster_config", {})
+
 
 class RunConfig(Config):
     @property
@@ -342,8 +425,24 @@ class RunConfig(Config):
 
     @property
     def auth_config(self):
-        cfg = self._get_or_default("authentication", {"type": "Null"})
+        cfg = self._get_or_default(
+            "authentication", {"type": "Null", "params": []}
+        )
         return AuthenticationConfig(cfg)
+
+    @property
+    def spark(self):
+        cfg = self._get_or_default("spark", {})
+        return SparkConfig(cfg)
+
+    @property
+    def env_vars(self):
+        return self._get_or_default("env_vars", [])
+
+    @property
+    def kubernetes_pod_templates(self):
+        cfg = self._get_or_default("kubernetes_pod_templates", {})
+        return KubernetesPodTemplates(cfg)
 
     def _get_prefix(self):
         return "run_config."
@@ -425,3 +524,27 @@ class PluginConfig(Config):
             template_file = templates_dir / f"github-{template}"
             with open(template_file, "r") as tfile, open(file_path, "w") as f:
                 f.write(tfile.read().format(project_name=project_name))
+
+
+class KubernetesPodTemplate(Config):
+    @property
+    def template(self):
+        return self._get_or_default("template", None)
+
+    @property
+    def image(self):
+        return self._get_or_default("image", None)
+
+    def __len__(self):
+        return len(self._raw)
+
+
+class KubernetesPodTemplates(Config):
+    def __getattr__(self, item):
+        return self[item]
+
+    def __getitem__(self, item):
+        return KubernetesPodTemplate(self._get_or_default(item, {}))
+
+    def __len__(self):
+        return len(self._raw)

@@ -1,12 +1,13 @@
+import logging
 import webbrowser
 from pathlib import Path
 from typing import Dict, List, Optional
 
 import click
-import fsspec
 from tabulate import tabulate
 
 from kedro_airflow_k8s.airflow import AirflowClient
+from kedro_airflow_k8s.cli_helper import CliHelper
 from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.context_helper import ContextHelper
 from kedro_airflow_k8s.template import (
@@ -56,14 +57,19 @@ def airflow_group(ctx, metadata, env, pipeline):
 @click.pass_context
 def compile(ctx, image, target_path="dags/"):
     """Create an Airflow DAG for a project"""
-    dag_filename, template_stream = get_dag_filename_and_template_stream(
+    (
+        dag_name,
+        template_stream,
+        spark_template_streams,
+    ) = get_dag_filename_and_template_stream(
         ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
+    if spark_template_streams:
+        CliHelper.dump_spark_artifacts(
+            ctx, target_path, spark_template_streams
+        )
 
-    target_path = Path(target_path) / dag_filename
-
-    with fsspec.open(str(target_path), "wt") as f:
-        template_stream.dump(f)
+    CliHelper.dump_templates(dag_name, target_path, template_stream)
 
 
 @airflow_group.command()
@@ -89,13 +95,18 @@ def upload_pipeline(ctx, output: str, image: str):
     """
     Uploads pipeline to Airflow DAG location
     """
-    dag_filename, template_stream = get_dag_filename_and_template_stream(
+    (
+        dag_name,
+        template_stream,
+        spark_template_streams,
+    ) = get_dag_filename_and_template_stream(
         ctx, image=image, cron_expression=get_cron_expression(ctx)
     )
 
+    CliHelper.conditionally_handle_spark_artifacts(spark_template_streams, ctx)
     output = output or ctx.obj["context_helper"].config.output
-    with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
-        template_stream.dump(f)
+    logging.info(f"Deploying to {output}")
+    CliHelper.dump_templates(dag_name, output, template_stream)
 
 
 @airflow_group.command()
@@ -115,18 +126,34 @@ def upload_pipeline(ctx, output: str, image: str):
     help="Cron expression for recurring run",
     required=False,
 )
+@click.option(
+    "-d",
+    "--dag-name",
+    "dag_name",
+    type=str,
+    required=False,
+    help="Allows overriding dag id and dag file name for a purpose of multiple variants"
+    " of experiments",
+)
 @click.pass_context
-def schedule(ctx, output: str, cron_expression: str):
+def schedule(ctx, output: str, cron_expression: str, dag_name: str = None):
     """
     Uploads pipeline to Airflow with given schedule
     """
-    dag_filename, template_stream = get_dag_filename_and_template_stream(
-        ctx, cron_expression=get_cron_expression(ctx, cron_expression)
+    (
+        dag_filename,
+        template_stream,
+        spark_template_streams,
+    ) = get_dag_filename_and_template_stream(
+        ctx,
+        cron_expression=get_cron_expression(ctx, cron_expression),
+        dag_name=dag_name,
     )
 
     output = output or ctx.obj["context_helper"].config.output
-    with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
-        template_stream.dump(f)
+
+    CliHelper.conditionally_handle_spark_artifacts(spark_template_streams, ctx)
+    CliHelper.dump_templates(dag_filename, output, template_stream)
 
 
 @airflow_group.command()
@@ -175,7 +202,11 @@ def run_once(
     """
     Uploads pipeline to Airflow and runs once
     """
-    dag_filename, template_stream = get_dag_filename_and_template_stream(
+    (
+        dag_filename,
+        template_stream,
+        spark_template_streams,
+    ) = get_dag_filename_and_template_stream(
         ctx,
         dag_name=dag_name,
         image=image,
@@ -185,8 +216,8 @@ def run_once(
     context_helper = ctx.obj["context_helper"]
     output = output or context_helper.config.output
 
-    with fsspec.open(f"{output}/{dag_filename}", "wt") as f:
-        template_stream.dump(f)
+    CliHelper.conditionally_handle_spark_artifacts(spark_template_streams, ctx)
+    CliHelper.dump_templates(dag_filename, output, template_stream)
 
     airflow_client = AirflowClient(context_helper.config.host)
     dag = airflow_client.wait_for_dag(

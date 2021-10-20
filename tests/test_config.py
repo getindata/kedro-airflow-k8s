@@ -20,6 +20,23 @@ run_config:
     start_date: 20200102
     image_pull_secrets: pull1,pull2
     service_account_name: service_account
+    spark:
+      type: dataproc
+      region: europe-west2
+      project_id: sandbox
+      cluster_name: cluster-8084
+      artifacts_path: gs://test/dataproc
+      cluster_config:
+        configBucket: test
+    kubernetes_pod_templates:
+        custom_template:
+            template: |-
+                type: Pod
+                metadata:
+                    name: {PodGenerator.make_unique_pod_id('test')}
+                spec:
+                    name: 1
+            image: custom
     volume:
         storageclass: kms
         size: 3Gi
@@ -67,13 +84,17 @@ run_config:
           timeout: 2
           check_existence: False
           execution_delta: 10
+    authentication:
+        type: Vars
+        params: ["MLFLOW_TRACKING_USERNAME", "MLFLOW_TRACKING_PASSWORD"]
+    env_vars: ["MLFLOW_TRACKING_USERNAME", "MLFLOW_TRACKING_PASSWORD"]
 """
 
 
 class TestPluginConfig(unittest.TestCase):
     def test_plugin_config(self):
-        cfg = PluginConfig(yaml.safe_load(CONFIG_YAML))
 
+        cfg = PluginConfig(yaml.safe_load(CONFIG_YAML))
         assert cfg.host == "test.host.com"
         assert cfg.output == "/data/ariflow/dags"
         assert cfg.run_config
@@ -108,6 +129,7 @@ class TestPluginConfig(unittest.TestCase):
             "value": "data-processing",
             "effect": "NoExecute",
         }
+
         assert resources.__default__.annotations
         assert (
             resources.__default__.annotations["iam.amazonaws.com/role"]
@@ -162,6 +184,39 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.macro_params == ["ds", "prev_ds"]
         assert cfg.run_config.variables_params == ["env"]
 
+        assert cfg.run_config.auth_config
+        assert cfg.run_config.auth_config.type == "Vars"
+        assert cfg.run_config.auth_config.params == [
+            "MLFLOW_TRACKING_USERNAME",
+            "MLFLOW_TRACKING_PASSWORD",
+        ]
+
+        assert cfg.run_config.env_vars == [
+            "MLFLOW_TRACKING_USERNAME",
+            "MLFLOW_TRACKING_PASSWORD",
+        ]
+
+        kubernetes_pod_templates = cfg.run_config.kubernetes_pod_templates
+
+        assert kubernetes_pod_templates.custom_template.image == "custom"
+        assert (
+            kubernetes_pod_templates.custom_template.template
+            == """type: Pod
+metadata:
+    name: {PodGenerator.make_unique_pod_id('test')}
+spec:
+    name: 1"""
+        )
+
+        spark = cfg.run_config.spark
+        assert spark
+        assert spark.type == "dataproc"
+        assert spark.region == "europe-west2"
+        assert spark.project_id == "sandbox"
+        assert spark.cluster_name == "cluster-8084"
+        assert spark.artifacts_path == "gs://test/dataproc"
+        assert spark.cluster_config["configBucket"] == "test"
+
     def test_defaults(self):
         cfg = PluginConfig({"run_config": {}})
 
@@ -172,6 +227,8 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.description is None
         assert cfg.run_config.start_date is None
         assert cfg.run_config.auth_config.type == "Null"
+        assert cfg.run_config.auth_config.params == []
+        assert cfg.run_config.spark
 
         assert cfg.run_config.volume
         assert cfg.run_config.volume.disabled is False
@@ -183,6 +240,8 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.resources
 
         assert not cfg.run_config.external_dependencies
+
+        assert len(cfg.run_config.kubernetes_pod_templates) == 0
 
     def test_run_name_is_experiment_name_by_default(self):
         cfg = PluginConfig(

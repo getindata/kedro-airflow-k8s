@@ -11,6 +11,7 @@ INSTALL_REQUIRES = [
     "click<8.0",
     "semver~=2.10",
     "python-slugify>=4.0.1",
+    "tabulate==0.8.9",
 ]
 
 # Dev Requirements
@@ -25,6 +26,7 @@ EXTRA_REQUIRE = {
         "mlflow-skinny==1.19.0",
         "sqlalchemy==1.3.23",
         "responses>=0.13.0",
+        "kedro[spark.SparkDataSet]>=0.16,<=0.18",
     ],
     "docs": [
         "sphinx==3.4.2",
@@ -36,11 +38,12 @@ EXTRA_REQUIRE = {
     ],
     "aws": ["s3fs>=0.6.1"],
     "mlflow": ["kedro-mlflow==0.4.1"],
+    "spark": ["kedro[spark.SparkDataSet]>=0.16,<=0.18"],
 }
 
 setup(
     name="kedro-airflow-k8s",
-    version="0.6.7",
+    version="0.7.0",
     description="Kedro plugin with Airflow on Kubernetes support",
     long_description=README,
     long_description_content_type="text/markdown",
