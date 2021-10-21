@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Support for failure notifications via slack
+- FIX: Missing jinja template for dataproc init script
 
 ## [0.7.0] - 2021-10-19
 

@@ -1,5 +1,6 @@
 include kedro_airflow_k8s/airflow_dag_template.j2
 include kedro_airflow_k8s/airflow_spark_task_template.j2
+include kedro_airflow_k8s/dataproc_init_script_template.j2
 include kedro_airflow_k8s/operators/data_volume_init_template.j2
 include templates/github-on-merge-to-master.yml
 include templates/github-on-push.yml
