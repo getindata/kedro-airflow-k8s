@@ -10,3 +10,6 @@ plugins:
         enabled: false
       bad-continuation:
         enabled: false
+      method-count:
+        config:
+          threshold: 25

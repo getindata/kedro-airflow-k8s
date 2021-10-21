@@ -46,6 +46,9 @@ run_config:
     # Service account name to execute nodes with
     #service_account_name: default
 
+    # List of handlers executed after task failure
+    failure_handlers: []
+
     # Optional volume specification
     volume:
         # Storage class - use null (or no value) to use the default storage
@@ -365,6 +368,16 @@ class RunConfig(Config):
         return self._get_or_fail("namespace")
 
     @property
+    def failure_handlers(self):
+        cfg = self._get_or_default("failure_handlers", [])
+        supported_types = FailureHandlerConfig.supported_types()
+        return [
+            FailureHandlerConfig(handler)
+            for handler in cfg
+            if handler["type"] in supported_types
+        ]
+
+    @property
     def experiment_name(self):
         return self._get_or_fail("experiment_name")
 
@@ -475,6 +488,24 @@ class VolumeConfig(Config):
 
     def _get_prefix(self):
         return "run_config.volume."
+
+
+class FailureHandlerConfig(Config):
+    @staticmethod
+    def supported_types():
+        return ["slack"]
+
+    @property
+    def type(self):
+        return self._get_or_fail("type")
+
+    @property
+    def connection_id(self):
+        return self._get_or_fail("connection_id")
+
+    @property
+    def message_template(self):
+        return self._get_or_default("message_template", "Task failed!")
 
 
 class SecretConfig(Config):

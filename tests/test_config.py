@@ -20,6 +20,10 @@ run_config:
     start_date: 20200102
     image_pull_secrets: pull1,pull2
     service_account_name: service_account
+    failure_handlers:
+      - type: slack
+        connection_id: slack
+        message_template: "test message"
     spark:
       type: dataproc
       region: europe-west2
@@ -117,6 +121,10 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.volume.owner == 1000
         assert cfg.run_config.volume.disabled is True
         assert cfg.run_config.resources
+        failure_handler = cfg.run_config.failure_handlers[0]
+        assert failure_handler.type == "slack"
+        assert failure_handler.connection_id == "slack"
+        assert failure_handler.message_template == """test message"""
         resources = cfg.run_config.resources
         assert resources.__default__
         assert resources.__default__.node_selectors

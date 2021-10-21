@@ -46,6 +46,26 @@ run_config:
     # Service account name to execute nodes with
     service_account_name: airflow
 
+    # List of handlers executed after task failure 
+    failure_handlers:
+      # type of integration, currently only slack is available
+      - type: slack
+        # airflow connection id with following parameters:
+        # host - webhook url
+        # password - webhook password
+        # login - username
+        connection_id: slack
+        # message template that will be send. It can contains following parameters that will be replaced:
+        # task
+        # dag
+        # execution_time
+        message_template: |
+            :red_circle: Task Failed.
+            *Task*: {task}
+            *Dag*: {dag}
+            *Execution Time*: {execution_time}
+            *Log Url*: {url}
+            
     # Optional volume specification
     volume:
         # Storage class - use null (or no value) to use the default storage
