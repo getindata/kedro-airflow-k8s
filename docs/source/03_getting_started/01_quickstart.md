@@ -151,7 +151,7 @@ Plugin requires project to be under git repository. Perform [repository initiali
 Plugin requires configuration to be present. It's best to use:
 
 ```console
-kedor airflow-k8s init --with-github-actions --output ${AIRFLOW_DAG_FOLDER} https://airflow.url
+kedro airflow-k8s init --with-github-actions --output ${AIRFLOW_DAG_FOLDER} https://airflow.url
 ```
 
 This command creates configuration file in `conf/pipelines/airflow-k8s.yaml` with some custom values and reference to
