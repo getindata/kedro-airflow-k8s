@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-  FIX: Broken support for kedro<0.17
+
 ## [0.7.1] - 2021-10-21
 
 -   Support for failure notifications via slack
