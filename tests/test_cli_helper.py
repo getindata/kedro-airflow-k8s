@@ -47,6 +47,7 @@ class TestCliHelper(unittest.TestCase):
     def test_dump_init_script(self):
         init_script = """echo "User injected init script"
 touch "/home/kedro/hello_world\""""
+        post_init_script = """echo "This is post init script\""""
         with TemporaryDirectory(prefix="kedro-airflow-k8s-tests") as dir_name:
             CliHelper.dump_init_script(
                 dir_name,
@@ -54,6 +55,7 @@ touch "/home/kedro/hello_world\""""
                 artifacts_path="gs://test-bucket/packages",
                 is_mlflow_enabled=False,
                 user_init=init_script,
+                user_post_init=post_init_script,
                 commit_sha=self.COMMIT_SHA,
             )
 
@@ -64,20 +66,18 @@ touch "/home/kedro/hello_world\""""
             ).read_text()
             print(full_script)
             assert init_script in full_script
+            assert post_init_script in full_script
             assert (
                 "gsutil cp gs://test-bucket/packages/test-kedro-project-abcdab.tar.gz"
                 " /tmp/" in full_script
             )
+            assert "PROJECT_HOME=/opt/test-kedro-project" in full_script
             assert (
-                """cd /opt/test-kedro-project/src && pip install -U ."""
-                in full_script
+                """cd ${PROJECT_HOME}/src && pip install -U .""" in full_script
             )
             assert (
                 """tar zxvf /tmp/test-kedro-project-abcdab.tar.gz -C /opt"""
                 in full_script
             )
-            assert (
-                """cd /opt/test-kedro-project && kedro install"""
-                in full_script
-            )
+            assert """cd ${PROJECT_HOME} && kedro install""" in full_script
             assert """kedro mlflow init""" not in full_script

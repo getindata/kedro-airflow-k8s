@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
--  FIX: Broken support for kedro<0.17
+-   For pyspark projects, allows to configure post script for dataproc initialization
+-   FIX: Broken support for kedro<0.17
 
 ## [0.7.1] - 2021-10-21
 

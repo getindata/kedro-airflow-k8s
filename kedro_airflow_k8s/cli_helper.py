@@ -2,7 +2,7 @@ import logging
 import tarfile
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Dict
+from typing import Dict, Optional
 
 import fsspec
 import jinja2
@@ -40,6 +40,10 @@ class CliHelper:
                 spark_template.dump(f)
 
     @staticmethod
+    def _read_resource(source_dir: str, location: str) -> Optional[str]:
+        return (Path(source_dir) / location).read_text() if location else ""
+
+    @staticmethod
     def dump_spark_artifacts(
         ctx,
         target_path: str,
@@ -51,12 +55,12 @@ class CliHelper:
         spark_config = ctx.obj["context_helper"].config.run_config.spark
         is_mlflow_enabled = bool(get_mlflow_url(ctx.obj["context_helper"]))
 
-        if spark_config.user_init_path:
-            user_init = (
-                Path(source_dir) / spark_config.user_init_path
-            ).read_text()
-        else:
-            user_init = ""
+        user_init = CliHelper._read_resource(
+            source_dir, spark_config.user_init_path
+        )
+        user_post_init = CliHelper._read_resource(
+            source_dir, spark_config.user_post_init_path
+        )
 
         CliHelper.dump_spark_templates(
             target_path, project_name, commit_sha, spark_template_streams
@@ -70,6 +74,7 @@ class CliHelper:
             spark_config.artifacts_path,
             is_mlflow_enabled,
             user_init,
+            user_post_init,
             commit_sha,
         )
 
@@ -102,6 +107,7 @@ class CliHelper:
         artifacts_path: str,
         is_mlflow_enabled: bool,
         user_init: str,
+        user_post_init: str,
         commit_sha: str,
     ):  # pylint: disable=too-many-arguments
         loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
@@ -116,6 +122,7 @@ class CliHelper:
             project_name=project_name,
             is_mlflow_enabled=is_mlflow_enabled,
             user_init=user_init,
+            user_post_init=user_post_init,
         )
 
         target_name = target_path + f"/{project_name}-{commit_sha}.sh"

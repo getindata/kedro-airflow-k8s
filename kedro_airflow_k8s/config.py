@@ -346,6 +346,10 @@ class SparkConfig(Config):
         return self._get_or_default("user_init_path", None)
 
     @property
+    def user_post_init_path(self):
+        return self._get_or_default("user_post_init_path", None)
+
+    @property
     def cluster_config(self):
         return self._get_or_default("cluster_config", {})
 
