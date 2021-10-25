@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+PROJECT_HOME=/opt/{{ project_name }}
+
+{{ user_init | safe }}
+
+echo "Downloading project from {{ gcs_path }}/{{ archive_name }}"
+gsutil cp {{ gcs_path }}/{{ archive_name }} /tmp/
+echo "Unzipping project to ${PROJECT_HOME}"
+tar zxvf /tmp/{{ archive_name }} -C /opt
+
+echo "Installing package"
+cd ${PROJECT_HOME}/src && pip install -U .
+
+echo "Installing project {{ project_name }}"
+export PYSPARK_SUBMIT_ARGS='--master local[1] pyspark-shell'
+cd ${PROJECT_HOME} && kedro install {% if is_mlflow_enabled %}&& kedro mlflow init{% endif %}
+
+{{ user_post_init | safe }}

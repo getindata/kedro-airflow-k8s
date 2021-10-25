@@ -1,5 +1,6 @@
 import unittest
 
+from airflow.kubernetes.pod_generator import PodGenerator
 from kubernetes.client.models.v1_env_var import V1EnvVar
 
 from kedro_airflow_k8s.operators.node_pod import NodePodOperator
@@ -135,3 +136,31 @@ postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb
         assert len(pod.spec.image_pull_secrets) == 2
         assert pod.spec.image_pull_secrets[0].name == "top"
         assert pod.spec.image_pull_secrets[1].name == "secret"
+
+    def test_task_with_custom_k8s_pod_template(self):
+        task = NodePodOperator(
+            node_name="test_node_name",
+            namespace="airflow",
+            pvc_name="shared_storage",
+            image="registry.gitlab.com/test_image",
+            image_pull_policy="Always",
+            env="test-pipelines",
+            task_id="test-node-name",
+            volume_owner=100,
+            mlflow_enabled=False,
+            kubernetes_pod_template=f"""
+type: Pod
+metadata:
+  name: {PodGenerator.make_unique_pod_id('test-node-name')}'
+  labels:
+    test: mylabel
+spec:
+  containers:
+    - name: base
+""",
+        )
+        pod = task.create_pod_request_obj()
+
+        assert pod.metadata.name.startswith("test-node-name")
+        assert "test-node-name" != pod.metadata.name
+        assert pod.metadata.labels["test"] == "mylabel"

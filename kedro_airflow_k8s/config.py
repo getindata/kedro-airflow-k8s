@@ -46,6 +46,9 @@ run_config:
     # Service account name to execute nodes with
     #service_account_name: default
 
+    # List of handlers executed after task failure
+    failure_handlers: []
+
     # Optional volume specification
     volume:
         # Storage class - use null (or no value) to use the default storage
@@ -175,6 +178,47 @@ run_config:
       # e.g. ["MLFLOW_TRACKING_USERNAME", "MLFLOW_TRACKING_PASSWORD"])
       #type: GoogleOAuth2
       #params: []
+    #spark:
+    #  submit_job_operator:
+    # Airflow operator to use for submitting Spark job: SparkSubmitOperator,
+    # DataprocSubmitJobOperator or KubernetesSparkOperator
+    #  region: None
+    #  project_id: None
+    #  cluster_name: None
+    #  create_cluster: False
+
+    # Optional custom kubermentes pod templates applied on nodes basis
+    #kubernetes_pod_templates:
+    # Name of the node you want to apply the custom template to.
+    # if you specify __default__, this template will be applied to all nodes.
+    # Otherwise it will be only applied to nodes tagged with `k8s_template:<node_name>`
+    #  node_name:
+
+    # Kubernetes pod template.
+    # It's the full content of the pod-template file (as a string)
+    # `run_config.volume` and `MLFLOW_RUN_ID` env are disabled when this is set.
+    # Note: python F-string formatting is applied to this string, so
+    # you can also use some dynamic values, e.g. to calculate pod name.
+    #    template:
+
+    # Optionally, you can also override the image
+    #    image:
+    # ____ EXAMPLE _______________
+    #
+    #kubernetes_pod_templates:
+    #  spark:
+    #    template: |-
+    #      apiVersion: v1
+    #      kind: Pod
+    #      metadata:
+    #        name: newname
+    #       spec:
+    #         containers:
+    #           - name: base
+    #         env:
+    #           - name: CUSTOM_ENV
+    #             value: env1
+    #
 """
 
 
@@ -276,6 +320,44 @@ class AuthenticationConfig(Config):
         return self._get_or_default("params", [])
 
 
+class SparkConfig(Config):
+    @property
+    def type(self):
+        return self._get_or_default("type", "none")
+
+    @property
+    def region(self):
+        return self._get_or_default("region", "None")
+
+    @property
+    def cluster_name(self):
+        return self._get_or_default("cluster_name", "None")
+
+    @property
+    def project_id(self):
+        return self._get_or_default("project_id", "None")
+
+    @property
+    def operator_factory(self):
+        return self._get_or_default("operator_factory", None)
+
+    @property
+    def artifacts_path(self):
+        return self._get_or_default("artifacts_path", None)
+
+    @property
+    def user_init_path(self):
+        return self._get_or_default("user_init_path", None)
+
+    @property
+    def user_post_init_path(self):
+        return self._get_or_default("user_post_init_path", None)
+
+    @property
+    def cluster_config(self):
+        return self._get_or_default("cluster_config", {})
+
+
 class RunConfig(Config):
     @property
     def image(self):
@@ -292,6 +374,16 @@ class RunConfig(Config):
     @property
     def namespace(self):
         return self._get_or_fail("namespace")
+
+    @property
+    def failure_handlers(self):
+        cfg = self._get_or_default("failure_handlers", [])
+        supported_types = FailureHandlerConfig.supported_types()
+        return [
+            FailureHandlerConfig(handler)
+            for handler in cfg
+            if handler["type"] in supported_types
+        ]
 
     @property
     def experiment_name(self):
@@ -360,8 +452,18 @@ class RunConfig(Config):
         return AuthenticationConfig(cfg)
 
     @property
+    def spark(self):
+        cfg = self._get_or_default("spark", {})
+        return SparkConfig(cfg)
+
+    @property
     def env_vars(self):
         return self._get_or_default("env_vars", [])
+
+    @property
+    def kubernetes_pod_templates(self):
+        cfg = self._get_or_default("kubernetes_pod_templates", {})
+        return KubernetesPodTemplates(cfg)
 
     def _get_prefix(self):
         return "run_config."
@@ -394,6 +496,24 @@ class VolumeConfig(Config):
 
     def _get_prefix(self):
         return "run_config.volume."
+
+
+class FailureHandlerConfig(Config):
+    @staticmethod
+    def supported_types():
+        return ["slack"]
+
+    @property
+    def type(self):
+        return self._get_or_fail("type")
+
+    @property
+    def connection_id(self):
+        return self._get_or_fail("connection_id")
+
+    @property
+    def message_template(self):
+        return self._get_or_default("message_template", "Task failed!")
 
 
 class SecretConfig(Config):
@@ -443,3 +563,27 @@ class PluginConfig(Config):
             template_file = templates_dir / f"github-{template}"
             with open(template_file, "r") as tfile, open(file_path, "w") as f:
                 f.write(tfile.read().format(project_name=project_name))
+
+
+class KubernetesPodTemplate(Config):
+    @property
+    def template(self):
+        return self._get_or_default("template", None)
+
+    @property
+    def image(self):
+        return self._get_or_default("image", None)
+
+    def __len__(self):
+        return len(self._raw)
+
+
+class KubernetesPodTemplates(Config):
+    def __getattr__(self, item):
+        return self[item]
+
+    def __getitem__(self, item):
+        return KubernetesPodTemplate(self._get_or_default(item, {}))
+
+    def __len__(self):
+        return len(self._raw)

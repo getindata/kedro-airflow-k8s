@@ -46,6 +46,26 @@ run_config:
     # Service account name to execute nodes with
     service_account_name: airflow
 
+    # List of handlers executed after task failure 
+    failure_handlers:
+      # type of integration, currently only slack is available
+      - type: slack
+        # airflow connection id with following parameters:
+        # host - webhook url
+        # password - webhook password
+        # login - username
+        connection_id: slack
+        # message template that will be send. It can contains following parameters that will be replaced:
+        # task
+        # dag
+        # execution_time
+        message_template: |
+            :red_circle: Task Failed.
+            *Task*: {task}
+            *Dag*: {dag}
+            *Execution Time*: {execution_time}
+            *Log Url*: {url}
+            
     # Optional volume specification
     volume:
         # Storage class - use null (or no value) to use the default storage
@@ -156,8 +176,60 @@ run_config:
     authentication:
       # Strategy that generates the tokens, supported values are: 
       # - Null
-      # - GoogleOAuth2 (generating OAuth2 tokens for service account provided by GOOGLE_APPLICATION_CREDENTIALS)  
+      # - GoogleOAuth2 (generating OAuth2 tokens for service account provided by GOOGLE_APPLICATION_CREDENTIALS)
+      # - Vars (credentials fetched from airflow Variable.get - specify variable keys,
+      # matching MLflow authentication env variable names, in `params`,
+      # e.g. ["MLFLOW_TRACKING_USERNAME", "MLFLOW_TRACKING_PASSWORD"])
       type: GoogleOAuth2 
+      #params: []
+
+    # Optional custom kubermentes pod templates applied on nodes basis
+    kubernetes_pod_templates:
+    # Name of the node you want to apply the custom template to.
+    # if you specify __default__, this template will be applied to all nodes.
+    # Otherwise it will be only applied to nodes tagged with `k8s_template:<node_name>`
+      spark:
+    # Kubernetes pod template.
+    # It's the full content of the pod-template file (as a string)
+    # `run_config.volume` and `MLFLOW_RUN_ID` env are disabled when this is set.
+    # Note: python F-string formatting is applied to this string, so
+    # you can also use some dynamic values, e.g. to calculate pod name.
+        template: |-
+          type: Pod
+          metadata:
+            name: {PodGenerator.make_unique_pod_id('{{ task_instance.task_id }}')}
+            labels:
+              spark_driver: {'{{ task_instance.task_id }}'}
+
+    # Optionally, you can also override the image
+    #   image:
+    
+    # Optional spark configuration
+    spark:
+      # Type of spark clusters to use, supported values: dataproc and custom
+      type: dataproc
+      # Optional factory of spark operators class
+      operator_factory: my_project.factories.OperatorFactory
+      # Region indicates location of cluster for public cloud configurations, for example region in GCP
+      region: europe-west1
+      # Project indicates logical placement inside public cloud configuration, for example project in GCP
+      project_id: target-project
+      # Name of the cluster to be created 
+      cluster_name: ephemeral
+      # Location where the spark artifacts are uploaded
+      artifacts_path: gs://dataproc-staging-europe-west2-546213781-jabcdefp4/packages
+      # Optional path in the project to the script portion preprended to generated init script
+      user_init_path: relative_location_to_src/init_script.sh
+      # Optional path in the project to the script portion appended to generated init script
+      user_post_init_path: relative_location_to_src/post_init_script.sh
+      # Optional configuration of the cluster, used during cluster creation, depends on type of the cluster
+      cluster_config: # example dataproc configuration
+        master_config:
+          disk_config:
+            boot_disk_size_gb: 35
+        worker_config:
+          disk_config:
+            boot_disk_size_gb: 35
 ```
 
 ## Indicate resources in pipeline nodes
@@ -178,6 +250,56 @@ node(func=train_model, inputs=["X_train", "y_train"], outputs="regressor", name=
 # k8s cluster default values are used
 node(func=evaluate_model, inputs=["X_train", "y_train"], outputs="regressor", name='evaluate_model')
 ```
+
+## Custom kubernetes pod templates
+
+You can provide custom kubernetes pod templates using `kubernetes_pod_templates`. Pod template to be used is based on
+the provided plugin configuration and presence of the tag `k8s_template` in `kedro` node definition.
+
+If no such tag is present, plugin will assign `__default__.template` from plugin `kubernetes_pod_templates` configuration, if exists.
+If no `__default__` is given in plugin `kubernetes_pod_templates` configuration or no `kubernetes_pod_templates` configuration is provided at all,
+the following plugin's default minimal pod template will be used.
+
+```yaml
+type: Pod
+  metadata:
+    name: {PodGenerator.make_unique_pod_id('{{ task_instance.task_id }}')}
+spec:
+  containers:
+    - name: base
+      env:
+        - name: MLFLOW_RUN_ID
+          value: {{ task_instance.xcom_pull(key="mlflow_run_id") }}
+  volumes:
+    - name: storage
+      persistentVolumeClaim:
+        claimName: {self._pvc_name}
+```
+
+where environment and volumes sections are present only if kedro mflow is used in the project and/or
+`run_config.volume` is not disabled.
+
+Note, that `claimName` is calculated the following way
+
+```python
+pvc_name = '{{ project_name | safe | slugify }}.{% raw %}{{ ts_nodash | lower  }}{% endraw %}'
+```
+
+If you do use a custom pod template and you want to keep the built-in mlflow/volume support you need to include
+these sections in your template as well.
+
+```python
+# train_model node is assigned a custom pod template from `spark` configuration, if no such configuration exists,
+# `__default__` is used, and if __default__ does not exist, the plugin's minimal pod template is used
+node(func=train_model, inputs=["X_train", "y_train"], outputs="regressor", name='train_model', tags=['k8s_template:spark'])
+# evaluate_model node is assigned a custom pod template `__default__` configuration and if it does not exist,
+# the plugin's default minimal pod template
+node(func=evaluate_model, inputs=["X_train", "y_train"], outputs="regressor", name='evaluate_model')
+```
+
+When using custom kubernetes pod templates the resulting pod configuration is a merge between
+properties provided via plugin settings, e.g. `resources.__default__.annotations`, and those specified in a
+template. In case of a conflict, plugin settings precede that of the template.
 
 ## Dynamic configuration support
 

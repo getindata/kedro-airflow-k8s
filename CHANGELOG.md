@@ -3,6 +3,19 @@
 ## [Unreleased]
 
 -   Support annotations with quotes
+-   For pyspark projects, allows to configure post script for dataproc initialization
+-   FIX: Broken support for kedro<0.17
+
+## [0.7.1] - 2021-10-21
+
+-   Support for failure notifications via slack
+-   FIX: Missing jinja template for dataproc init script
+
+## [0.7.0] - 2021-10-19
+
+-   Schedule supports `dag-name` parameter
+-   Support for kedro with pyspark, using Google Dataproc
+-   Support for custom pod templates
 -   FIX: adding missing dependency package: tabulate
 -   FIX: Fix default config template
 -   Support populating k8s node env_vars from Airflow variables
@@ -124,7 +137,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.7...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.7.1...HEAD
+
+[0.7.1]: https://github.com/getindata/kedro-airflow-k8s/compare/0.7.0...0.7.1
 
 [0.6.7]: https://github.com/getindata/kedro-airflow-k8s/compare/0.6.6...0.6.7
 
