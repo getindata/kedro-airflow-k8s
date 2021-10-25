@@ -97,7 +97,9 @@ class TestPluginCLI:
                         "__default__": {
                             "requests": {"cpu": "2", "memory": "1Gi"},
                             "limits": {"cpu": "4", "memory": "4Gi"},
-                            "annotations": {"global": "global1"},
+                            "annotations": {
+                                "vault.hashicorp.com/agent-inject-template-foo": '{{- with secret "database/creds/db-app" -}}\npostgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb?sslmode=disable\n{{- end }}\n'  # noqa: E501
+                            },
                         },
                         "huge": {
                             "node_selectors": {
@@ -176,6 +178,14 @@ class TestPluginCLI:
                 pre_ds:{{ pre_ds }},
                 env:{{ var.value.env }},
             \"\"\","""
+            in dag_content
+        )
+
+        assert (
+            '''"vault.hashicorp.com/agent-inject-template-foo": """{{- with secret "database/creds/db-app" -}}
+postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb?sslmode=disable
+{{- end }}
+"""'''  # noqa: E501
             in dag_content
         )
 
