@@ -1,6 +1,5 @@
 import unittest
 
-import pyspark
 from kedro.extras.datasets.pandas import CSVDataSet
 from kedro.extras.datasets.spark import SparkDataSet
 from kedro.io import DataCatalog
@@ -94,6 +93,8 @@ class TestTaskGroupFactory(unittest.TestCase):
         assert len(task_groups[1].children) == 0
 
     def test_create_dag_intermediate_spark_frames(self):
+        import pyspark
+
         def node2(
             input_param: pyspark.sql.dataframe.DataFrame,
         ) -> pyspark.sql.dataframe.DataFrame:
