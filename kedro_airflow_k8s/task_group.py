@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from inspect import signature
-from typing import Dict, List, Optional, Set
+from typing import Callable, Dict, List, Optional, Set
 
 from kedro.io.data_catalog import DataCatalog
 from kedro.pipeline.node import Node
@@ -70,17 +70,28 @@ class TaskGroupFactory:
         self.group_counter = group_counter
 
     @staticmethod
+    def _node_get_func(node: Node) -> Callable:
+        try:
+            return node.func
+        except AttributeError:
+            return node._func  # support for kedro<0.17
+
+    @staticmethod
     def _is_any_parameter_pyspark_frame(node: Node) -> bool:
         parameter_types = [
             ".".join([p.annotation.__module__, p.annotation.__name__])
-            for p in signature(node.func).parameters.values()
+            for p in signature(
+                TaskGroupFactory._node_get_func(node)
+            ).parameters.values()
             if p.annotation.__class__.__name__ == "type"
         ]
         return "pyspark.sql.dataframe.DataFrame" in parameter_types
 
     @staticmethod
     def _is_return_value_pyspark_frame(node: Node) -> bool:
-        return_annotation = signature(node.func).return_annotation
+        return_annotation = signature(
+            TaskGroupFactory._node_get_func(node)
+        ).return_annotation
         return (
             return_annotation
             and "pyspark.sql.dataframe.DataFrame"
