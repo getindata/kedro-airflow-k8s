@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+-   Support annotations with quotes
 -   For pyspark projects, allows to configure post script for dataproc initialization
 -   FIX: Broken support for kedro<0.17
 
