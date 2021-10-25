@@ -45,8 +45,10 @@ The following methods have to be provided:
 
 `run_config.spark.user_init_path` allows configuring the way the cluster is initialized. Plugin delivers
 initialization script that's aligned with the project artifacts. The script can be prepended with custom
-logic, to support the cases like custom package repository setup.
-It's required the path to be relative to the project `src` path.
+logic, to support the cases like custom package repository setup. `run_config.spark.user_post_init_path` additionally 
+allows appending to initialization script part of the shell script.
+Scripts can use environment variable `PROJECT_HOME` in order to refer to project location on the cluster.
+It's required the paths to be relative to the project `src` path.
 
 ## Detection of spark nodes
 

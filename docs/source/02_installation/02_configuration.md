@@ -219,7 +219,9 @@ run_config:
       # Location where the spark artifacts are uploaded
       artifacts_path: gs://dataproc-staging-europe-west2-546213781-jabcdefp4/packages
       # Optional path in the project to the script portion preprended to generated init script
-      user_init_path: relative_location/init_script.sh
+      user_init_path: relative_location_to_src/init_script.sh
+      # Optional path in the project to the script portion appended to generated init script
+      user_post_init_path: relative_location_to_src/post_init_script.sh
       # Optional configuration of the cluster, used during cluster creation, depends on type of the cluster
       cluster_config: # example dataproc configuration
         master_config:
