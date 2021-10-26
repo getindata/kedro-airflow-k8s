@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   `MLFLOW_RUN_ID` passed as environment variable to dataproc oriented pipelines
+
 ## [0.7.2] - 2021-10-25
 
 -   Support annotations with quotes
