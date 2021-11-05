@@ -158,7 +158,14 @@ with DAG(
         PYSPARK_JOB = {
                         "reference": {"project_id": '{{ config.run_config.spark.project_id }}'},
                         "placement": {"cluster_name": '{{ config.run_config.spark.cluster_name }}'},
-                        "pyspark_job": {"main_python_file_uri": '{{ config.run_config.spark.artifacts_path }}/{{ project_name }}-{{ git_info.commit_sha }}-{{ node.name }}.py'},
+                        "pyspark_job": {"main_python_file_uri": '{{ config.run_config.spark.artifacts_path }}/{{ project_name }}-{{ git_info.commit_sha }}-{{ node.name }}.py',
+                                        "properties": {
+                                            {% if mlflow_url %}
+                                            "spark.executorEnv.MLFLOW_RUN_ID": "{% raw %}{{ ti.xcom_pull(key='mlflow_run_id') }}{% endraw %}",
+                                            "spark.yarn.appMasterEnv.MLFLOW_RUN_ID": "{% raw %}{{ ti.xcom_pull(key='mlflow_run_id') }}{% endraw %}",
+                                            {% endif %}
+                                        }
+                        },
                     }
         tasks["{{ node.name | slugify }}"] = DataprocSubmitJobOperator(
             task_id="kedro-{{ node.name | slugify }}", job=PYSPARK_JOB, location='{{ config.run_config.spark.region }}', project_id='{{ config.run_config.spark.project_id }}'
