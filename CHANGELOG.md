@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+-   Take DAG status from the final task
 -   Fix finding pyspark DataFrames
 -   `MLFLOW_RUN_ID` passed as environment variable to dataproc oriented pipelines
 

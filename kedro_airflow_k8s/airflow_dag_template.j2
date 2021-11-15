@@ -5,6 +5,7 @@ from airflow.kubernetes.secret import Secret
 from airflow.utils.dates import days_ago
 from airflow.utils.task_group import TaskGroup
 from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.operators.dummy import DummyOperator
 from datetime import timedelta
 from datetime import datetime
 
@@ -121,6 +122,8 @@ with DAG(
     {%- if custom_spark_factory %}
     {{ custom_spark_factory.imports_statement | indent() }}
     {%- endif %}
+
+    final = DummyOperator(task_id='final', dag=dag)
 
     tasks = {}
     with TaskGroup("kedro", prefix_group_id=False) as kedro_group:
@@ -296,8 +299,9 @@ with DAG(
     {% endif %}
 
     {% if not config.run_config.volume.disabled %}
-    kedro_group >> delete_pipeline_storage
+    kedro_group >> delete_pipeline_storage >> final
     {% endif %}
+    kedro_group >> final
 
 if __name__ == "__main__":
     dag.cli()
