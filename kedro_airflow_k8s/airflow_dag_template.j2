@@ -146,6 +146,10 @@ with DAG(
             task_id='delete-spark-cluster',
             trigger_rule='all_done'
         )
+    {%- elif config.run_config.spark.type == 'k8s' or config.run_config.spark.type == 'kubernetes' %}
+        import airflow.operators.dummy
+        tasks["create-spark-cluster"] = airflow.operators.dummy.DummyOperator(task_id='create-spark-cluster')
+        tasks["delete-spark-cluster"] = airflow.operators.dummy.DummyOperator(task_id='delete-spark-cluster')
     {%- elif custom_spark_factory %}
         tasks["create-spark-cluster"] = {{ custom_spark_factory.create_cluster_operator(project_name=project_name, config=config, init_script_path=init_script, cluster_config=config.run_config.spark.cluster_config) | safe | indent(8) }}
         tasks["delete-spark-cluster"] = {{ custom_spark_factory.delete_cluster_operator(project_name=project_name, config=config) | safe | indent(8) }}
@@ -169,6 +173,17 @@ with DAG(
                     }
         tasks["{{ node.name | slugify }}"] = DataprocSubmitJobOperator(
             task_id="kedro-{{ node.name | slugify }}", job=PYSPARK_JOB, location='{{ config.run_config.spark.region }}', project_id='{{ config.run_config.spark.project_id }}'
+        )
+        {%- elif config.run_config.spark.type == 'k8s' or config.run_config.spark.type == 'kubernetes' %}
+        import airflow.providers.apache.spark.operators.spark_submit
+        {% set main_python_path = config.run_config.spark.artifacts_path ~ '/' ~ project_name ~ '-' ~ git_info.commit_sha ~ '-' ~ node.name ~ '.py' %}
+        tasks["{{ node.name | slugify }}"] = airflow.providers.apache.spark.operators.spark_submit.SparkSubmitOperator(
+            task_id="kedro-{{ node.name | slugify }}", application='{{main_python_path}}', conf={
+                'spark.master': '{{ config.run_config.spark.cluster_name }}',
+                'spark.submit.deployMode': 'cluster',
+                'spark.kubernetes.container.image': {%- if k8s_templates[node.name].image -%}"{{ k8s_templates[node.name].image }}"{%- else -%}"{{ image }}"{%- endif %}
+            },
+            name='{{ node.name | slugify }}'
         )
         {%- elif custom_spark_factory %}
         {% set main_python_path = config.run_config.spark.artifacts_path ~ '/' ~ project_name ~ '-' ~ git_info.commit_sha ~ '-' ~ node.name ~ '.py' %}
