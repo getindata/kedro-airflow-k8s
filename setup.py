@@ -27,6 +27,7 @@ EXTRA_REQUIRE = {
         "sqlalchemy==1.3.23",
         "responses>=0.13.0",
         "kedro[spark.SparkDataSet]>=0.16,<=0.18",
+        "WTForms<3.0.0",
     ],
     "docs": [
         "sphinx==3.4.2",
