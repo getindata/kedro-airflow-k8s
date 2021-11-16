@@ -183,7 +183,8 @@ with DAG(
                 'spark.submit.deployMode': 'cluster',
                 'spark.kubernetes.container.image': {%- if k8s_templates[node.name].image -%}"{{ k8s_templates[node.name].image }}"{%- else -%}"{{ image }}"{%- endif %}
             },
-            name='{{ node.name | slugify }}'
+            name='{{ node.name | slugify }}',
+            conn_id='spark_k8s'
         )
         {%- elif custom_spark_factory %}
         {% set main_python_path = config.run_config.spark.artifacts_path ~ '/' ~ project_name ~ '-' ~ git_info.commit_sha ~ '-' ~ node.name ~ '.py' %}
