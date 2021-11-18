@@ -14,6 +14,8 @@ from airflow.providers.google.cloud.operators.dataproc import (
     DataprocCreateClusterOperator,
     DataprocDeleteClusterOperator
 )
+{% elif config.run_config.spark.type in ['kubernetes','k8s'] %}
+{{ include_spark_submit_k8s_operator | safe }}
 {% endif %}
 
 EXPERIMENT_NAME = "{{ config.run_config.experiment_name | slugify }}"
@@ -175,16 +177,16 @@ with DAG(
             task_id="kedro-{{ node.name | slugify }}", job=PYSPARK_JOB, location='{{ config.run_config.spark.region }}', project_id='{{ config.run_config.spark.project_id }}'
         )
         {%- elif config.run_config.spark.type == 'k8s' or config.run_config.spark.type == 'kubernetes' %}
-        import airflow.providers.apache.spark.operators.spark_submit
         {% set main_python_path = config.run_config.spark.artifacts_path ~ '/' ~ project_name ~ '-' ~ git_info.commit_sha ~ '-' ~ node.name ~ '.py' %}
-        tasks["{{ node.name | slugify }}"] = airflow.providers.apache.spark.operators.spark_submit.SparkSubmitOperator(
-            task_id="kedro-{{ node.name | slugify }}", application='{{main_python_path}}', conf={
-                'spark.master': '{{ config.run_config.spark.cluster_name }}',
-                'spark.submit.deployMode': 'cluster',
-                'spark.kubernetes.container.image': {%- if k8s_templates[node.name].image -%}"{{ k8s_templates[node.name].image }}"{%- else -%}"{{ image }}"{%- endif %}
-            },
-            name='{{ node.name | slugify }}',
-            conn_id='spark_k8s'
+        tasks["{{ node.name | slugify }}"] = SparkSubmitK8SOperator(
+                node_name='{{ node.name | slugify }}',
+                namespace='{{ config.run_config.namespace }}',
+                kedro_script='{{main_python_path}}',
+                image={%- if k8s_templates[node.name].image -%}"{{ k8s_templates[node.name].image }}"{%- else -%}"{{ image }}"{%- endif %},
+                run_name='{{ dag_name | slugify }}',
+                nodes=[{% for task in node.task_group %}'{{ task.name }}',{% endfor %}],
+                env='{{ env }}',
+                conn_id='spark_k8s'
         )
         {%- elif custom_spark_factory %}
         {% set main_python_path = config.run_config.spark.artifacts_path ~ '/' ~ project_name ~ '-' ~ git_info.commit_sha ~ '-' ~ node.name ~ '.py' %}
