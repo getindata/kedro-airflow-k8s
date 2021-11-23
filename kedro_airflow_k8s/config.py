@@ -355,7 +355,78 @@ class SparkConfig(Config):
 
     @property
     def cluster_config(self):
-        return self._get_or_default("cluster_config", {})
+        data = self._get_or_default("cluster_config", {})
+        if self.type in ["k8s", "kubernetes"]:
+            return SparkK8SConfig(data)
+        return data
+
+
+class SparkK8SStorageConfig(Config):
+    @property
+    def class_name(self):
+        return self._get_or_default("class_name", "standard")
+
+    @property
+    def size(self):
+        return self._get_or_default("size", None)
+
+
+class SparkK8SConfig(Config):
+    @property
+    def image(self):
+        return self._get_or_default("image", None)
+
+    @property
+    def conf(self):
+        return self._get_or_default("conf", {})
+
+    @property
+    def driver_port(self):
+        return self._get_or_default("driver_port", None)
+
+    @property
+    def block_manager_port(self):
+        return self._get_or_default("block_manager_port", None)
+
+    @property
+    def secrets(self):
+        return self._get_or_default("secrets", {})
+
+    @property
+    def labels(self):
+        return self._get_or_default("labels", {})
+
+    @property
+    def local_storage(self):
+        return SparkK8SStorageConfig(self._get_or_default("local_storage", {}))
+
+    @property
+    def env_vars(self):
+        return self._get_or_default("env_vars", {})
+
+    @property
+    def requests(self):
+        return ResourceNodeConfig(self._get_or_default("requests", {}))
+
+    @property
+    def limits(self):
+        return ResourceNodeConfig(self._get_or_default("limits", {}))
+
+    @property
+    def num_executors(self):
+        return self._get_or_default("num_executors", "1")
+
+    @property
+    def jars(self):
+        return self._get_or_default("jars", None)
+
+    @property
+    def repositories(self):
+        return self._get_or_default("repositories", None)
+
+    @property
+    def packages(self):
+        return self._get_or_default("packages", None)
 
 
 class RunConfig(Config):
