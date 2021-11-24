@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.7.3] - 2021-11-16
+
+-   Take DAG status from the final task
+-   Fix finding pyspark DataFrames
 -   `MLFLOW_RUN_ID` passed as environment variable to dataproc oriented pipelines
 
 ## [0.7.2] - 2021-10-25
@@ -141,7 +145,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.7.2...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.7.3...HEAD
+
+[0.7.3]: https://github.com/getindata/kedro-airflow-k8s/compare/0.7.2...0.7.3
 
 [0.7.2]: https://github.com/getindata/kedro-airflow-k8s/compare/0.7.1...0.7.2
 

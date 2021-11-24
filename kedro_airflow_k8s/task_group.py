@@ -94,6 +94,7 @@ class TaskGroupFactory:
         ).return_annotation
         return (
             return_annotation
+            and return_annotation.__class__.__name__ == "type"
             and "pyspark.sql.dataframe.DataFrame"
             == ".".join(
                 [return_annotation.__module__, return_annotation.__name__]
