@@ -31,6 +31,7 @@ class SparkSubmitK8SOperator(
         **kwargs,
     ):
         nodes_list = ",".join(nodes)
+
         sa_conf_name = (
             "spark.kubernetes.authenticate.driver.serviceAccountName"
         )
@@ -47,55 +48,49 @@ class SparkSubmitK8SOperator(
                 for k, v in kwargs.get("env_vars", {}).items()
             }
         )
-        base_conf.update(
-            {
-                f"spark.kubernetes.driver.secrets.{k}": v
-                for k, v in secrets.items()
-            }
-        )
-        base_conf.update(
-            {
-                f"spark.kubernetes.executor.secrets.{k}": v
-                for k, v in secrets.items()
-            }
-        )
-        base_conf.update(
-            {
-                f"spark.kubernetes.driver.label.{k}": v
-                for k, v in labels.items()
-            }
-        )
-        base_conf.update(
-            {
-                f"spark.kubernetes.executor.label.{k}": v
-                for k, v in labels.items()
-            }
-        )
+        for worker_type in ["driver", "executor"]:
+            base_conf.update(
+                {
+                    f"spark.kubernetes.{worker_type}.secrets.{k}": v
+                    for k, v in secrets.items()
+                }
+            )
+            base_conf.update(
+                {
+                    f"spark.kubernetes.{worker_type}.label.{k}": v
+                    for k, v in labels.items()
+                }
+            )
         if driver_port:
             base_conf["spark.driver.port"] = driver_port
         if block_manager_port:
             base_conf["spark.blockManager.port"] = block_manager_port
         if local_storage_class_name and local_storage_size:
-            storage_prop = (
-                "spark.kubernetes.executor.volumes.persistentVolumeClaim."
-                "spark-local-dir-kedro"
-            )
-            base_conf[f"{storage_prop}.options.claimName"] = "OnDemand"
-            base_conf[
-                f"{storage_prop}.options.storageClass"
-            ] = local_storage_class_name
-            base_conf[f"{storage_prop}.options.sizeLimit"] = local_storage_size
-            base_conf[f"{storage_prop}.mount.path"] = "/storage"
-            base_conf[f"{storage_prop}.mount.readOnly"] = "false"
+            for worker_type in ["executor"]:
+                storage_prop = (
+                    f"spark.kubernetes.{worker_type}.volumes.persistentVolumeClaim."
+                    "spark-local-dir-1"
+                )
+                base_conf[f"{storage_prop}.options.claimName"] = "OnDemand"
+                base_conf[
+                    f"{storage_prop}.options.storageClass"
+                ] = local_storage_class_name
+                base_conf[
+                    f"{storage_prop}.options.sizeLimit"
+                ] = local_storage_size
+                base_conf[f"{storage_prop}.mount.path"] = "/storage"
+                base_conf[f"{storage_prop}.mount.readOnly"] = "false"
         if limits_memory:
-            base_conf["spark.driver.memory"] = limits_memory
-            base_conf["spark.executor.memory"] = limits_memory
+            for worker_type in ["driver", "executor"]:
+                base_conf[f"spark.{worker_type}.memory"] = limits_memory
         if limits_cpu:
-            base_conf["spark.kubernetes.driver.limit.cores"] = limits_cpu
-            base_conf["spark.kubernetes.executor.limit.cores"] = limits_cpu
+            for worker_type in ["driver", "executor"]:
+                base_conf[
+                    f"spark.kubernetes.{worker_type}.limit.cores"
+                ] = limits_cpu
         if requests_cpu:
-            base_conf["spark.driver.cores"] = requests_cpu
-            base_conf["spark.executor.cores"] = requests_cpu
+            for worker_type in ["driver", "executor"]:
+                base_conf[f"spark.{worker_type}.cores"] = requests_cpu
 
         base_conf.update(conf)
         logging.info(f"K8S configuration for {kedro_script} is: {base_conf}")

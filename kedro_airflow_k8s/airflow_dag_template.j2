@@ -177,10 +177,9 @@ with DAG(
             task_id="kedro-{{ node.name | slugify }}", job=PYSPARK_JOB, location='{{ config.run_config.spark.region }}', project_id='{{ config.run_config.spark.project_id }}'
         )
         {%- elif config.run_config.spark.type == 'k8s' or config.run_config.spark.type == 'kubernetes' %}
-        {% set main_python_path = config.run_config.spark.artifacts_path ~ '/' ~ project_name ~ '-' ~ git_info.commit_sha ~ '-' ~ node.name ~ '.py' %}
         tasks["{{ node.name | slugify }}"] = SparkSubmitK8SOperator(
                 node_name='{{ node.name | slugify }}',
-                kedro_script='{{main_python_path}}',
+                kedro_script='{{ config.run_config.spark.cluster_config.run_script }}',
                 image={% if config.run_config.spark.cluster_config.image %}"{{ config.run_config.spark.cluster_config.image }}"{%- elif k8s_templates[node.name].image -%}"{{ k8s_templates[node.name].image }}"{%- else -%}"{{ image }}"{%- endif %},
                 run_name='{{ dag_name | slugify }}',
                 nodes=[{% for task in node.task_group %}'{{ task.name }}',{% endfor %}],
@@ -192,7 +191,7 @@ with DAG(
                 },
                 requests_cpu="{{ config.run_config.spark.cluster_config.requests.cpu if config.run_config.spark.cluster_config.requests.cpu }}",
                 limits_cpu="{{ config.run_config.spark.cluster_config.limits.cpu if config.run_config.spark.cluster_config.limits.cpu }}",
-                limits_memory="{{ config.run_config.spark.cluster_config.requests.memory if config.run_config.spark.cluster_config.requests.memory }}",
+                limits_memory="{{ config.run_config.spark.cluster_config.limits.memory if config.run_config.spark.cluster_config.limits.memory }}",
                 image_pull_policy='{{ config.run_config.image_pull_policy }}',
                 driver_port="{{ config.run_config.spark.cluster_config.driver_port if config.run_config.spark.cluster_config.driver_port }}",
                 block_manager_port="{{ config.run_config.spark.cluster_config.block_manager_port if config.run_config.spark.cluster_config.block_manager_port }}",
@@ -214,6 +213,9 @@ with DAG(
                 namespace='{{ config.run_config.namespace }}',
                 conn_id="{{ config.run_config.spark.cluster_name if config.run_config.spark.cluster_name }}",
                 env_vars={
+                    {%- if mlflow_url %}
+                    "MLFLOW_RUN_ID": "{% raw %}{{ ti.xcom_pull(key='mlflow_run_id') }}{% endraw %}",
+                    {%- endif %}
                     {%- for key, value in config.run_config.spark.cluster_config.env_vars.items() %}
                     "{{ key }}": "{{ value }}",
                     {%- endfor %}

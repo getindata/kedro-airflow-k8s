@@ -219,6 +219,12 @@ run_config:
     #           - name: CUSTOM_ENV
     #             value: env1
     #
+
+    # Configuration for spark jobs
+    # spark:
+    # type: k8s
+    # cluster_name: spark_k8s
+    #   run_script: local:///path/to/run/script/in/image.py
 """
 
 
@@ -360,6 +366,10 @@ class SparkConfig(Config):
             return SparkK8SConfig(data)
         return data
 
+    @property
+    def requires_artifacts_dump(self):
+        return self.type not in ["k8s", "kubernetes"]
+
 
 class SparkK8SStorageConfig(Config):
     @property
@@ -372,6 +382,10 @@ class SparkK8SStorageConfig(Config):
 
 
 class SparkK8SConfig(Config):
+    @property
+    def run_script(self):
+        return self._get_or_fail("run_script")
+
     @property
     def image(self):
         return self._get_or_default("image", None)
