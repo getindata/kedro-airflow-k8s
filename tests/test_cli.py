@@ -159,33 +159,33 @@ class TestPluginCLI:
         assert "auth_handler=GoogleOAuth2AuthHandler()" in dag_content
         assert (
             """env_vars={
-                    "var1": "{{ var.value.var1 }}",
-                    "var2": "{{ var.value.var2 }}",
-                }"""
+                "var1": "{{ var.value.var1 }}",
+                "var2": "{{ var.value.var2 }}",
+            }"""
             in dag_content
         )
         assert (
             """secrets=[
-                    Secret("env", None, "airflow-secrets", None),
-                    Secret("env", "DB_PASSWORD", "database-secrets", "password"),
-                ]"""
+                Secret("env", None, "airflow-secrets", None),
+                Secret("env", "DB_PASSWORD", "database-secrets", "password"),
+            ]"""
             in dag_content
         )
 
         assert (
             """parameters=\"\"\"
-                    ds:{{ ds }},
-                    pre_ds:{{ pre_ds }},
-                    env:{{ var.value.env }},
-                \"\"\","""
+                ds:{{ ds }},
+                pre_ds:{{ pre_ds }},
+                env:{{ var.value.env }},
+            \"\"\","""
             in dag_content
         )
 
         assert (
             '''"vault.hashicorp.com/agent-inject-template-foo": """{{- with secret "database/creds/db-app" -}}
-    postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb?sslmode=disable
-    {{- end }}
-    """'''  # noqa: E501
+postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb?sslmode=disable
+{{- end }}
+"""'''  # noqa: E501
             in dag_content
         )
 
@@ -248,10 +248,10 @@ class TestPluginCLI:
         assert (
             dag_content.count(
                 '''f"""type: Pod
-    metadata:
-        name: test
-        annotations:
-          custom_annotation: cust_ann"""'''
+metadata:
+    name: test
+    annotations:
+      custom_annotation: cust_ann"""'''
             )
             == 2
         )
@@ -279,10 +279,10 @@ class TestPluginCLI:
         assert (
             dag_content.count(
                 '''f"""type: Pod
-    metadata:
-        name: test
-        annotations:
-          custom_annotation: cust_ann"""'''
+metadata:
+    name: test
+    annotations:
+      custom_annotation: cust_ann"""'''
             )
             == 4
         )
