@@ -15,15 +15,15 @@ class SparkSubmitK8SOperator(
         run_name: str,
         nodes: List[str],
         env: str,
-        conf: Dict[str, str] = {},
+        conf: Dict[str, str] = None,
         requests_cpu: Optional[str] = None,
         limits_cpu: Optional[str] = None,
         limits_memory: Optional[str] = None,
         image_pull_policy: str = "IfNotPresent",
         driver_port: Optional[str] = None,
         block_manager_port: Optional[str] = None,
-        secrets: Dict[str, str] = {},
-        labels: Dict[str, str] = {},
+        secrets: Dict[str, str] = None,
+        labels: Dict[str, str] = None,
         service_account_name: str = "default",
         local_storage_class_name: Optional[str] = None,
         local_storage_size: Optional[str] = None,
@@ -31,6 +31,9 @@ class SparkSubmitK8SOperator(
         **kwargs,
     ):
         nodes_list = ",".join(nodes)
+        conf = conf or {}
+        secrets = secrets or {}
+        labels = labels or {}
 
         sa_conf_name = (
             "spark.kubernetes.authenticate.driver.serviceAccountName"
@@ -66,7 +69,7 @@ class SparkSubmitK8SOperator(
         if block_manager_port:
             base_conf["spark.blockManager.port"] = block_manager_port
         if local_storage_class_name and local_storage_size:
-            for worker_type in ["executor"]:
+            for worker_type in ["driver", "executor"]:
                 storage_prop = (
                     f"spark.kubernetes.{worker_type}.volumes.persistentVolumeClaim."
                     "spark-local-dir-1"
