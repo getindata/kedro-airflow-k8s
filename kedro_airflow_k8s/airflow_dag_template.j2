@@ -152,9 +152,8 @@ with DAG(
             trigger_rule='all_done'
         )
     {%- elif config.run_config.spark.type == 'k8s' or config.run_config.spark.type == 'kubernetes' %}
-        import airflow.operators.dummy
-        tasks["create-spark-cluster"] = airflow.operators.dummy.DummyOperator(task_id='create-spark-cluster')
-        tasks["delete-spark-cluster"] = airflow.operators.dummy.DummyOperator(task_id='delete-spark-cluster')
+        tasks["create-spark-cluster"] = DummyOperator(task_id='create-spark-cluster')
+        tasks["delete-spark-cluster"] = DummyOperator(task_id='delete-spark-cluster')
     {%- elif custom_spark_factory %}
         tasks["create-spark-cluster"] = {{ custom_spark_factory.create_cluster_operator(project_name=project_name, config=config, init_script_path=init_script, cluster_config=config.run_config.spark.cluster_config) | safe | indent(8) }}
         tasks["delete-spark-cluster"] = {{ custom_spark_factory.delete_cluster_operator(project_name=project_name, config=config) | safe | indent(8) }}

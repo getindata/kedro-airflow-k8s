@@ -159,33 +159,33 @@ class TestPluginCLI:
         assert "auth_handler=GoogleOAuth2AuthHandler()" in dag_content
         assert (
             """env_vars={
-                "var1": "{{ var.value.var1 }}",
-                "var2": "{{ var.value.var2 }}",
-            }"""
+                    "var1": "{{ var.value.var1 }}",
+                    "var2": "{{ var.value.var2 }}",
+                }"""
             in dag_content
         )
         assert (
             """secrets=[
-                Secret("env", None, "airflow-secrets", None),
-                Secret("env", "DB_PASSWORD", "database-secrets", "password"),
-            ]"""
+                    Secret("env", None, "airflow-secrets", None),
+                    Secret("env", "DB_PASSWORD", "database-secrets", "password"),
+                ]"""
             in dag_content
         )
 
         assert (
             """parameters=\"\"\"
-                ds:{{ ds }},
-                pre_ds:{{ pre_ds }},
-                env:{{ var.value.env }},
-            \"\"\","""
+                    ds:{{ ds }},
+                    pre_ds:{{ pre_ds }},
+                    env:{{ var.value.env }},
+                \"\"\","""
             in dag_content
         )
 
         assert (
             '''"vault.hashicorp.com/agent-inject-template-foo": """{{- with secret "database/creds/db-app" -}}
-postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb?sslmode=disable
-{{- end }}
-"""'''  # noqa: E501
+    postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb?sslmode=disable
+    {{- end }}
+    """'''  # noqa: E501
             in dag_content
         )
 
@@ -248,10 +248,10 @@ postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb?sslmode=
         assert (
             dag_content.count(
                 '''f"""type: Pod
-metadata:
-    name: test
-    annotations:
-      custom_annotation: cust_ann"""'''
+    metadata:
+        name: test
+        annotations:
+          custom_annotation: cust_ann"""'''
             )
             == 2
         )
@@ -279,10 +279,10 @@ metadata:
         assert (
             dag_content.count(
                 '''f"""type: Pod
-metadata:
-    name: test
-    annotations:
-      custom_annotation: cust_ann"""'''
+    metadata:
+        name: test
+        annotations:
+          custom_annotation: cust_ann"""'''
             )
             == 4
         )
@@ -379,6 +379,52 @@ metadata:
         assert (
             "from test import CreateClusterOperator, DeleteClusterOperator, "
             "SubmitOperator" in dag_content
+        )
+
+    def test_compile_with_spark_k8s(self, context_helper):
+        context_helper.config._raw["run_config"].update(
+            {
+                "spark": {
+                    "type": "k8s",
+                    "cluster_name": "spark_k8s",
+                    "cluster_config": {"run_script": "local:///test.py"},
+                }
+            }
+        )
+
+        spark_node = MagicMock()
+        spark_node.name = "spark_node"
+        spark_node.tags = ["kedro-airflow-k8s:group:pyspark"]
+        context_helper.pipeline.node_dependencies.update({spark_node: set()})
+        context_helper.pipeline.nodes.append(spark_node)
+        context_helper.pipeline_grouped = TaskGroupFactory().create(
+            context_helper.pipeline, DataCatalog()
+        )
+
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+        result = runner.invoke(compile, [], obj=config)
+
+        assert result.exit_code == 0
+        assert Path("dags/kedro_airflow_k8s.py").exists()
+        dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
+
+        assert (
+            """tasks["pyspark-0"] = SparkSubmitK8SOperator(""" in dag_content
+        )
+        assert (
+            """"MLFLOW_RUN_ID": "{{ ti.xcom_pull(key='mlflow_run_id') }}","""
+            in dag_content
+        )
+        assert """conn_id="spark_k8s",""" in dag_content
+        assert (
+            """tasks["create-spark-cluster"] = DummyOperator(task_id='create-spark-cluster')"""  # noqa: E501
+            in dag_content
+        )
+        assert (
+            """tasks["delete-spark-cluster"] = DummyOperator(task_id='delete-spark-cluster')"""  # noqa: E501
+            in dag_content
         )
 
     def test_upload_pipeline(self, context_helper):
