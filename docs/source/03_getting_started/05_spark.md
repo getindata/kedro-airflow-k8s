@@ -54,7 +54,7 @@ names to be executed. It should initialize kedro session and run project with gi
 
 >> `Dockerfile` should execute spark entrypoint on start. Script is provided as an argument to `spark-submit`
 
-Example script template is provided inside the plugin sources in `src/kedro_airflow_k8s/templates/spark_run.py`
+Example script template is provided inside the plugin sources in `src/kedro_airflow_k8s/templates/spark_run.py.tpl`
 
 ### Custom configuration
 
