@@ -1,3 +1,7 @@
+"""
+Module contains Apache Airflow operator that creates k8s pod for execution of
+kedro pyspark node.
+"""
 import logging
 from typing import Dict, List, Optional
 
@@ -7,6 +11,12 @@ import airflow.providers.apache.spark.operators.spark_submit
 class SparkSubmitK8SOperator(
     airflow.providers.apache.spark.operators.spark_submit.SparkSubmitOperator
 ):
+    """
+    Operator starts pod with target image with kedro pyspark grouped nodes.
+    This class simplifies creation of pods by providing convenient options to
+    SparkSubmitOperator
+    """
+
     def __init__(
         self,
         node_name: str,
