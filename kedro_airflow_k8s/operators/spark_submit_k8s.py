@@ -61,6 +61,46 @@ class SparkSubmitK8SOperator(
                 for k, v in kwargs.get("env_vars", {}).items()
             }
         )
+        base_conf.update(self.setup_secrets(labels, secrets))
+        if driver_port:
+            base_conf["spark.driver.port"] = driver_port
+        if block_manager_port:
+            base_conf["spark.blockManager.port"] = block_manager_port
+        base_conf.update(
+            self.setup_storage(local_storage_class_name, local_storage_size)
+        )
+        base_conf.update(
+            self.setup_resources(limits_cpu, limits_memory, requests_cpu)
+        )
+
+        base_conf.update(conf)
+        logging.info(f"K8S configuration for {kedro_script} is: {base_conf}")
+        super().__init__(
+            task_id=f"kedro-{node_name}",
+            application=kedro_script,
+            conf=base_conf,
+            name=f"{run_name}_{node_name}",
+            application_args=[f"--env={env}", f"--nodes={nodes_list}"],
+            **kwargs,
+        )
+
+    def setup_resources(self, limits_cpu, limits_memory, requests_cpu):
+        base_conf = {}
+        if limits_memory:
+            for worker_type in ["driver", "executor"]:
+                base_conf[f"spark.{worker_type}.memory"] = limits_memory
+        if limits_cpu:
+            for worker_type in ["driver", "executor"]:
+                base_conf[
+                    f"spark.kubernetes.{worker_type}.limit.cores"
+                ] = limits_cpu
+        if requests_cpu:
+            for worker_type in ["driver", "executor"]:
+                base_conf[f"spark.{worker_type}.cores"] = requests_cpu
+        return base_conf
+
+    def setup_secrets(self, labels, secrets):
+        base_conf = {}
         for worker_type in ["driver", "executor"]:
             base_conf.update(
                 {
@@ -74,10 +114,10 @@ class SparkSubmitK8SOperator(
                     for k, v in labels.items()
                 }
             )
-        if driver_port:
-            base_conf["spark.driver.port"] = driver_port
-        if block_manager_port:
-            base_conf["spark.blockManager.port"] = block_manager_port
+        return base_conf
+
+    def setup_storage(self, local_storage_class_name, local_storage_size):
+        base_conf = {}
         if local_storage_class_name and local_storage_size:
             for worker_type in ["driver", "executor"]:
                 storage_prop = (
@@ -93,25 +133,4 @@ class SparkSubmitK8SOperator(
                 ] = local_storage_size
                 base_conf[f"{storage_prop}.mount.path"] = "/storage"
                 base_conf[f"{storage_prop}.mount.readOnly"] = "false"
-        if limits_memory:
-            for worker_type in ["driver", "executor"]:
-                base_conf[f"spark.{worker_type}.memory"] = limits_memory
-        if limits_cpu:
-            for worker_type in ["driver", "executor"]:
-                base_conf[
-                    f"spark.kubernetes.{worker_type}.limit.cores"
-                ] = limits_cpu
-        if requests_cpu:
-            for worker_type in ["driver", "executor"]:
-                base_conf[f"spark.{worker_type}.cores"] = requests_cpu
-
-        base_conf.update(conf)
-        logging.info(f"K8S configuration for {kedro_script} is: {base_conf}")
-        super().__init__(
-            task_id=f"kedro-{node_name}",
-            application=kedro_script,
-            conf=base_conf,
-            name=f"{run_name}_{node_name}",
-            application_args=[f"--env={env}", f"--nodes={nodes_list}"],
-            **kwargs,
-        )
+        return base_conf
