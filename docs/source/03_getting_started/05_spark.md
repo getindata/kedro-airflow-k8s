@@ -49,12 +49,14 @@ supplementary jars required by the project can be included as well, unless shoul
 from the external location.
 
 It's also required to provide runner script inside the image. This script is provided as an entry point to `spark-submit`. 
-The script should accept `--env` kedro application argument and `--nodes` as a comma-separated list of kedro node 
-names to be executed. It should initialize kedro session and run project with given arguments. 
+The script should accept `run` command, `--env` kedro application argument, `--node` as a comma-separated list of kedro nodes
+names to be executed and `--runner=ThreadRunner`.
+ It should initialize kedro session and run project with given arguments. 
 
 >> `Dockerfile` should execute spark entrypoint on start. Script is provided as an argument to `spark-submit`
 
-Example script template is provided inside the plugin sources in `src/kedro_airflow_k8s/templates/spark_run.py.tpl`
+Example script template is provided inside the plugin sources in `src/kedro_airflow_k8s/templates/spark_run.py.tpl`.
+The script is delegating invocation directly to kedro.
 
 ### Custom configuration
 

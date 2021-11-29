@@ -80,7 +80,12 @@ class SparkSubmitK8SOperator(
             application=kedro_script,
             conf=base_conf,
             name=f"{run_name}_{node_name}",
-            application_args=[f"--env={env}", f"--nodes={nodes_list}"],
+            application_args=[
+                "run",
+                f"--env={env}",
+                f"--node={nodes_list}",
+                "--runner=ThreadRunner",
+            ],
             **kwargs,
         )
 

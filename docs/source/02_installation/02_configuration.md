@@ -309,7 +309,7 @@ structure:
 type: kubernetes # or k8s
 cluster_name: spark_k8s # name of the Airflow connection id, that points to kubernetes control plane, default `spark_default`
 cluster_config:
-  # Location of the script that initialize the kedro session and runs the project; has to accept --env and --nodes
+  # Location of the script that initialize the kedro session and runs the project; is invoked with `run --env=$ENV --node=$NODES --runner=ThreadRunner` kedro parameters
   # arguments
   run_script: local:///home/kedro/spark_run.py
   # Optional image to use for the driver and executor. If not provided, value from `run_config.image` is used
