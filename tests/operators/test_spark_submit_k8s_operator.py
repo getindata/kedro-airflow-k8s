@@ -90,6 +90,8 @@ class TestSparkSubmitK8SOperator(unittest.TestCase):
         assert task._application == "local:///test/location.py"
         assert task._name == "yet-another-experiment_test-spark-node"
         assert task._application_args == [
+            "run",
             "--env=pipelines",
-            "--nodes=prepare_data,train",
+            "--node=prepare_data,train",
+            "--runner=ThreadRunner",
         ]
