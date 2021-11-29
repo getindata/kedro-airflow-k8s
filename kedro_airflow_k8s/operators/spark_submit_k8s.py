@@ -84,22 +84,35 @@ class SparkSubmitK8SOperator(
             **kwargs,
         )
 
-    def setup_resources(self, limits_cpu, limits_memory, requests_cpu):
+    @staticmethod
+    def setup_resources(limits_cpu, limits_memory, requests_cpu):
+        """
+        Sets up driver and executor configuration for k8s limits and requests
+        :param limits_cpu:
+        :param limits_memory:
+        :param requests_cpu:
+        :return:
+        """
         base_conf = {}
-        if limits_memory:
-            for worker_type in ["driver", "executor"]:
+        for worker_type in ["driver", "executor"]:
+            if limits_memory:
                 base_conf[f"spark.{worker_type}.memory"] = limits_memory
-        if limits_cpu:
-            for worker_type in ["driver", "executor"]:
+            if limits_cpu:
                 base_conf[
                     f"spark.kubernetes.{worker_type}.limit.cores"
                 ] = limits_cpu
-        if requests_cpu:
-            for worker_type in ["driver", "executor"]:
+            if requests_cpu:
                 base_conf[f"spark.{worker_type}.cores"] = requests_cpu
         return base_conf
 
-    def setup_secrets(self, labels, secrets):
+    @staticmethod
+    def setup_secrets(labels, secrets):
+        """
+        Sets up driver and executor references to k8s secrets and injection points
+        :param labels:
+        :param secrets:
+        :return:
+        """
         base_conf = {}
         for worker_type in ["driver", "executor"]:
             base_conf.update(
@@ -116,7 +129,14 @@ class SparkSubmitK8SOperator(
             )
         return base_conf
 
-    def setup_storage(self, local_storage_class_name, local_storage_size):
+    @staticmethod
+    def setup_storage(local_storage_class_name, local_storage_size):
+        """
+        Sets up driver and executor extra storage for data spilling
+        :param local_storage_class_name:
+        :param local_storage_size:
+        :return:
+        """
         base_conf = {}
         if local_storage_class_name and local_storage_size:
             for worker_type in ["driver", "executor"]:
