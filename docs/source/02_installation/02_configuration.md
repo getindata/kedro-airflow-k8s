@@ -206,7 +206,7 @@ run_config:
     
     # Optional spark configuration
     spark:
-      # Type of spark clusters to use, supported values: dataproc and custom
+      # Type of spark clusters to use, supported values: dataproc, k8s, kubernetes, custom
       type: dataproc
       # Optional factory of spark operators class
       operator_factory: my_project.factories.OperatorFactory
@@ -300,6 +300,62 @@ node(func=evaluate_model, inputs=["X_train", "y_train"], outputs="regressor", na
 When using custom kubernetes pod templates the resulting pod configuration is a merge between
 properties provided via plugin settings, e.g. `resources.__default__.annotations`, and those specified in a
 template. In case of a conflict, plugin settings precede that of the template.
+
+## Spark on Kubernetes configuration
+
+In order to configure spark on kubernetes, custom `cluster_config` has to be provided. It has the following
+structure:
+```yaml
+type: kubernetes # or k8s
+cluster_name: spark_k8s # name of the Airflow connection id, that points to kubernetes control plane, default `spark_default`
+cluster_config:
+  # Location of the script that initialize the kedro session and runs the project; is invoked with `run --env=$ENV --node=$NODES --runner=ThreadRunner` kedro parameters
+  # arguments
+  run_script: local:///home/kedro/spark_run.py
+  # Optional image to use for the driver and executor. If not provided, value from `run_config.image` is used
+  image: airflow-k8s-plugin-spark-demo
+  # Optional spark configuration
+  conf:
+    spark.dynamicAllocation.enabled: true
+    spark.dynamicAllocation.maxExecutors: 4
+  # Optional port of the driver
+  driver_port: 10000
+  # Optional port of the block managers
+  block_manager_port: 10001
+  # Optional dictionary of secrets to be mounted into driver and executor from the namespace of the project
+  secrets:
+    kedro-secret: /var/kedro_secret
+  # Optional labels to be assigned to driver and executor
+  labels:
+    huge-machine: yes
+  # Optional spark-dir local storage to be mounted from dynamically created PVC
+  local_storage:
+    class_name: standard
+    size: 100Gi
+  # Optional dictionary of environment variables to be injected into driver and executor pods
+  env_vars:
+    GOOGLE_APPLICATION_CREDENTIALS: /var/kedro_secret/sa
+  # Optional request for cpu resources, for driver and executor (memory request equals memory limit)
+  requests:
+    cpu: 2
+  # Optional limit for the cpu and memory resources, for driver and executor
+  limits:
+    cpu: 4
+    memory: 16Gi # enforces memory request
+  # Optional number of executors to spawn
+  num_executors: 4 # by default 1
+  # Optional list of jars used by the spark runtime, spark-submit format
+  jars: local:///home/kedro/jars/gcs-connector.jar
+  # Optional list of repositories used by the spark runtime, spark-submit format
+  repositories: https://oss.sonatype.org/content/groups/public
+  # Optional list of packages used by the spark runtime, spark-submit format
+  packages: org.apache.spark:spark-streaming-kafka_2.10:1.6.0,org.elasticsearch:elasticsearch-spark_2.10:2.2.0
+```
+
+Additionally, the following parameters are used from the project configuration to create the pods: `run_config.image`, 
+`run_config.image_pull_policy`, `run_config.namespace`,  `run_config.service_account_name`.
+
+Further details on configuring spark jobs on k8s at https://spark.apache.org/docs/latest/running-on-kubernetes.html.
 
 ## Dynamic configuration support
 

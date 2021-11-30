@@ -15,6 +15,8 @@ from airflow.providers.google.cloud.operators.dataproc import (
     DataprocCreateClusterOperator,
     DataprocDeleteClusterOperator
 )
+{% elif config.run_config.spark.type in ['kubernetes','k8s'] %}
+{{ include_spark_submit_k8s_operator | safe }}
 {% endif %}
 
 EXPERIMENT_NAME = "{{ config.run_config.experiment_name | slugify }}"
@@ -149,6 +151,9 @@ with DAG(
             task_id='delete-spark-cluster',
             trigger_rule='all_done'
         )
+    {%- elif config.run_config.spark.type == 'k8s' or config.run_config.spark.type == 'kubernetes' %}
+        tasks["create-spark-cluster"] = DummyOperator(task_id='create-spark-cluster')
+        tasks["delete-spark-cluster"] = DummyOperator(task_id='delete-spark-cluster')
     {%- elif custom_spark_factory %}
         tasks["create-spark-cluster"] = {{ custom_spark_factory.create_cluster_operator(project_name=project_name, config=config, init_script_path=init_script, cluster_config=config.run_config.spark.cluster_config) | safe | indent(8) }}
         tasks["delete-spark-cluster"] = {{ custom_spark_factory.delete_cluster_operator(project_name=project_name, config=config) | safe | indent(8) }}
@@ -172,6 +177,55 @@ with DAG(
                     }
         tasks["{{ node.name | slugify }}"] = DataprocSubmitJobOperator(
             task_id="kedro-{{ node.name | slugify }}", job=PYSPARK_JOB, location='{{ config.run_config.spark.region }}', project_id='{{ config.run_config.spark.project_id }}'
+        )
+        {%- elif config.run_config.spark.type == 'k8s' or config.run_config.spark.type == 'kubernetes' %}
+        tasks["{{ node.name | slugify }}"] = SparkSubmitK8SOperator(
+                node_name='{{ node.name | slugify }}',
+                kedro_script='{{ config.run_config.spark.cluster_config.run_script }}',
+                image={% if config.run_config.spark.cluster_config.image %}"{{ config.run_config.spark.cluster_config.image }}"{%- elif k8s_templates[node.name].image -%}"{{ k8s_templates[node.name].image }}"{%- else -%}"{{ image }}"{%- endif %},
+                run_name='{{ dag_name | slugify }}',
+                nodes=[{% for task in node.task_group %}'{{ task.name }}',{% endfor %}],
+                env='{{ env }}',
+                conf={
+                    {%- for key, value in config.run_config.spark.cluster_config.conf.items() %}
+                    "{{ key }}": "{{ value }}",
+                    {%- endfor %}
+                },
+                requests_cpu="{{ config.run_config.spark.cluster_config.requests.cpu if config.run_config.spark.cluster_config.requests.cpu }}",
+                limits_cpu="{{ config.run_config.spark.cluster_config.limits.cpu if config.run_config.spark.cluster_config.limits.cpu }}",
+                limits_memory="{{ config.run_config.spark.cluster_config.limits.memory if config.run_config.spark.cluster_config.limits.memory }}",
+                image_pull_policy='{{ config.run_config.image_pull_policy }}',
+                driver_port="{{ config.run_config.spark.cluster_config.driver_port if config.run_config.spark.cluster_config.driver_port }}",
+                block_manager_port="{{ config.run_config.spark.cluster_config.block_manager_port if config.run_config.spark.cluster_config.block_manager_port }}",
+                secrets={
+                    {%- for key, value in config.run_config.spark.cluster_config.secrets.items() %}
+                    "{{ key }}": "{{ value }}",
+                    {%- endfor %}
+                },
+                labels={
+                    {%- for key, value in config.run_config.spark.cluster_config.labels.items() %}
+                    "{{ key }}": "{{ value }}",
+                    {%- endfor %}
+                },
+                {%- if config.run_config.service_account_name %}
+                service_account_name="{{ config.run_config.service_account_name }}",
+                {%- endif %}
+                local_storage_class_name="{{ config.run_config.spark.cluster_config.local_storage.class_name if config.run_config.spark.cluster_config.local_storage.class_name }}",
+                local_storage_size="{{ config.run_config.spark.cluster_config.local_storage.size if config.run_config.spark.cluster_config.local_storage.size }}",
+                namespace='{{ config.run_config.namespace }}',
+                conn_id="{{ config.run_config.spark.cluster_name if config.run_config.spark.cluster_name }}",
+                env_vars={
+                    {%- if mlflow_url %}
+                    "MLFLOW_RUN_ID": "{% raw %}{{ ti.xcom_pull(key='mlflow_run_id') }}{% endraw %}",
+                    {%- endif %}
+                    {%- for key, value in config.run_config.spark.cluster_config.env_vars.items() %}
+                    "{{ key }}": "{{ value }}",
+                    {%- endfor %}
+                },
+                jars="{{ config.run_config.spark.cluster_config.jars if config.run_config.spark.cluster_config.jars }}",
+                packages="{{ config.run_config.spark.cluster_config.packages if config.run_config.spark.cluster_config.packages }}",
+                repositories="{{ config.run_config.spark.cluster_config.repositories if config.run_config.spark.cluster_config.repositories }}",
+                num_executors="{{ config.run_config.spark.cluster_config.num_executors if config.run_config.spark.cluster_config.num_executors else "1" }}",
         )
         {%- elif custom_spark_factory %}
         {% set main_python_path = config.run_config.spark.artifacts_path ~ '/' ~ project_name ~ '-' ~ git_info.commit_sha ~ '-' ~ node.name ~ '.py' %}

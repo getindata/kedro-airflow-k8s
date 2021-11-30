@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Support spark projects on K8S
+
 ## [0.7.3] - 2021-11-16
 
 -   Take DAG status from the final task

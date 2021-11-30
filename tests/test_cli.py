@@ -381,6 +381,52 @@ metadata:
             "SubmitOperator" in dag_content
         )
 
+    def test_compile_with_spark_k8s(self, context_helper):
+        context_helper.config._raw["run_config"].update(
+            {
+                "spark": {
+                    "type": "k8s",
+                    "cluster_name": "spark_k8s",
+                    "cluster_config": {"run_script": "local:///test.py"},
+                }
+            }
+        )
+
+        spark_node = MagicMock()
+        spark_node.name = "spark_node"
+        spark_node.tags = ["kedro-airflow-k8s:group:pyspark"]
+        context_helper.pipeline.node_dependencies.update({spark_node: set()})
+        context_helper.pipeline.nodes.append(spark_node)
+        context_helper.pipeline_grouped = TaskGroupFactory().create(
+            context_helper.pipeline, DataCatalog()
+        )
+
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+        result = runner.invoke(compile, [], obj=config)
+
+        assert result.exit_code == 0
+        assert Path("dags/kedro_airflow_k8s.py").exists()
+        dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
+
+        assert (
+            """tasks["pyspark-0"] = SparkSubmitK8SOperator(""" in dag_content
+        )
+        assert (
+            """"MLFLOW_RUN_ID": "{{ ti.xcom_pull(key='mlflow_run_id') }}","""
+            in dag_content
+        )
+        assert """conn_id="spark_k8s",""" in dag_content
+        assert (
+            """tasks["create-spark-cluster"] = DummyOperator(task_id='create-spark-cluster')"""  # noqa: E501
+            in dag_content
+        )
+        assert (
+            """tasks["delete-spark-cluster"] = DummyOperator(task_id='delete-spark-cluster')"""  # noqa: E501
+            in dag_content
+        )
+
     def test_upload_pipeline(self, context_helper):
         config = dict(context_helper=context_helper)
 

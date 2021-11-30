@@ -277,3 +277,40 @@ spec:
         cfg = PluginConfig({})
         with self.assertRaises(MissingConfigException):
             print(cfg.host)
+
+    def test_spark_k8s_config(self):
+        CONFIG_YAML = """
+run_config:
+    spark:
+        type: kubernetes
+        cluster_name: spark_k8s
+        cluster_config:
+            run_script: local:///home/kedro/spark_run.py
+"""
+        cfg = PluginConfig(yaml.safe_load(CONFIG_YAML))
+        assert cfg.run_config.spark.type == "kubernetes"
+        assert cfg.run_config.spark.cluster_name == "spark_k8s"
+        assert (
+            cfg.run_config.spark.cluster_config.run_script
+            == "local:///home/kedro/spark_run.py"
+        )
+        assert cfg.run_config.spark.cluster_config.image is None
+        assert cfg.run_config.spark.cluster_config.conf == {}
+        assert cfg.run_config.spark.cluster_config.driver_port is None
+        assert cfg.run_config.spark.cluster_config.block_manager_port is None
+        assert cfg.run_config.spark.cluster_config.secrets == {}
+        assert cfg.run_config.spark.cluster_config.labels == {}
+        assert (
+            cfg.run_config.spark.cluster_config.local_storage.class_name
+            == "standard"
+        )
+        assert cfg.run_config.spark.cluster_config.local_storage.size is None
+        assert cfg.run_config.spark.cluster_config.env_vars == {}
+        assert cfg.run_config.spark.cluster_config.requests.cpu is None
+        assert cfg.run_config.spark.cluster_config.requests.memory is None
+        assert cfg.run_config.spark.cluster_config.limits.cpu is None
+        assert cfg.run_config.spark.cluster_config.limits.memory is None
+        assert cfg.run_config.spark.cluster_config.num_executors == "1"
+        assert cfg.run_config.spark.cluster_config.jars is None
+        assert cfg.run_config.spark.cluster_config.repositories is None
+        assert cfg.run_config.spark.cluster_config.packages is None
