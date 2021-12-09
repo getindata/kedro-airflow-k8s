@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 -   Support spark projects on K8S
+-   FIX: handle `KEDRO_ENV` environment variable
 
 ## [0.7.3] - 2021-11-16
 

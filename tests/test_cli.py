@@ -12,6 +12,7 @@ from kedro.io import DataCatalog
 from kedro_airflow_k8s import airflow
 from kedro_airflow_k8s.airflow import DAGModel
 from kedro_airflow_k8s.cli import (
+    airflow_group,
     compile,
     init,
     list_pipelines,
@@ -188,6 +189,38 @@ postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb?sslmode=
 """'''  # noqa: E501
             in dag_content
         )
+
+    @pytest.mark.parametrize(
+        "testname, env_var, cli, expected",
+        [
+            (
+                "CLI arg should have preference over environment variable",
+                "pipelines",
+                "custom",
+                "custom",
+            ),
+            (
+                "KEDRO_ENV should be taken into account",
+                "pipelines",
+                None,
+                "pipelines",
+            ),
+            ("CLI arg should be taken into account", None, "custom", "custom"),
+            ("default value should be set", None, None, "local"),
+        ],
+    )
+    def test_handle_env_arguments(self, testname, env_var, cli, expected):
+        runner = CliRunner()
+        with patch(
+            "kedro_airflow_k8s.context_helper.ContextHelper.init"
+        ) as context_helper_init:
+            cli = ["--env", cli] if cli else []
+            env = dict(KEDRO_ENV=env_var) if env_var else dict()
+
+            runner.invoke(airflow_group, cli + ["compile", "--help"], env=env)
+            context_helper_init.assert_called_once_with(
+                None, expected, "__default__"
+            )
 
     def test_compile_with_dependencies(self, context_helper):
         context_helper.config._raw["run_config"].update(
