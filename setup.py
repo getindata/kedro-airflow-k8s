@@ -58,7 +58,7 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     keywords="kedro airflow kubernetes k8s ml mlops plugin",
-    author=u"Michal Zelechowski, Mariusz Strzelecki, Mateusz Pytel",
+    author="Michal Zelechowski, Mariusz Strzelecki, Mateusz Pytel",
     author_email="mateusz@getindata.com",
     url="https://github.com/getindata/kedro-airflow-k8s/",
     packages=find_packages(exclude=["ez_setup", "examples", "tests", "docs"]),
