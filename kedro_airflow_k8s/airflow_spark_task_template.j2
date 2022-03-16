@@ -6,7 +6,7 @@ from kedro.framework.startup import _get_project_metadata
 from kedro.runner import ThreadRunner
 
 startup_error = None
-project_path = "/opt/{{ project_name }}"
+project_path = os.getenv("PROJECT_HOME", "/opt/{{ project_name }}")
 
 def init_kedro(path, env: str = None, extra_params: Dict[str, Any] = None):
     """Line magic which reloads all Kedro default variables."""

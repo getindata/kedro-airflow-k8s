@@ -4,6 +4,7 @@
 
 -   Support spark projects on K8S
 -   FIX: handle `KEDRO_ENV` environment variable
+-   FIX: Removed hardcoded project path from spark job
 
 ## [0.7.3] - 2021-11-16
 
