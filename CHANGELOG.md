@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2022-03-23
+
 -   Support spark projects on K8S
 -   FIX: handle `KEDRO_ENV` environment variable
 -   FIX: Removed hardcoded project path from spark job
@@ -149,7 +151,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.7.3...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.8.0...HEAD
+
+[0.8.0]: https://github.com/getindata/kedro-airflow-k8s/compare/0.7.3...0.8.0
 
 [0.7.3]: https://github.com/getindata/kedro-airflow-k8s/compare/0.7.2...0.7.3
 
