@@ -12,6 +12,7 @@ from kedro.io import DataCatalog
 from kedro_airflow_k8s import airflow
 from kedro_airflow_k8s.airflow import DAGModel
 from kedro_airflow_k8s.cli import (
+    airflow_group,
     compile,
     init,
     list_pipelines,
@@ -188,6 +189,38 @@ postgres://{{ .Data.username }}:{{ .Data.password }}@postgres:5432/mydb?sslmode=
 """'''  # noqa: E501
             in dag_content
         )
+
+    @pytest.mark.parametrize(
+        "testname, env_var, cli, expected",
+        [
+            (
+                "CLI arg should have preference over environment variable",
+                "pipelines",
+                "custom",
+                "custom",
+            ),
+            (
+                "KEDRO_ENV should be taken into account",
+                "pipelines",
+                None,
+                "pipelines",
+            ),
+            ("CLI arg should be taken into account", None, "custom", "custom"),
+            ("default value should be set", None, None, "local"),
+        ],
+    )
+    def test_handle_env_arguments(self, testname, env_var, cli, expected):
+        runner = CliRunner()
+        with patch(
+            "kedro_airflow_k8s.context_helper.ContextHelper.init"
+        ) as context_helper_init:
+            cli = ["--env", cli] if cli else []
+            env = dict(KEDRO_ENV=env_var) if env_var else dict()
+
+            runner.invoke(airflow_group, cli + ["compile", "--help"], env=env)
+            context_helper_init.assert_called_once_with(
+                None, expected, "__default__"
+            )
 
     def test_compile_with_dependencies(self, context_helper):
         context_helper.config._raw["run_config"].update(
@@ -379,6 +412,52 @@ metadata:
         assert (
             "from test import CreateClusterOperator, DeleteClusterOperator, "
             "SubmitOperator" in dag_content
+        )
+
+    def test_compile_with_spark_k8s(self, context_helper):
+        context_helper.config._raw["run_config"].update(
+            {
+                "spark": {
+                    "type": "k8s",
+                    "cluster_name": "spark_k8s",
+                    "cluster_config": {"run_script": "local:///test.py"},
+                }
+            }
+        )
+
+        spark_node = MagicMock()
+        spark_node.name = "spark_node"
+        spark_node.tags = ["kedro-airflow-k8s:group:pyspark"]
+        context_helper.pipeline.node_dependencies.update({spark_node: set()})
+        context_helper.pipeline.nodes.append(spark_node)
+        context_helper.pipeline_grouped = TaskGroupFactory().create(
+            context_helper.pipeline, DataCatalog()
+        )
+
+        config = dict(context_helper=context_helper)
+
+        runner = CliRunner()
+        result = runner.invoke(compile, [], obj=config)
+
+        assert result.exit_code == 0
+        assert Path("dags/kedro_airflow_k8s.py").exists()
+        dag_content = Path("dags/kedro_airflow_k8s.py").read_text()
+
+        assert (
+            """tasks["pyspark-0"] = SparkSubmitK8SOperator(""" in dag_content
+        )
+        assert (
+            """"MLFLOW_RUN_ID": "{{ ti.xcom_pull(key='mlflow_run_id') }}","""
+            in dag_content
+        )
+        assert """conn_id="spark_k8s",""" in dag_content
+        assert (
+            """tasks["create-spark-cluster"] = DummyOperator(task_id='create-spark-cluster')"""  # noqa: E501
+            in dag_content
+        )
+        assert (
+            """tasks["delete-spark-cluster"] = DummyOperator(task_id='delete-spark-cluster')"""  # noqa: E501
+            in dag_content
         )
 
     def test_upload_pipeline(self, context_helper):

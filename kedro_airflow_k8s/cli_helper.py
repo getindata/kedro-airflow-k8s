@@ -55,28 +55,29 @@ class CliHelper:
         spark_config = ctx.obj["context_helper"].config.run_config.spark
         is_mlflow_enabled = bool(get_mlflow_url(ctx.obj["context_helper"]))
 
-        user_init = CliHelper._read_resource(
-            source_dir, spark_config.user_init_path
-        )
-        user_post_init = CliHelper._read_resource(
-            source_dir, spark_config.user_post_init_path
-        )
+        if spark_config.requires_artifacts_dump:
+            user_init = CliHelper._read_resource(
+                source_dir, spark_config.user_init_path
+            )
+            user_post_init = CliHelper._read_resource(
+                source_dir, spark_config.user_post_init_path
+            )
 
-        CliHelper.dump_spark_templates(
-            target_path, project_name, commit_sha, spark_template_streams
-        )
-        CliHelper.dump_project_as_archive(
-            source_dir, target_path, project_name, commit_sha
-        )
-        CliHelper.dump_init_script(
-            target_path,
-            project_name,
-            spark_config.artifacts_path,
-            is_mlflow_enabled,
-            user_init,
-            user_post_init,
-            commit_sha,
-        )
+            CliHelper.dump_spark_templates(
+                target_path, project_name, commit_sha, spark_template_streams
+            )
+            CliHelper.dump_project_as_archive(
+                source_dir, target_path, project_name, commit_sha
+            )
+            CliHelper.dump_init_script(
+                target_path,
+                project_name,
+                spark_config.artifacts_path,
+                is_mlflow_enabled,
+                user_init,
+                user_post_init,
+                commit_sha,
+            )
 
     @staticmethod
     def dump_project_as_archive(

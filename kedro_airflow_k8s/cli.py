@@ -1,4 +1,5 @@
 import logging
+import os
 import webbrowser
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -27,7 +28,12 @@ def commands():
     context_settings=dict(help_option_names=["-h", "--help"]),
 )
 @click.option(
-    "-e", "--env", "env", type=str, default="local", help="Environment to use."
+    "-e",
+    "--env",
+    "env",
+    type=str,
+    default=lambda: os.environ.get("KEDRO_ENV", "local"),
+    help="Environment to use.",
 )
 @click.option(
     "-p",

@@ -28,6 +28,36 @@ Use `cluster_config` to provide dictionary that describes the cluster as require
 by [Airflow Dataproc operators](https://github.com/apache/airflow/blob/v2-1-stable/airflow/providers/google/cloud/operators/Dataproc.py).
 Checking with [Google Dataproc REST API](https://cloud.google.com/dataproc/docs/reference/rest/v1/ClusterConfig) is helpful.
 
+### Kubernetes
+
+It's possible to execute kedro spark jobs on K8S. In this case, there's no external cluster that's started for the 
+purpose of the task. Instead, user has to provide image, containing both spark and kedro project. Usually such image
+is created with `docker-image-tool.sh`, which is a part of spark distribution. Example image building process may
+look like this:
+
+```shell
+cp -r $SPARK_HOME /tmp
+cd $KEDRO_PROJECT_HOME
+cp -r . /tmp/spark-3.1.2-bin-hadoop3.2
+/tmp/spark-3.1.2-bin-hadoop3.2/bin/docker-image-tool.sh -t $COMMIT_SHA -p Dockerfile -r $REGISTRY_IMAGE -b java_image_tag=14-slim build
+```
+
+There's a manual work to be done with the `Dockerfile` first. One approach is to use one of the templates provided by
+spark distribution and merge it with the `Dockerfile` of kedro project. It's important that image contain kedro project
+with all of it's contents and it's installed as a package on a system level together with all the requirements. Any
+supplementary jars required by the project can be included as well, unless should be fetched during the job execution
+from the external location.
+
+It's also required to provide runner script inside the image. This script is provided as an entry point to `spark-submit`. 
+The script should accept `run` command, `--env` kedro application argument, `--node` as a comma-separated list of kedro nodes
+names to be executed and `--runner=ThreadRunner`.
+ It should initialize kedro session and run project with given arguments. 
+
+>> `Dockerfile` should execute spark entrypoint on start. Script is provided as an argument to `spark-submit`
+
+Example script template is provided inside the plugin sources in `src/kedro_airflow_k8s/templates/spark_run.py.tpl`.
+The script is delegating invocation directly to kedro.
+
 ### Custom configuration
 
 In order to provide one's own operators it's sufficient to mark `run_config.spark.type` as `custom`,
