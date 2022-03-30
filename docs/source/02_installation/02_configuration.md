@@ -9,6 +9,26 @@ host: https://airflow.example.com
 # Directory from where Apache Airflow is reading DAGs definitions
 output: gs://airflow-bucket-example-com
 
+# Type of execution engine to use.
+#
+# For **Kubernetes** deployment and in-cluster Airflow, the section
+# looks like:
+# execution_engine:
+#   type: kubernetes
+#
+# For **AWS Fargate** deployment, it contains all the information required
+# to run the containers in serverless manner:
+# execution_engine:
+#   type: aws-fargate
+#   cluster: ml-pipelines
+#   task_definition: kedro-housing-demo
+#   subnets:
+#   - subnet-0083ec591aa1e0656
+#   security_groups:
+#   - sg-0248cffcc8f2c0ec0
+execution_engine:
+  type: kubernetes
+
 # Configuration used to run the pipeline
 run_config:
 

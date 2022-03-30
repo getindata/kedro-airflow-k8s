@@ -1,7 +1,6 @@
 import logging
 
 from airflow import DAG
-from airflow.kubernetes.secret import Secret
 from airflow.utils.dates import days_ago
 from airflow.utils.task_group import TaskGroup
 from airflow.sensors.external_task import ExternalTaskSensor
@@ -59,7 +58,15 @@ args = {
 {{ include_data_volume_init_operator | safe }}
 {% endif %}
 {% endif %}
+
+{% if config.execution_engine.type == 'kubernetes' %}
 {{ include_node_pod_operator | safe }}
+{% set operator_class = 'NodePodOperator' %}
+from airflow.kubernetes.secret import Secret
+{% elif config.execution_engine.type == 'aws-fargate' %}
+{{ include_aws_fargate_operator | safe }}
+{% set operator_class = 'AWSFargateOperator' %}
+{% endif %}
 
 with DAG(
     dag_id='{{ dag_name }}',
@@ -123,6 +130,14 @@ with DAG(
 
     {%- if custom_spark_factory %}
     {{ custom_spark_factory.imports_statement | indent() }}
+    {%- endif %}
+
+    {%- if config.execution_engine.type == 'aws-fargate' %}
+    resolve_task_definition=TaskDefinitionResolverOperator(
+        task_id='resolve_task_definition',
+        dag_commit_id='{{ git_info.commit_sha }}',
+        family='{{ config.execution_engine.params['task_definition'] }}',
+    )
     {%- endif %}
 
     final = DummyOperator(task_id='final', dag=dag)
@@ -240,7 +255,7 @@ with DAG(
         """
         tasks["create-spark-cluster"] >> tasks["{{ node.name | slugify }}"] >> tasks["delete-spark-cluster"]
         {%- else %}
-        tasks["{{ node.name | slugify }}"] = NodePodOperator(
+        tasks["{{ node.name | slugify }}"] = {{ operator_class }}(
             node_name="{{node.name}}",
             namespace="{{config.run_config.namespace}}",
             volume_disabled={{config.run_config.volume.disabled}},
@@ -312,6 +327,10 @@ with DAG(
             {%- if k8s_templates[node.name].template %}
             kubernetes_pod_template=f"""{{ k8s_templates[node.name].template | safe }}""",
             {%- endif %}
+            {%- if config.execution_engine.type == 'aws-fargate' %}
+            execution_params={{ config.execution_engine.params | safe }},
+            task_definition="{% raw %}{{ ti.xcom_pull(key='task_definition_arn') }}{% endraw %}",
+            {%- endif %}
         )
         {%- endif %}
     {% endfor %}
@@ -355,6 +374,11 @@ with DAG(
     {% if not config.run_config.volume.disabled %}
     kedro_group >> delete_pipeline_storage >> final
     {% endif %}
+
+    {% if config.execution_engine.type == 'aws-fargate' %}
+    resolve_task_definition >> kedro_group
+    {% endif %}
+
     kedro_group >> final
 
 if __name__ == "__main__":

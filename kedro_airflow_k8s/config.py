@@ -9,6 +9,26 @@ host: {url}
 # Directory from where Apache Airflow is reading DAGs definitions
 output: {output}
 
+# Type of execution engine to use.
+#
+# For **Kubernetes** deployment and in-cluster Airflow, the section
+# looks like:
+# execution_engine:
+#   type: kubernetes
+#
+# For **AWS Fargate** deployment, it contains all the information required
+# to run the containers in serverless manner:
+# execution_engine:
+#   type: aws-fargate
+#   cluster: ml-pipelines
+#   task_definition: kedro-housing-demo
+#   subnets:
+#   - subnet-0083ec591aa1e0656
+#   security_groups:
+#   - sg-0248cffcc8f2c0ec0
+execution_engine:
+  type: kubernetes
+
 # Configuration used to run the pipeline
 run_config:
 
@@ -601,6 +621,16 @@ class FailureHandlerConfig(Config):
         return self._get_or_default("message_template", "Task failed!")
 
 
+class ExecutionEngine(Config):
+    @property
+    def type(self):
+        return self._get_or_fail("type")
+
+    @property
+    def params(self):
+        return self._raw
+
+
 class SecretConfig(Config):
     @property
     def deploy_type(self):
@@ -635,6 +665,11 @@ class PluginConfig(Config):
     def run_config(self):
         cfg = self._get_or_default("run_config", {})
         return RunConfig(cfg)
+
+    @property
+    def execution_engine(self):
+        cfg = self._get_or_default("execution_engine", {"type": "kubernetes"})
+        return ExecutionEngine(cfg)
 
     @staticmethod
     def sample_config(**kwargs):
