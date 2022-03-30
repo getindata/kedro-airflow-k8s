@@ -21,11 +21,11 @@ output: {output}
 # execution_engine:
 #   type: aws-fargate
 #   cluster: ml-pipelines
-#   task_definition: kedro-housing-demo
+#   task_definition: my-first-ml-pipeline
 #   subnets:
-#   - subnet-0083ec591aa1e0656
+#   - subnet-001122334455
 #   security_groups:
-#   - sg-0248cffcc8f2c0ec0
+#   - sg-0248abcd0248
 execution_engine:
   type: kubernetes
 

@@ -55,6 +55,7 @@ class AWSFargateOperator(EcsOperator):
         node_name,
         execution_params,
         task_definition,
+        env: str,
         parameters="",
         **kwargs,
     ):
@@ -69,7 +70,7 @@ class AWSFargateOperator(EcsOperator):
                         "name": "main",
                         "command": [
                             "-e",
-                            "airflow",
+                            env,
                             "--pipeline",
                             pipeline,
                             "--node",
