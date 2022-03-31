@@ -1,7 +1,13 @@
 import boto3
 from airflow.exceptions import AirflowException
 from airflow.operators.python import BaseOperator
-from airflow.providers.amazon.aws.operators.ecs import EcsOperator
+
+try:
+    from airflow.providers.amazon.aws.operators.ecs import EcsOperator
+except ImportError:
+    from airflow.providers.amazon.aws.operators.ecs import (
+        ECSOperator as EcsOperator,
+    )
 
 
 class TaskDefinitionResolverOperator(BaseOperator):
