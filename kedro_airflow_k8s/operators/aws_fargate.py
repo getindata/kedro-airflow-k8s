@@ -1,3 +1,5 @@
+import json
+
 import boto3
 from airflow.exceptions import AirflowException
 from airflow.operators.python import BaseOperator
@@ -61,7 +63,8 @@ class AWSFargateOperator(EcsOperator):
         node_name,
         execution_params,
         task_definition,
-        env: str,
+        env,
+        mlflow_enabled,
         parameters="",
         **kwargs,
     ):
@@ -94,3 +97,17 @@ class AWSFargateOperator(EcsOperator):
                 },
             },
         )
+        self.mlflow_enabled = mlflow_enabled
+
+    def execute(self, context):
+        if self.mlflow_enabled:
+            env = json.loads(
+                context["task_instance"].xcom_pull(key="mlflow_auth_context")
+            )
+            env["MLFLOW_RUN_ID"] = context["task_instance"].xcom_pull(
+                key="mlflow_run_id"
+            )
+            self.overrides["containerOverrides"][0]["environment"] = [
+                {"name": key, "value": value} for key, value in env.items()
+            ]
+        super().execute(context)
