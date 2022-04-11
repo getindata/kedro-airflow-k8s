@@ -49,6 +49,10 @@ class TestStartMLflowExperimentOperator(unittest.TestCase):
             context = self.create_context(op)
 
             assert op.execute(context=context) == "next-run-id"
+            assert (
+                context["ti"].xcom_pull(key="mlflow_run_id") == "next-run-id"
+            )
+            assert context["ti"].xcom_pull(key="mlflow_auth_context") == "{}"
 
     def test_init_with_existing_experiment(self):
         with mock.patch.object(
@@ -195,3 +199,7 @@ class TestStartMLflowExperimentOperator(unittest.TestCase):
 
             assert op.execute(context=context) == "next-run-id"
             assert os.environ["MLFLOW_TRACKING_TOKEN"] == "TEST_JWT_TOKEN"
+            assert (
+                context["ti"].xcom_pull(key="mlflow_auth_context")
+                == '{"MLFLOW_TRACKING_TOKEN": "TEST_JWT_TOKEN"}'
+            )
