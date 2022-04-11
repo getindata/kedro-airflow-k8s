@@ -45,7 +45,7 @@ resource "aws_ecs_task_definition" "service" {
 }
 ```
 
-Also, updating an image requires creating a new vertion of Task Definition that would point to it. You can use the following lines in your CI/CD code to achieve this, keeping the other properties of Task Definition intact ([source](https://github.com/aws/aws-cli/issues/3064#issuecomment-638751296)):
+Also, updating an image requires creating a new version of Task Definition that would point to it. You can use the following lines in your CI/CD code to achieve this, keeping the other properties of Task Definition intact ([source](https://github.com/aws/aws-cli/issues/3064#issuecomment-638751296)):
 
 ```
 export ECR_IMAGE="..."

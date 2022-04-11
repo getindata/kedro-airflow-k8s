@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Support for running the DAG with AWS ECS Fargate instead of Kubernetes
+
 ## [0.8.0] - 2022-03-23
 
 -   Support spark projects on K8S
