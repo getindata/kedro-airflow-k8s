@@ -24,7 +24,7 @@ class TaskDefinitionResolverOperator(BaseOperator):
         self.dag_commit_id = dag_commit_id
         self.family = family
 
-    def execute(self, context):
+    def _iterate_task_definitions(self):
         client = boto3.client("ecs")
 
         response_iterator = client.get_paginator(
@@ -37,16 +37,21 @@ class TaskDefinitionResolverOperator(BaseOperator):
                 "PageSize": 100,
             },
         )
-
         for response in response_iterator:
             for td_id in response["taskDefinitionArns"]:
-                td = client.describe_task_definition(taskDefinition=td_id)
-                image = td["taskDefinition"]["containerDefinitions"][0][
-                    "image"
-                ]
-                if f":{self.dag_commit_id}" in image:
-                    context["ti"].xcom_push("task_definition_arn", td_id)
-                    return
+                yield (
+                    td_id,
+                    client.describe_task_definition(taskDefinition=td_id),
+                )
+
+    def execute(self, context):
+        for td_id, td_spec in self._iterate_task_definitions():
+            image = td_spec["taskDefinition"]["containerDefinitions"][0][
+                "image"
+            ]
+            if f":{self.dag_commit_id}" in image:
+                context["ti"].xcom_push("task_definition_arn", td_id)
+                return
 
         raise AirflowException(
             f"Cannot find Task Definition for commit {self.dag_commit_id}"
@@ -96,6 +101,7 @@ class AWSFargateOperator(EcsOperator):
                     "subnets": execution_params["subnets"],
                 },
             },
+            **kwargs,
         )
         self.mlflow_enabled = mlflow_enabled
 
