@@ -31,6 +31,7 @@ EXTRA_REQUIRE = {
         "WTForms<3.0.0",
         "Markdown==3.3.4",
         "moto>=3.1.4",
+        "apache-airflow-providers-amazon==3.2.0",
     ],
     "docs": [
         "sphinx==3.4.2",
