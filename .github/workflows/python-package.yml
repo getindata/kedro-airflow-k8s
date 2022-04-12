@@ -36,7 +36,6 @@ jobs:
     - name: Test with tox
       run: |
         airflow db reset --yes
-        export AWS_DEFAULT_REGION=eu-central-1
         tox -e py37
 
     - name: Report coverage
