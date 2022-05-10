@@ -30,6 +30,8 @@ EXTRA_REQUIRE = {
         "kedro[spark.SparkDataSet]>=0.16,<=0.18",
         "WTForms<3.0.0",
         "Markdown==3.3.4",
+        "moto>=3.1.4",
+        "apache-airflow-providers-amazon==3.2.0",
     ],
     "docs": [
         "sphinx==3.4.2",
@@ -39,7 +41,7 @@ EXTRA_REQUIRE = {
     "gcp": [
         "gcsfs<0.8.0",
     ],
-    "aws": ["s3fs>=0.6.1"],
+    "aws": ["s3fs>=0.6.1", "apache-airflow-providers-amazon==3.2.0"],
     "mlflow": ["kedro-mlflow==0.4.1"],
     "spark": ["kedro[spark.SparkDataSet]>=0.16,<=0.18"],
 }

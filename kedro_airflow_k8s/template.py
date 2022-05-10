@@ -123,6 +123,9 @@ def _create_template_stream(
         include_spark_submit_k8s_operator=(
             Path(__file__).parent / "operators/spark_submit_k8s.py"
         ).read_text(),
+        include_aws_fargate_operator=(
+            Path(__file__).parent / "operators/aws_fargate.py"
+        ).read_text(),
         secrets=context_helper.config.run_config.secrets,
         macro_params=context_helper.config.run_config.macro_params,
         variables_params=context_helper.config.run_config.variables_params,

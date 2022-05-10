@@ -9,3 +9,4 @@ Getting started
    Kedro-Mlflow integration <03_mlflow.md>
    Authentication to Airflow API <04_authentication.md>
    Spark integration <05_spark.md>
+   Running the containers on AWS ECS Fargate <06_aws_fargate.md>

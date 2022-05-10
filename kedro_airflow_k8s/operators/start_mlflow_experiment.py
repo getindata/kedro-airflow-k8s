@@ -2,6 +2,7 @@
 Module contains Apache Airflow operator that starts experiment in mlflow.
 """
 import abc
+import json
 import logging
 import os
 from typing import Dict, List, Optional
@@ -160,5 +161,6 @@ class StartMLflowExperimentOperator(BaseOperator):
         )
 
         context["ti"].xcom_push("mlflow_run_id", run_id)
+        context["ti"].xcom_push("mlflow_auth_context", json.dumps(auth_vars))
 
         return run_id
