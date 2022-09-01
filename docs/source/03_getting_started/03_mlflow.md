@@ -51,7 +51,7 @@ If you store your credentials in Airflow secrets backend, e.g. HashiCorp vault, 
 to use Airflow Variables as MLFlow API credentials.
 
 Names of the variables need to match expected MLflow environment variable names, e.g. `MLFLOW_TRACKING_TOKEN`.
-You specify them in the authentiation config. For instance, setting up Basic Authentication requires the following:
+You specify them in the authentication config. For instance, setting up Basic Authentication requires the following:
 
 ```yaml
 run_config:

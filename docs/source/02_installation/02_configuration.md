@@ -276,7 +276,7 @@ spec:
         claimName: {self._pvc_name}
 ```
 
-where environment and volumes sections are present only if kedro mflow is used in the project and/or
+where environment and volumes sections are present only if kedro mlflow is used in the project and/or
 `run_config.volume` is not disabled.
 
 Note, that `claimName` is calculated the following way

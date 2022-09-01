@@ -1,2 +1,72 @@
+[tool.poetry]
+name = "kedro-airflow-k8s"
+version = "0.8.0"
+description = "Kedro Plugin to support running pipelines on Kubernetes using Airflow"
+readme = "README.md"
+authors = ['Michal Zelechowski <michal.zelechowski@getindata.com>', 'Mariusz Strzelecki <mariusz.strzelecki@getindata.com', 'Mateusz Pytel <mateusz.pytel@getindata.com>']
+maintainers = ['GetInData MLOPS <mlops@getindata.com>']
+homepage = "https://github.com/getindata/kedro-airflow-k8s"
+repository = "https://github.com/getindata/kedro-airflow-k8s"
+documentation = "https://kedro-airflow-k8s.readthedocs.io/"
+keywords = ['airflow', 'kubernetes', 'mlops', 'kedro-plugin', 'kedro', 'machinelearning']
+license = "Apache-2.0"
+classifiers = [
+    "Development Status :: 4 - Beta", # license and python versions added automatically
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.coverage.run]
+branch = true
+relative_files = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError"
+]
+
 [tool.black]
 line-length = 79
+
+[tool.isort]
+known_third_party = ["click", "google", "kedro", "airflow", "kubernetes", "tabulate", "pydantic","semver","setuptools"]
+
+[tool.poetry.dependencies]
+python = ">=3.8, <3.10"
+kedro = {version = "<0.19", python = ">=3.8" }
+click = "<8.0"
+semver = "~=2.10"
+python-slugify = ">=4.0.1"
+tabulate = "==0.8.9"
+protobuf = "<=3.20.0"
+gcsfs = { version = "<0.8.0", optional = true }
+s3fs = { version = ">=0.4.2", optional = true }
+kedro-mlflow = { version = "<=0.12.0", optional = true }
+
+[tool.poetry.dev-dependencies]
+pytest = "<7"
+pytest-cov = ">=2.8.0, <4.0.0"
+tox = ">=3.25.1"
+pre-commit = "2.20.0"
+apache-airflow = { version = "==2.1.0", extras = ["kubernetes"] }
+apache-airflow-providers-cncf-kubernetes = "==1.1.0"
+apache-airflow-providers-apache-spark = "==2.0.1"
+mlflow-skinny = "==1.19.0"
+sqlalchemy = "==1.3.23"
+responses = ">=0.13.0"
+WTForms = "<3.0.0"
+Markdown = "==3.3.4"
+kedro = {version = "<0.19", extras = ["spark"] }
+
+[tool.poetry.extras]
+gcp = ["gcsfs"]
+mlflow = ["kedro-mlflow"]
+
+[tool.poetry.plugins."kedro.project_commands"]
+"airflow-k8s" = "kedro_airflow_k8s.cli:commands"
+
+[tool.poetry.plugins."kedro.hooks"]
+"kubeflow_cfg_hook" = "kedro_airflow_k8s.hooks:env_templated_config_loader_hook"

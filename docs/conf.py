@@ -15,7 +15,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 import re
 
-from kedro_airflow_k8s import version as release
+from kedro_airflow_k8s import __version__ as release
 
 # -- Project information -----------------------------------------------------
 

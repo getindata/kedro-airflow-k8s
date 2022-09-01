@@ -9,7 +9,7 @@ tasks.
 an easy way to manage and host JupyterLab based data science workbench environment.
 What we've found out is that the default images provided by a service cause some
 dependency conflicts. To avoid this issues make sure you use isolated virtual
-environment, e.g. [virtualenv](https://pypi.org/project/virtualenv/). New virual 
+environment, e.g. [virtualenv](https://pypi.org/project/virtualenv/). New virtual 
 environment can be created by simply invoking `python -m virtualenv venv` command.
 
 
