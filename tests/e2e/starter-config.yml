@@ -1,0 +1,5 @@
+project_name: Spaceflights E2E Test
+repo_name: spaceflights
+python_package: spaceflights
+include_example: false
+output_dir: .

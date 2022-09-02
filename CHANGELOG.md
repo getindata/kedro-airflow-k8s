@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+-   Add e2e tests with Cloud Composer 2
 
 ## [0.8.0] - 2022-03-23
 
