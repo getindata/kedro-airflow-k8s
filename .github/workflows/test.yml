@@ -111,8 +111,6 @@ jobs:
         uses: google-github-actions/auth@v0.6.0
         with:
           credentials_json: ${{ secrets.GOOGLE_CLOUD_TOKEN_JSON }}
-          create_credentials_file: true
-          cleanup_credentials: true
           token_format: access_token
 
       - name: Run project on Cloud Composer
