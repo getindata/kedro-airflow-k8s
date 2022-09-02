@@ -88,6 +88,11 @@ jobs:
           rm conf/base/catalog.yml
           mv ../tests/e2e/catalog.yml conf/base/catalog.yml
 
+      - name: Prepare docker env
+        uses: docker/setup-buildx-action@v1
+        with:
+          install: true
+
       - name: Build pipeline docker image
         working-directory: ./spaceflights
         run: |
