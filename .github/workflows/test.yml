@@ -104,6 +104,7 @@ jobs:
           creds: ${{ secrets.GOOGLE_CLOUD_TOKEN_JSON }}
           src: kedro-airflow-k8s-e2e:latest
           dst: us.gcr.io/gid-ml-ops-sandbox/kedro-airflow-k8s-e2e:${{ github.sha }}
+          registry: us.gcr.io
 
       - name: Set up GCP Credentials
         id: 'auth'
