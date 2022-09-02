@@ -7,7 +7,7 @@ with open("README.md") as f:
 
 # Runtime Requirements.
 INSTALL_REQUIRES = [
-    "kedro>=0.16,<=0.18",
+    "kedro>=0.16,<0.17",
     "click<8.0",
     "semver~=2.10",
     "python-slugify>=4.0.1",
