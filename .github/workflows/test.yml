@@ -1,0 +1,118 @@
+name: Tests
+
+on:
+  push:
+    branches: 
+      - master
+      - develop
+  pull_request:
+
+jobs:
+  unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.7
+
+#    - name: Setup virtualenv
+#      run: |
+#        python -V
+#        python -m pip install virtualenv pipdeptree
+#        virtualenv venv
+#        source venv/bin/activate
+#        pip install --upgrade pip
+#
+#    - name: Check pre-commit status
+#      run: |
+#        pip install .[mlflow,tests]
+#        pip freeze
+#        pipdeptree
+#        pre-commit run --all-files
+#
+#    - name: Test with tox
+#      run: |
+#        airflow db reset --yes
+#        tox -e py37
+#
+#    - name: Report coverage
+#      uses: paambaati/codeclimate-action@v2.7.5
+#      env:
+#        CC_TEST_REPORTER_ID: ${{ secrets.CODE_CLIMATE }}
+#      with:
+#        coverageCommand: coverage xml
+#        debug: true
+#        coverageLocations: coverage.xml:coverage.py
+  e2e_test:
+    if: (github.event.pull_request.head.repo.full_name || github.push.repository.full_name) == github.repository
+    runs-on: ubuntu-latest
+    needs: [ unit_tests ]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup python
+        uses: actions/setup-python@v2.2.1
+        with:
+          python-version: '3.8'
+
+      - name: Setup virtualenv
+        run: |
+          python -V
+          python -m pip install virtualenv pipdeptree
+          virtualenv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+
+      - name: Initialize kedro spaceflights
+        run: |
+          pip install ".[gcp]"
+          kedro new --starter spaceflights --config tests/e2e/starter-config.yml
+
+      - name: Install project dependencies
+        working-directory: ./spaceflights
+        run: |
+          echo "kedro-docker" >> src/requirements.txt
+          sed -i '/kedro-telemetry/d' src/requirements.txt
+          cat src/requirements.txt
+          pip install -r src/requirements.txt
+
+      - name: Init and update configuration
+        working-directory: ./spaceflights
+        run: |
+          kedro docker init
+          kedro airflow-k8s init ${{ secrets.AIRFLOW_URL }} --output ${{ secrets.AIRFLOW_DAGS_ROOT }}
+          echo "!data/01_raw" >> .dockerignore
+          rm conf/base/catalog.yml
+          mv ../tests/e2e/catalog.yml conf/base/catalog.yml
+
+      - name: Build pipeline docker image
+        working-directory: ./spaceflights
+        run: |
+          docker build --build-arg BASE_IMAGE=python:3.8-buster --tag kedro-airflow-k8s-e2e:latest --load .
+
+      - name: Publish docker image to GCR
+        uses: mattes/gce-docker-push-action@v1
+        with:
+          creds: ${{ secrets.GOOGLE_CLOUD_TOKEN_JSON }}
+          src: kedro-airflow-k8s-e2e:latest
+          dst: us.gcr.io/gid-ml-ops-sandbox/kedro-airflow-k8s-e2e:${{ github.sha }}
+
+      - name: Set up GCP Credentials
+        id: 'auth'
+        uses: google-github-actions/auth@v0.6.0
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CLOUD_TOKEN_JSON }}
+          create_credentials_file: true
+          cleanup_credentials: true
+          token_format: access_token
+
+      - name: Run project on Cloud Composer
+        working-directory: spaceflights
+        run: |
+          kedro airflow-k8s upload-pipeline --image=us.gcr.io/gid-ml-ops-sandbox/kedro-airflow-k8s-e2e:${{ github.sha }}
+          kedro airflow-k8s run-once --wait-for-completion 900 --image=us.gcr.io/gid-ml-ops-sandbox/kedro-airflow-k8s-e2e:${{ github.sha }}
+        env:
+          AIRFLOW_API_TOKEN: ${{ steps.auth.outputs.access_token }}
