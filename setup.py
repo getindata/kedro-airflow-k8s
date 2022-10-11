@@ -30,7 +30,7 @@ EXTRA_REQUIRE = {
         "kedro[spark.SparkDataSet]>=0.16,<=0.18",
         "WTForms<3.0.0",
         "Markdown==3.3.4",
-        "protobuf==3.20.3"
+        "protobuf==3.20.3",
     ],
     "docs": [
         "sphinx==3.4.2",
