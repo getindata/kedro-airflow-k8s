@@ -1,6 +1,8 @@
 import abc
 from typing import Dict
 
+from kedro.pipeline.node import Node
+
 from kedro_airflow_k8s.config import PluginConfig
 
 
@@ -9,7 +11,8 @@ class SparkOperatorFactoryBase(abc.ABC):
     def submit_operator(
         self,
         project_name: str,
-        node_name: str,
+        node: Node,
+        pipeline: str,
         config: PluginConfig,
         main_python_file_path: str,
     ) -> str:
