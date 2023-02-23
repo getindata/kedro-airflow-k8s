@@ -4,12 +4,15 @@ from unittest.mock import MagicMock, Mock, patch
 from kedro.framework.session import KedroSession
 
 from kedro_airflow_k8s.config import PluginConfig
-from kedro_airflow_k8s.context_helper import ContextHelper, ContextHelper16
+from kedro_airflow_k8s.context_helper import (
+    ContextHelper,
+    ContextHelper16,
+    TaskGroupFactory,
+)
 
 
 class TestContextHelper(unittest.TestCase):
     def test_init_different_kedro_versions(self):
-
         with patch("kedro_airflow_k8s.context_helper.kedro_version", "0.16.0"):
             ch = ContextHelper.init(None, None)
             assert isinstance(ch, ContextHelper16)
@@ -54,3 +57,33 @@ class TestContextHelper(unittest.TestCase):
                 metadata, "test", "feature_engineering"
             )
             assert helper.pipeline == "pipeline_mock"
+
+    def test_grouped_pipeline_creation(self):
+        metadata = Mock()
+        metadata.package_name = "test_package"
+        with patch.object(
+            KedroSession, "create", MagicMock()
+        ) as create, patch.object(
+            TaskGroupFactory, "create"
+        ) as task_factory_creator:
+            create().load_context().config_loader.get.return_value = {
+                "run_config": {"group_spark_nodes": True}
+            }
+            _ = ContextHelper.init(metadata, "test").pipeline_grouped
+
+            task_factory_creator.assert_called()
+
+    def test_ungrouped_pipeline_creation(self):
+        metadata = Mock()
+        metadata.package_name = "test_package"
+        with patch.object(
+            KedroSession, "create", MagicMock()
+        ) as create, patch.object(
+            TaskGroupFactory, "create_ungrouped"
+        ) as task_factory_creator:
+            create().load_context().config_loader.get.return_value = {
+                "run_config": {"group_spark_nodes": False}
+            }
+            _ = ContextHelper.init(metadata, "test").pipeline_grouped
+
+            task_factory_creator.assert_called()

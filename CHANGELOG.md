@@ -3,6 +3,7 @@
 ## [Unreleased]
 - Submit_operator supports `node` and `pipeline` parameters
 - Pass `node` and `pipeline` parameters to submit_operator in `airflow_dag_template.j2` jinja template
+- Extra option to skip grouping Spark nodes
 
 ## [0.8.0] - 2022-03-23
 

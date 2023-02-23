@@ -320,3 +320,17 @@ class TaskGroupFactory:
 
         logging.info(f"Found pyspark groups: {pyspark_groups}")
         return list(default_groups.union(pyspark_groups))
+
+    def create_ungrouped(self, pipeline: Pipeline) -> List[TaskGroup]:
+        nodes_child_deps = TaskGroupFactory._get_nodes_child_deps(pipeline)
+
+        default_groups = TaskGroupFactory._create_default_groups(
+            pipeline.nodes, []
+        )
+
+        for any_group in default_groups:
+            TaskGroupFactory._set_children_dependencies(
+                any_group, default_groups, nodes_child_deps
+            )
+
+        return list(default_groups)
