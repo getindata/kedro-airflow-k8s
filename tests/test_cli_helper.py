@@ -7,7 +7,6 @@ from kedro_airflow_k8s.cli_helper import CliHelper
 
 
 class TestCliHelper(unittest.TestCase):
-
     COMMIT_SHA = "abcdab"
 
     def test_dump_project_as_archive(self):

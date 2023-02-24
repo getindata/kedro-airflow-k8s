@@ -101,7 +101,6 @@ run_config:
 
 class TestPluginConfig(unittest.TestCase):
     def test_plugin_config(self):
-
         cfg = PluginConfig(yaml.safe_load(CONFIG_YAML))
         assert cfg.host == "test.host.com"
         assert cfg.output == "/data/ariflow/dags"
