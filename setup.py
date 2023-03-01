@@ -12,6 +12,7 @@ INSTALL_REQUIRES = [
     "semver~=2.10",
     "python-slugify>=4.0.1",
     "tabulate==0.8.9",
+    "pip-tools<6.11",
 ]
 
 # Dev Requirements
