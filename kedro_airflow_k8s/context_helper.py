@@ -48,7 +48,9 @@ class ContextHelper(object):
                 self.pipeline, self.context.catalog
             )
         else:
-            return TaskGroupFactory().create_ungrouped(self.pipeline)
+            return TaskGroupFactory().create_ungrouped(
+                self.pipeline, self.context.catalog
+            )
 
     @property
     def pipeline_name(self):
