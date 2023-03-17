@@ -7,11 +7,12 @@ with open("README.md") as f:
 
 # Runtime Requirements.
 INSTALL_REQUIRES = [
-    "kedro>=0.16,<=0.18",
+    "kedro>=0.16, <0.18",
     "click<8.0",
     "semver~=2.10",
     "python-slugify>=4.0.1",
     "tabulate==0.8.9",
+    "pip-tools<6.11",
 ]
 
 # Dev Requirements
@@ -25,9 +26,10 @@ EXTRA_REQUIRE = {
         "apache-airflow-providers-cncf-kubernetes==1.1.0",
         "apache-airflow-providers-apache-spark==2.0.1",
         "mlflow-skinny==1.19.0",
+        "numpy<1.24",  # mlflow 1.19 is incompatible with numpy >= 1.24
         "sqlalchemy==1.3.23",
         "responses>=0.13.0",
-        "kedro[spark.SparkDataSet]>=0.16,<=0.18",
+        "kedro[spark.SparkDataSet]>=0.16, <0.18",
         "WTForms<3.0.0",
         "Markdown==3.3.4",
         "protobuf==3.20.3",
@@ -42,7 +44,7 @@ EXTRA_REQUIRE = {
     ],
     "aws": ["s3fs>=0.6.1"],
     "mlflow": ["kedro-mlflow==0.4.1"],
-    "spark": ["kedro[spark.SparkDataSet]>=0.16,<=0.18"],
+    "spark": ["kedro[spark.SparkDataSet]>=0.16, <0.18"],
 }
 
 setup(

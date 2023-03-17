@@ -43,7 +43,14 @@ class ContextHelper(object):
 
     @property
     def pipeline_grouped(self):
-        return TaskGroupFactory().create(self.pipeline, self.context.catalog)
+        if self.config.run_config.group_spark_nodes:
+            return TaskGroupFactory().create(
+                self.pipeline, self.context.catalog
+            )
+        else:
+            return TaskGroupFactory().create_ungrouped(
+                self.pipeline, self.context.catalog
+            )
 
     @property
     def pipeline_name(self):
