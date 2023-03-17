@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2023-03-17
+
+-   Submit_operator supports `node` and `pipeline` parameters
+-   Pass `node` and `pipeline` parameters to submit_operator in `airflow_dag_template.j2` jinja template
+-   Extra option to skip grouping Spark nodes
+
 ## [0.8.0] - 2022-03-23
 
 -   Support spark projects on K8S
@@ -151,7 +157,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.8.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.8.1...HEAD
+
+[0.8.1]: https://github.com/getindata/kedro-airflow-k8s/compare/0.8.0...0.8.1
 
 [0.8.0]: https://github.com/getindata/kedro-airflow-k8s/compare/0.7.3...0.8.0
 

@@ -93,6 +93,10 @@ run_config:
     # Apache Airflow variables to be exposed for the parameters
     variables_params: [env]
 
+    # Spark nodes are grouped by default to benefit from lazy execution.
+    # If you want to disable this behaviour, set the following value to False.
+    group_spark_nodes: True
+
     # Optional resources specification
     #resources:
         # Default configuration used by all nodes that do not declare the
@@ -549,6 +553,10 @@ class RunConfig(Config):
     def kubernetes_pod_templates(self):
         cfg = self._get_or_default("kubernetes_pod_templates", {})
         return KubernetesPodTemplates(cfg)
+
+    @property
+    def group_spark_nodes(self):
+        return self._get_or_default("group_spark_nodes", False)
 
     def _get_prefix(self):
         return "run_config."

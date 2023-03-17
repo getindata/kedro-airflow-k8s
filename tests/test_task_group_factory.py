@@ -372,3 +372,53 @@ class TestTaskGroupFactory(unittest.TestCase):
         assert task_groups[0].group_type == "pyspark"
         assert len(task_groups[0].task_group) == 3
         assert task_groups[0].name.startswith("pyspark_")
+
+    def test_create_dag_only_spark_ungrouped(self):
+        pipeline = Pipeline(
+            nodes=[
+                node(
+                    self,
+                    inputs=["sparkframe1"],
+                    outputs=["sparkframe2"],
+                    name="node1",
+                ),
+                node(
+                    self,
+                    inputs=["sparkframe2"],
+                    outputs=["sparkframe3"],
+                    name="node2",
+                ),
+                node(
+                    self,
+                    inputs=None,
+                    outputs=["pandasframe1"],
+                    name="node3",
+                ),
+            ]
+        )
+
+        data_catalog = DataCatalog(
+            data_sets={
+                "sparkframe1": SparkDataSet("/tmp/dummy1"),
+                "sparkframe2": SparkDataSet("/tmp/dummy2"),
+                "sparkframe3": SparkDataSet("/tmp/dummy6"),
+                "pandasframe1": CSVDataSet("/tmp/dummy3"),
+            }
+        )
+
+        task_groups = TaskGroupFactory().create_ungrouped(
+            pipeline, data_catalog
+        )
+        task_groups.sort(key=lambda x: x.name)
+
+        assert len(task_groups) == 3
+        assert task_groups[0].group_type == "pyspark"
+        assert len(task_groups[0].task_group) == 1
+        assert task_groups[0].name.startswith("node1")
+        assert len(task_groups[0].children) == 1
+        assert task_groups[1] in task_groups[0].children
+        assert task_groups[1].group_type == "pyspark"
+        assert len(task_groups[1].task_group) == 1
+        assert task_groups[1].name.startswith("node2")
+        assert len(task_groups[1].children) == 0
+        assert task_groups[2].group_type == "default"

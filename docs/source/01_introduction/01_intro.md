@@ -12,13 +12,13 @@ to run the pipeline once or schedule the recurring run.
 [Kubernetes](https://kubernetes.io/) is a platform for managing containerized workloads and services,
 that facilitates both declarative configuration and automation.
 
-## Why to integrate Kedro project with Airflow nad Kubernetes?
+## Why to integrate Kedro project with Airflow and Kubernetes?
 
 Airflow's main attitude is the portability. Once you define a pipeline,
 it can be started on any Kubernetes cluster. The code to execute is stored inside 
 docker images that cover not only the source itself, but all the libraries and 
 entire execution environment. Portability is also one of key Kedro aspects, as 
-the pieplines must be versionable and packagebale. Kedro, with 
+the pipelines must be versionable and packagebale. Kedro, with 
 [Kedro-docker](https://github.com/quantumblacklabs/kedro-docker) plugin do a fantastic 
-job to achieve this and Airflow looks like a nice addon to run the pipelines 
+job to achieve this and Airflow looks like a nice add-on to run the pipelines 
 on powerful remote Kubernetes clusters.
