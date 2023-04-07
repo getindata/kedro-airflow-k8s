@@ -100,7 +100,7 @@ class NodePodOperator(KubernetesPodOperator):
             arguments=[
                 "kedro",
                 "run",
-                "-e",
+                "--env",
                 env,
                 "--pipeline",
                 pipeline,
