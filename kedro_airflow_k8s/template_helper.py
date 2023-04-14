@@ -1,5 +1,5 @@
 import abc
-from typing import Dict
+from typing import Dict, Optional
 
 from kedro.pipeline.node import Node
 
@@ -15,6 +15,7 @@ class SparkOperatorFactoryBase(abc.ABC):
         pipeline: str,
         config: PluginConfig,
         main_python_file_path: str,
+        parameters: Optional[str] = ""
     ) -> str:
         pass
 

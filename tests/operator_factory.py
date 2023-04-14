@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from kedro_airflow_k8s.config import PluginConfig
 from kedro_airflow_k8s.template_helper import SparkOperatorFactoryBase
@@ -27,6 +27,6 @@ class TestOperatorFactory(SparkOperatorFactoryBase):
         )
 
     def submit_operator(
-        self, project_name, node, pipeline, config, main_python_file_path: str
+        self, project_name, node, pipeline, config, main_python_file_path: str, parameters: Optional[str]
     ):
         return f"""SubmitOperator("{project_name}", "{node.name}")"""
