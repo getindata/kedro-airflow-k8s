@@ -235,8 +235,7 @@ with DAG(
             node=node,
             config=config,
             main_python_file_path=main_python_path,
-            parameters="""
-            {%- for param in macro_params %}
+            parameters="""{%- for param in macro_params %}
                 {{ param }}:{{'{{'}} {{  param }} {{ '}}' }},
                 {%- endfor %}
             {%- for param in variables_params %}
