@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kedro-airflow-k8s"
-version = "0.8.0"
+version = "0.8.1"
 description = "Kedro Plugin to support running pipelines on Kubernetes using Airflow"
 readme = "README.md"
 authors = ['Michal Zelechowski <michal.zelechowski@getindata.com>', 'Mariusz Strzelecki <mariusz.strzelecki@getindata.com', 'Mateusz Pytel <mateusz.pytel@getindata.com>']
@@ -45,6 +45,7 @@ protobuf = "<=3.20.0"
 gcsfs = { version = "<0.8.0", optional = true }
 s3fs = { version = ">=0.4.2", optional = true }
 kedro-mlflow = { version = "<=0.12.0", optional = true }
+numpy = "<1.24"
 
 [tool.poetry.dev-dependencies]
 pytest = "<7"
