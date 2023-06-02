@@ -1,0 +1,23 @@
+# Changes here will be overwritten by Copier
+_commit: v1.0.0
+_src_path: git@github.com:getindata/python-opensource-template.git
+authors:
+- Michal Zelechowski <michal.zelechowski@getindata.com>
+- Mariusz Strzelecki <mariusz.strzelecki@getindata.com
+- Mateusz Pytel <mateusz.pytel@getindata.com>
+description: Kedro Plugin to support running pipelines on Kubernetes using Airflow
+docs_url: https://kedro-airflow-k8s.readthedocs.io/
+full_name: Kedro Airflow K8S Plugin
+github_url: https://github.com/getindata/kedro-airflow-k8s
+initial_version: 0.8.0
+keywords:
+- airflow
+- kubernetes
+- mlops
+- kedro-plugin
+- kedro
+- machinelearning
+maintainers:
+- GetInData MLOPS <mlops@getindata.com>
+module_name: kedro_airflow_k8s
+short_name: kedro-airflow-k8s

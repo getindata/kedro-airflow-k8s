@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+-   Improvements in build process (migrated build tool to poetry, quality gate switched to sonarcloud)
+-   Added support for python 3.9, dropping 3.7 
+-   Updated kedro to version 0.18.* (#139, #106, #58)
+
 ## [0.8.1] - 2023-03-17
 
 -   Submit_operator supports `node` and `pipeline` parameters

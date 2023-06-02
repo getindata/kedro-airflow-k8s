@@ -1,7 +1,7 @@
 import unittest
 
 import yaml
-from kedro.config.config import MissingConfigException
+from kedro.config import MissingConfigException
 
 from kedro_airflow_k8s.config import PluginConfig
 

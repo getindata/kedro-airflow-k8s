@@ -56,7 +56,7 @@ A best-practice setup includes initialising git and creating a virtual environme
   documentation: https://kedro.readthedocs.io/
 ```
 
-> TODO: switch to the official `spaceflights` starter after https://github.com/quantumblacklabs/kedro-starter-spaceflights/pull/10 is merged
+> TO DO: switch to the official `spaceflights` starter after https://github.com/quantumblacklabs/kedro-starter-spaceflights/pull/10 is merged
 
 Finally, go the demo project directory and ensure that kedro-airflow-k8s plugin is activated:
 

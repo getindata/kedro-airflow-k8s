@@ -116,12 +116,12 @@ class StartMLflowExperimentOperator(BaseOperator):
         for k, v in auth_vars.items():
             os.environ[k] = v
 
+        from mlflow.entities.lifecycle_stage import LifecycleStage
+        from mlflow.exceptions import MlflowException
         from mlflow.protos.databricks_pb2 import (
             RESOURCE_ALREADY_EXISTS,
             ErrorCode,
         )
-        from mlflow.exceptions import MlflowException
-        from mlflow.entities.lifecycle_stage import LifecycleStage
 
         mlflow_client = self.create_mlflow_client()
         try:
