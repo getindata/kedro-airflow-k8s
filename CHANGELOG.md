@@ -4,6 +4,8 @@
 
 ## [0.8.2] - 2023-08-29
 
+-   Fixed incompatibility with airflow's dumb-init entrypoint
+
 ## [0.8.1] - 2023-03-17
 
 -   Submit_operator supports `node` and `pipeline` parameters
