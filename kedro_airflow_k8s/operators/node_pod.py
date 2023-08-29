@@ -57,7 +57,7 @@ class NodePodOperator(KubernetesPodOperator):
         :param pvc_name: name of the shared storage attached to this pod
         :param image: image to be mounted
         :param image_pull_policy: k8s image pull policy
-        :param env: kedro pipeline configuration name, provided with '-e' option
+        :param env: kedro pipeline configuration name, provided with '--env' option
         :param pipeline: kedro pipeline name, provided with '--pipeline' option
         :param task_id: Airflow id to override
         :param startup_timeout: after the amount provided in seconds the pod start is
@@ -100,7 +100,7 @@ class NodePodOperator(KubernetesPodOperator):
             arguments=[
                 "kedro",
                 "run",
-                "-e",
+                "--env",
                 env,
                 "--pipeline",
                 pipeline,

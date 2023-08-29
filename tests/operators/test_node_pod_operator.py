@@ -56,7 +56,7 @@ class TestNodePodOperator(unittest.TestCase):
         assert container.args == [
             "kedro",
             "run",
-            "-e",
+            "--env",
             "test-pipelines",
             "--pipeline",
             "data_science_pipeline",
