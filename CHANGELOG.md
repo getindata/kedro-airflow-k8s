@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.8.2] - 2023-08-29
+
 ## [0.8.1] - 2023-03-17
 
 -   Submit_operator supports `node` and `pipeline` parameters
@@ -157,7 +159,9 @@
 
 -   Initial implementation of `kedro_airflow_k8s` plugin stub. 
 
-[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.8.1...HEAD
+[Unreleased]: https://github.com/getindata/kedro-airflow-k8s/compare/0.8.2...HEAD
+
+[0.8.2]: https://github.com/getindata/kedro-airflow-k8s/compare/0.8.1...0.8.2
 
 [0.8.1]: https://github.com/getindata/kedro-airflow-k8s/compare/0.8.0...0.8.1
 
