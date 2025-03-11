@@ -1,3 +1,7 @@
+# :bangbang: DEPRECATION NOTICE :bangbang:
+This plugin is no longer maintained. Use [kedro-airflow](https://pypi.org/project/kedro-airflow/) instead. 
+
+
 # Kedro Airflow K8S Plugin
 
 [![Python Version](https://img.shields.io/badge/python-3.7%20%7C%203.8-blue.svg)](https://github.com/getindata/kedro-airflow-k8s)
